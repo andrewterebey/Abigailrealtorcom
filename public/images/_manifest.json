@@ -1,0 +1,452 @@
+{
+  "about-background.jpg": {
+    "pages": [
+      "about"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/7516810b-496c-4414-9ba1-372dc475e985",
+    "alt": "",
+    "bytes": 259377
+  },
+  "about-bio-portrait-agent-photo.jpg": {
+    "pages": [
+      "about",
+      "home-valuation"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/7d056238-690e-4110-a799-89c0f067ad66",
+    "alt": "agent photo",
+    "bytes": 82912
+  },
+  "blog-background.jpg": {
+    "pages": [
+      "blog"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/1366e006-b364-4307-b8aa-bf5d1567fcf3",
+    "alt": "",
+    "bytes": 407892
+  },
+  "blog-bellevue-investment-guide-blog-image.jpg": {
+    "pages": [
+      "blog-bellevue-investment-guide"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/75ab2bc5-a0c0-4d6f-a609-95f96dd0f0a6",
+    "alt": "",
+    "bytes": 637402
+  },
+  "blog-image-investing-in-bellevue-real-estate-an-essential-guide.jpg": {
+    "pages": [
+      "blog",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/bll54yg240bx3kvigmuc",
+    "alt": "Investing in Bellevue Real Estate: An Essential Guide",
+    "bytes": 257106
+  },
+  "blog-image-kirkland-real-estate-life-in-a-lakeside-retreat.jpg": {
+    "pages": [
+      "blog",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/acggmxsinqqipp0tpss8",
+    "alt": "Kirkland Real Estate: Life in a Lakeside Retreat",
+    "bytes": 157830
+  },
+  "blog-image-seattle-real-estate-guide-buying-tips-for-first-time-homeown.jpg": {
+    "pages": [
+      "blog",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/ptiiibsjd6xbpyud3rj8",
+    "alt": "Seattle Real Estate Guide: Buying Tips for First-Time Homeowners",
+    "bytes": 169030
+  },
+  "blog-image-why-king-county-homes-are-a-smart-investment.jpg": {
+    "pages": [
+      "blog",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/hrnhzsv6ceis6vg2v9qp",
+    "alt": "Why King County Homes Are a Smart Investment",
+    "bytes": 275338
+  },
+  "blog-king-county-investment-blog-image.jpg": {
+    "pages": [
+      "blog-king-county-investment"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/3024925f-d244-4d75-9c4c-69e2a4c37de6",
+    "alt": "",
+    "bytes": 87303
+  },
+  "blog-kirkland-lakeside-blog-image.jpg": {
+    "pages": [
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/6ff67c80-f062-468b-9d98-151cc98c716e",
+    "alt": "",
+    "bytes": 746093
+  },
+  "blog-seattle-first-time-buyers-blog-image.jpg": {
+    "pages": [
+      "blog-seattle-first-time-buyers"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/f6c39005-95c2-48de-aec8-d53e2721785e",
+    "alt": "",
+    "bytes": 355603
+  },
+  "home-background.png": {
+    "pages": [
+      "home"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/de1c71bf-02fd-4f3c-9908-0d7ee69fff7e",
+    "alt": "",
+    "bytes": 2113966
+  },
+  "home-contact-background.jpg": {
+    "pages": [
+      "home",
+      "about",
+      "properties",
+      "home-valuation",
+      "options",
+      "blog",
+      "terms-and-conditions",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/f8d27c76-fa2b-468b-b4e2-3618dc2281d5",
+    "alt": "",
+    "bytes": 873487
+  },
+  "home-featured-image.jpg": {
+    "pages": [
+      "home",
+      "properties"
+    ],
+    "sourceUrl": "https://dlajgvw9htjpb.cloudfront.net/cms/7ddb5280-c27c-448e-83cc-b436fb962fd9/2490855/8267920318593661323.jpg",
+    "alt": "",
+    "bytes": 534276
+  },
+  "home-footer-image-footer-image.png": {
+    "pages": [
+      "home",
+      "about",
+      "properties",
+      "home-valuation",
+      "options",
+      "blog",
+      "terms-and-conditions",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/fcb9caba-4dc2-4143-b72f-2a118ae9de17",
+    "alt": "Footer Image",
+    "bytes": 36574
+  },
+  "home-footer-image.jpg": {
+    "pages": [
+      "home",
+      "about",
+      "properties",
+      "home-valuation",
+      "options",
+      "blog",
+      "terms-and-conditions",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/b517d231-d9f5-4e15-870d-852a977c9204",
+    "alt": "",
+    "bytes": 4490
+  },
+  "home-gallery-portrait.jpg": {
+    "pages": [
+      "home"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/48c36d7c-4093-47c0-9cf9-204a4c2aa414",
+    "alt": "",
+    "bytes": 361032
+  },
+  "home-image-spinner-white-decorative.svg": {
+    "pages": [
+      "home",
+      "about",
+      "properties",
+      "home-valuation",
+      "options",
+      "blog",
+      "terms-and-conditions",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://cdn.userway.org/widgetapp/images/spin_wh.svg",
+    "alt": "Spinner: White decorative",
+    "bytes": 1977
+  },
+  "home-image.svg": {
+    "pages": [
+      "home",
+      "about",
+      "properties",
+      "home-valuation",
+      "options",
+      "blog",
+      "terms-and-conditions",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://cdn.userway.org/widgetapp/images/body_wh.svg",
+    "alt": "",
+    "bytes": 4561
+  },
+  "home-nav-logo.jpg": {
+    "pages": [
+      "home",
+      "about",
+      "properties",
+      "home-valuation",
+      "options",
+      "blog",
+      "terms-and-conditions",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside",
+      "home-search"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/066743c8-02de-40af-b20f-9c9f5594ab09",
+    "alt": "",
+    "bytes": 202037
+  },
+  "home-neighborhoods-image-bellevue.jpg": {
+    "pages": [
+      "home",
+      "neighborhoods-bellevue"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/e3842579-924b-45cd-a073-1bec35ccba6a",
+    "alt": "Bellevue",
+    "bytes": 615892
+  },
+  "home-neighborhoods-image-eastside.jpg": {
+    "pages": [
+      "home",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/338f53f3-a3d6-45d1-b249-fafc3ff6f5bb",
+    "alt": "Eastside",
+    "bytes": 677438
+  },
+  "home-neighborhoods-image-newcastle.jpg": {
+    "pages": [
+      "home",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/12ee9f34-a117-4dec-a8ff-d96226863c59",
+    "alt": "Newcastle",
+    "bytes": 701932
+  },
+  "home-neighborhoods-image-renton.jpg": {
+    "pages": [
+      "home",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/7fa3f895-2bf7-4dcd-8bb1-7b2339ddcf96",
+    "alt": "Renton",
+    "bytes": 733495
+  },
+  "home-neighborhoods-image-seattle.jpg": {
+    "pages": [
+      "home",
+      "neighborhoods-seattle"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/5d1312cb-0f20-4640-999f-af29c5142fbe",
+    "alt": "Seattle",
+    "bytes": 375480
+  },
+  "home-neighborhoods-image-shoreline.jpg": {
+    "pages": [
+      "home",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/7ed84951-cbf7-40f6-b811-b1ad8e3112ff",
+    "alt": "Shoreline",
+    "bytes": 615549
+  },
+  "home-portrait-image.png": {
+    "pages": [
+      "home",
+      "about",
+      "properties",
+      "home-valuation",
+      "options",
+      "blog",
+      "terms-and-conditions",
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton",
+      "blog-king-county-investment",
+      "blog-bellevue-investment-guide",
+      "blog-seattle-first-time-buyers",
+      "blog-kirkland-lakeside"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/3d7664bf-e7bb-43a9-8948-5556999cd3eb",
+    "alt": "image",
+    "bytes": 1695601
+  },
+  "home-portrait-main.jpg": {
+    "pages": [
+      "home"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/998197ec-8781-4178-9291-27023edd73b1",
+    "alt": "main",
+    "bytes": 1700010
+  },
+  "home-valuation-background.jpg": {
+    "pages": [
+      "home-valuation"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/2343da7d-cd7e-4eb7-81ed-a263b13038de",
+    "alt": "",
+    "bytes": 722635
+  },
+  "home-valuation-image-dummy-map.png": {
+    "pages": [
+      "home-valuation"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/3ea69cb0-a40c-49b2-ac5a-a31b434b95c1",
+    "alt": "dummy-map",
+    "bytes": 136239
+  },
+  "home-valuation-image-main.jpg": {
+    "pages": [
+      "home-valuation"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/d0d0e292-75b6-490c-a9c3-d458db35d590",
+    "alt": "main",
+    "bytes": 311754
+  },
+  "neighborhoods-bellevue-background.jpg": {
+    "pages": [
+      "neighborhoods-bellevue",
+      "neighborhoods-seattle",
+      "neighborhoods-newcastle",
+      "neighborhoods-eastside",
+      "neighborhoods-shoreline",
+      "neighborhoods-renton"
+    ],
+    "sourceUrl": "https://res.cloudinary.com/luxuryp/images/f_auto,q_auto/rtudhqztym1ag6ohof8v/about",
+    "alt": "",
+    "bytes": 731172
+  },
+  "options-background.jpg": {
+    "pages": [
+      "options"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/0aa0cbf8-32df-4270-a0d7-d829736f953c",
+    "alt": "",
+    "bytes": 763383
+  },
+  "options-image-main.jpg": {
+    "pages": [
+      "options"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/e65137f4-dd2b-4f5e-a6f3-ae49c8caecaa",
+    "alt": "main",
+    "bytes": 13442515
+  },
+  "properties-background.jpg": {
+    "pages": [
+      "properties"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/a8ecf53e-d36d-4c8c-be7b-a811ee646fbc",
+    "alt": "",
+    "bytes": 1098626
+  },
+  "properties-card.png": {
+    "pages": [
+      "properties"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/53ca722d-7b5e-46e2-a174-2812066d655a",
+    "alt": "",
+    "bytes": 28951
+  }
+}

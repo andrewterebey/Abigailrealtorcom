@@ -48,20 +48,28 @@ async function capture(browser: Browser, spec: PageSpec, viewport: Viewport) {
     viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 1,
   })
+  // tsx+esbuild inject a `__name` helper into transpiled page.evaluate bodies
+  // which the browser context doesn't define; shim it so evaluates don't throw.
+  await context.addInitScript({
+    content: 'window.__name = function(fn){return fn;};',
+  })
   const page: Page = await context.newPage()
   const url = `${LIVE_BASE_URL}${spec.path}`
   const outPath = path.join(OUT_DIR, `${spec.name}-${viewport.name}.png`)
 
   try {
+    // `networkidle` hangs on this site due to long-poll analytics; use
+    // `domcontentloaded` + load state as a best-effort settle.
     const response = await page.goto(url, {
-      waitUntil: 'networkidle',
-      timeout: 45000,
+      waitUntil: 'domcontentloaded',
+      timeout: 60000,
     })
     const status = response?.status() ?? 0
     if (status >= 400) {
       console.warn(`  [skip] ${spec.name} ${viewport.name}: HTTP ${status}`)
       return
     }
+    await page.waitForLoadState('load', { timeout: 20000 }).catch(() => {})
     // Scroll through to trigger lazy-loaded carousels/images, then reset.
     await page.evaluate(async () => {
       await new Promise<void>((resolve) => {
