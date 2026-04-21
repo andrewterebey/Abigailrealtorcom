@@ -1,0 +1,24 @@
+{
+  "testimonials": [
+    {
+      "id": "sarah-mike",
+      "author": "Sarah & Mike",
+      "quote": "Abigail was outstanding from start to finish! Her deep knowledge of the local market helped us make informed decisions, and her warm personality made the whole experience enjoyable. She found us the perfect home, and we’re so grateful for her dedication!"
+    },
+    {
+      "id": "james-k",
+      "author": "James K.",
+      "quote": "I can’t recommend Abigail enough! Her professionalism and attention to detail were evident in every interaction. She kept us informed, listened to our needs, and managed every aspect of the sale with care and expertise. Thanks to her, we sold our home quickly and at a great price!"
+    },
+    {
+      "id": "linda-tom-b",
+      "author": "Linda & Tom B.",
+      "quote": "Abigail made buying our first home an absolute pleasure! She was there every step of the way, answering all our questions and helping us feel comfortable with each decision. Her guidance and expertise took all the stress out of the process. Highly recommend her!"
+    },
+    {
+      "id": "emily-r",
+      "author": "Emily R.",
+      "quote": "Abigail went above and beyond for us! She was always available, even on weekends and evenings, and her dedication to helping us find the perfect home was truly remarkable. We always felt like her top priority. Thank you, Abigail, for making our dream a reality!"
+    }
+  ]
+}
