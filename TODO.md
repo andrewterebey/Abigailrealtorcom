@@ -64,6 +64,11 @@ Pages in build order. Complete visual parity for page N before starting N+1.
 - [ ] Make the dynamic date placeholders in
       `/content/legal/idx-disclaimer.md` (`{{DATE}}`, `{{TIME_UTC}}`,
       `{{YEAR}}`) render with the current timestamp when the footer is built.
+- [ ] **Populate 12 unique listing photos** in `/public/listings/` — currently
+      `placeholder-01.jpg` through `placeholder-12.jpg` are all the same seed
+      image (a copy of `home-featured-image.jpg`) so the Spotlight Listings /
+      Properties grid renders. Replace with per-listing Unsplash photos per
+      CLAUDE.md §7.8 before go-live.
 - [ ] **Hero video licensing** — the ferry-at-sunrise video
       (`/public/videos/home-hero.*`) has a "hov-" filename prefix that
       strongly suggests a Luxury Presence stock library asset rather than
