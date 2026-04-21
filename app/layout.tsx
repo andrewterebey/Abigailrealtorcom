@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Forum, Poppins } from 'next/font/google'
 import './globals.css'
+import { SiteHeader } from '@/components/site/site-header'
+import { SiteFooter } from '@/components/site/site-footer'
 
 const forum = Forum({
   variable: '--font-display',
@@ -36,7 +38,9 @@ export default function RootLayout({
       <body
         className={`${forum.variable} ${poppins.variable} font-body text-site-text antialiased`}
       >
+        <SiteHeader />
         {children}
+        <SiteFooter />
       </body>
     </html>
   )
