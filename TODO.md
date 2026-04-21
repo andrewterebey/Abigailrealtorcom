@@ -64,3 +64,9 @@ Pages in build order. Complete visual parity for page N before starting N+1.
 - [ ] Make the dynamic date placeholders in
       `/content/legal/idx-disclaimer.md` (`{{DATE}}`, `{{TIME_UTC}}`,
       `{{YEAR}}`) render with the current timestamp when the footer is built.
+- [ ] **Hero video licensing** — the ferry-at-sunrise video
+      (`/public/videos/home-hero.*`) has a "hov-" filename prefix that
+      strongly suggests a Luxury Presence stock library asset rather than
+      something Abigail licensed directly. Before go-live: confirm the
+      license transfers when the site leaves Luxury Presence, or swap for a
+      licensed/original replacement clip.
