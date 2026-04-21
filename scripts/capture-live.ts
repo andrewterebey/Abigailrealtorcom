@@ -15,19 +15,32 @@ const VIEWPORTS: Viewport[] = [
 
 type PageSpec = { name: string; path: string }
 
+// Paths below were discovered from abigailrealtor.com's sitemap on 2026-04-21
+// (sitemap-static.xml and sitemap-neighborhoods-dpages.xml). If the live site
+// adds or renames routes, re-run the sitemap fetch and update this list.
 const PAGES: PageSpec[] = [
   { name: 'home', path: '/' },
   { name: 'about', path: '/about' },
   { name: 'properties', path: '/properties' },
-  { name: 'home-search', path: '/home-search' },
+  { name: 'properties-sale', path: '/properties/sale' },
+  { name: 'properties-sold', path: '/properties/sold' },
+  { name: 'home-search', path: '/home-search/listings' },
   { name: 'home-valuation', path: '/home-valuation' },
   { name: 'neighborhoods', path: '/neighborhoods' },
+  { name: 'neighborhoods-bellevue', path: '/neighborhoods/bellevue' },
+  { name: 'neighborhoods-seattle', path: '/neighborhoods/seattle' },
+  { name: 'neighborhoods-newcastle', path: '/neighborhoods/newcastle' },
+  { name: 'neighborhoods-eastside', path: '/neighborhoods/eastside' },
+  { name: 'neighborhoods-shoreline', path: '/neighborhoods/shoreline' },
+  { name: 'neighborhoods-renton', path: '/neighborhoods/renton' },
   { name: 'testimonials', path: '/testimonials' },
   { name: 'buyers', path: '/buyers' },
   { name: 'sellers', path: '/sellers' },
   { name: 'options', path: '/options' },
   { name: 'blog', path: '/blog' },
   { name: 'contact', path: '/contact' },
+  { name: 'dmca-notice', path: '/dmca-notice' },
+  { name: 'terms-and-conditions', path: '/terms-and-conditions' },
 ]
 
 async function capture(browser: Browser, spec: PageSpec, viewport: Viewport) {
@@ -49,8 +62,22 @@ async function capture(browser: Browser, spec: PageSpec, viewport: Viewport) {
       console.warn(`  [skip] ${spec.name} ${viewport.name}: HTTP ${status}`)
       return
     }
-    // Let lazy-loaded carousels/images settle.
-    await page.waitForTimeout(1500)
+    // Scroll through to trigger lazy-loaded carousels/images, then reset.
+    await page.evaluate(async () => {
+      await new Promise<void>((resolve) => {
+        let y = 0
+        const step = () => {
+          window.scrollTo(0, y)
+          y += 400
+          if (y < document.body.scrollHeight) setTimeout(step, 100)
+          else resolve()
+        }
+        step()
+      })
+      await new Promise((r) => setTimeout(r, 600))
+      window.scrollTo(0, 0)
+      await new Promise((r) => setTimeout(r, 500))
+    })
     await page.screenshot({ path: outPath, fullPage: true })
     console.log(`  [ok]   ${spec.name} ${viewport.name} -> ${outPath}`)
   } catch (err) {
