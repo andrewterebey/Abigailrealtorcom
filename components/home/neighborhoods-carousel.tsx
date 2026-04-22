@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRef } from 'react'
 import { Container } from '@/components/site/container'
 
@@ -46,22 +45,23 @@ export function NeighborhoodsCarousel() {
             </h2>
           </div>
 
-          <div className="hidden gap-2 lg:flex">
+          <div className="hidden items-center gap-4 lg:flex">
             <button
               type="button"
               onClick={() => scrollBy(-360)}
-              aria-label="Previous neighborhoods"
-              className="border border-black/10 p-3 text-site-text transition-colors hover:border-site-gold hover:text-site-gold"
+              className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors hover:text-site-gold"
             >
-              <ChevronLeft className="size-5" />
+              Previous
             </button>
+            <span aria-hidden className="text-site-text-muted/40">
+              |
+            </span>
             <button
               type="button"
               onClick={() => scrollBy(360)}
-              aria-label="Next neighborhoods"
-              className="border border-black/10 p-3 text-site-text transition-colors hover:border-site-gold hover:text-site-gold"
+              className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors hover:text-site-gold"
             >
-              <ChevronRight className="size-5" />
+              Next
             </button>
           </div>
         </div>
@@ -87,11 +87,11 @@ export function NeighborhoodsCarousel() {
               />
               <div className="absolute inset-0 bg-black/20 transition-colors group-hover:bg-black/30" />
             </div>
-            <div className="mt-4 flex items-center justify-between">
-              <span className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text">
+            <div className="mt-4 flex items-center gap-3">
+              <span aria-hidden className="h-4 w-px bg-site-gold" />
+              <span className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors group-hover:text-site-gold">
                 Explore {n.name}
               </span>
-              <ChevronRight className="size-4 text-site-gold transition-transform group-hover:translate-x-1" />
             </div>
           </Link>
         ))}

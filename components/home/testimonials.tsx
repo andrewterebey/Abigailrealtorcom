@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Container } from '@/components/site/container'
 import testimonialsData from '@/content/testimonials.json'
 
@@ -32,17 +31,28 @@ export function Testimonials() {
           What Clients Are Saying
         </h2>
 
-        <div className="relative mx-auto mt-10 max-w-3xl">
-          <button
-            type="button"
-            onClick={prev}
-            aria-label="Previous testimonial"
-            className="absolute left-0 top-1/2 -translate-y-1/2 p-2 text-site-text-muted transition-colors hover:text-site-gold"
-          >
-            <ChevronLeft className="size-6" />
-          </button>
+        <div className="mx-auto mt-6 max-w-3xl">
+          <div className="flex items-center justify-center gap-6">
+            <button
+              type="button"
+              onClick={prev}
+              className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors hover:text-site-gold"
+            >
+              Previous
+            </button>
+            <span aria-hidden className="text-site-text-muted/40">
+              |
+            </span>
+            <button
+              type="button"
+              onClick={next}
+              className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors hover:text-site-gold"
+            >
+              Next
+            </button>
+          </div>
 
-          <blockquote className="px-10">
+          <blockquote className="mt-8">
             <p className="font-body text-[15px] leading-[1.8] text-site-text md:text-[16px]">
               {current.quote}
             </p>
@@ -51,16 +61,11 @@ export function Testimonials() {
             </footer>
           </blockquote>
 
-          <button
-            type="button"
-            onClick={next}
-            aria-label="Next testimonial"
-            className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-site-text-muted transition-colors hover:text-site-gold"
+          <div
+            className="mt-8 flex justify-center gap-2"
+            role="tablist"
+            aria-label="Testimonial navigation"
           >
-            <ChevronRight className="size-6" />
-          </button>
-
-          <div className="mt-8 flex justify-center gap-2" role="tablist" aria-label="Testimonial navigation">
             {TESTIMONIALS.map((t, i) => (
               <button
                 key={t.id}
@@ -70,7 +75,9 @@ export function Testimonials() {
                 aria-label={`Testimonial ${i + 1}`}
                 onClick={() => setIndex(i)}
                 className={`h-2 w-2 rounded-full transition-colors ${
-                  i === index ? 'bg-site-gold' : 'bg-site-text-muted/40 hover:bg-site-gold/60'
+                  i === index
+                    ? 'bg-site-gold'
+                    : 'bg-site-text-muted/40 hover:bg-site-gold/60'
                 }`}
               />
             ))}

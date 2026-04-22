@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Container } from './container'
 
 const NAV_LINKS = [
@@ -14,10 +14,22 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  const headerClasses = scrolled
+    ? 'fixed inset-x-0 top-0 z-50 border-b border-black/5 bg-white text-site-text shadow-sm'
+    : 'absolute inset-x-0 top-0 z-50 text-white'
 
   return (
-    <header className="absolute inset-x-0 top-0 z-50 text-white">
-      <Container className="flex items-center justify-between py-5 lg:py-7">
+    <header className={headerClasses}>
+      <Container className="flex items-center justify-between py-4 lg:py-5">
         <Link
           href="/"
           aria-label="Abigail Anderson — home"
@@ -29,7 +41,11 @@ export function SiteHeader() {
             width={347}
             height={100}
             priority
-            className="h-10 w-auto lg:h-12"
+            className={
+              scrolled
+                ? 'h-9 w-auto lg:h-10'
+                : 'h-10 w-auto brightness-0 invert lg:h-12'
+            }
           />
         </Link>
 
@@ -41,14 +57,16 @@ export function SiteHeader() {
             <Link
               key={link.href}
               href={link.href}
-              className="font-body text-[14px] font-normal uppercase tracking-[0.1em] text-white transition-opacity hover:opacity-80"
+              className={`font-body text-[14px] font-normal uppercase tracking-[0.1em] transition-opacity hover:opacity-80 ${
+                scrolled ? 'text-site-text' : 'text-white'
+              }`}
             >
               {link.label}
             </Link>
           ))}
           <Link
             href="/contact"
-            className="rounded-full border border-white/20 bg-site-gold px-6 py-2 font-display text-[10px] uppercase tracking-[0.04em] text-white transition-colors hover:bg-site-gold-dim"
+            className="rounded-full bg-site-gold px-6 py-2 font-display text-[10px] uppercase tracking-[0.04em] text-white transition-colors hover:bg-site-gold-dim"
           >
             Let&apos;s Connect
           </Link>
@@ -58,7 +76,7 @@ export function SiteHeader() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open menu"
-          className="p-2 lg:hidden"
+          className={`p-2 lg:hidden ${scrolled ? 'text-site-text' : 'text-white'}`}
         >
           <Menu className="size-6" />
         </button>

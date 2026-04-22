@@ -22,7 +22,7 @@ export function Hero() {
   return (
     <section
       aria-label="Hero"
-      className="relative h-screen min-h-[600px] w-full overflow-hidden text-white"
+      className="relative h-[78vh] min-h-[560px] w-full overflow-hidden text-white"
     >
       <video
         autoPlay
