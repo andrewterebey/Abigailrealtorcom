@@ -8,15 +8,15 @@ export function GetToKnow() {
   return (
     <section className="py-16 md:py-20 lg:py-24">
       <Container>
-        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-          <div className="overflow-hidden">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,420px)_1fr] lg:gap-16">
+          <div className="mx-auto w-full max-w-sm overflow-hidden lg:max-w-none">
             <Image
               src="/images/home-portrait-main.jpg"
               alt="Abigail Anderson"
               width={2560}
               height={2560}
               className="h-auto w-full object-cover"
-              sizes="(min-width: 1024px) 600px, 100vw"
+              sizes="(min-width: 1024px) 420px, (min-width: 640px) 384px, 100vw"
               priority
             />
           </div>

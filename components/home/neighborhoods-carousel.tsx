@@ -11,13 +11,14 @@ type Neighborhood = {
   image: string
 }
 
+// Home carousel features only the 4 markets Abigail highlights on the live
+// site; Shoreline and Renton still have full /neighborhoods/<slug> detail
+// pages (linked from the /neighborhoods index), they just aren't on Home.
 const NEIGHBORHOODS: Neighborhood[] = [
   { slug: 'bellevue', name: 'Bellevue', image: '/images/home-neighborhoods-image-bellevue.jpg' },
   { slug: 'seattle', name: 'Seattle', image: '/images/home-neighborhoods-image-seattle.jpg' },
   { slug: 'newcastle', name: 'Newcastle', image: '/images/home-neighborhoods-image-newcastle.jpg' },
   { slug: 'eastside', name: 'Eastside', image: '/images/home-neighborhoods-image-eastside.jpg' },
-  { slug: 'shoreline', name: 'Shoreline', image: '/images/home-neighborhoods-image-shoreline.jpg' },
-  { slug: 'renton', name: 'Renton', image: '/images/home-neighborhoods-image-renton.jpg' },
 ]
 
 export function NeighborhoodsCarousel() {
@@ -90,7 +91,7 @@ export function NeighborhoodsCarousel() {
             <div className="mt-4 flex items-center gap-3">
               <span aria-hidden className="h-4 w-px bg-site-gold" />
               <span className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors group-hover:text-site-gold">
-                Explore {n.name}
+                {n.name}
               </span>
             </div>
           </Link>
