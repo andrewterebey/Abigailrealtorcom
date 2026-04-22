@@ -8,21 +8,25 @@ export function GetToKnow() {
   return (
     <section className="py-16 md:py-20 lg:py-24">
       <Container>
-        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,420px)_1fr] lg:gap-16">
-          <div className="mx-auto w-full max-w-sm overflow-hidden lg:max-w-none">
-            <Image
-              src="/images/home-portrait-main.jpg"
-              alt="Abigail Anderson"
-              width={2560}
-              height={2560}
-              className="h-auto w-full object-cover"
-              sizes="(min-width: 1024px) 420px, (min-width: 640px) 384px, 100vw"
-              priority
-            />
+        {/* Live: 12-col grid inside the standard container. Portrait fills
+            cols 1–6 with a fixed ~5/4 aspect ratio (650×523 at 1440 viewport),
+            content sits in cols 8–12 with col 7 as the gap. */}
+        <div className="grid items-center gap-10 lg:grid-cols-12 lg:gap-0">
+          <div className="lg:col-span-6">
+            <div className="relative aspect-[650/523] w-full overflow-hidden">
+              <Image
+                src="/images/home-portrait-main.jpg"
+                alt="Abigail Anderson"
+                fill
+                className="object-cover"
+                sizes="(min-width: 1024px) 650px, 100vw"
+                priority
+              />
+            </div>
           </div>
-          <div>
+          <div className="lg:col-span-5 lg:col-start-8">
             <p className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-gold">
-              Mission, Passion &amp; Purpose
+              Passion, Precision &amp; Purpose
             </p>
             <h2 className="mt-3 text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
               Get To Know Abigail
@@ -32,7 +36,7 @@ export function GetToKnow() {
             </p>
             <Link
               href="/about"
-              className="mt-8 inline-flex items-center justify-center bg-site-gold px-10 py-[18px] font-body text-[14px] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-site-gold-dim"
+              className="mt-8 inline-flex items-center justify-center bg-site-gold px-[46px] py-[20px] font-body text-[14px] font-bold uppercase tracking-[0.107em] text-white transition-colors hover:bg-site-gold-dim"
             >
               Learn More
             </Link>

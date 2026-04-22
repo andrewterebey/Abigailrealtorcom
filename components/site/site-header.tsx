@@ -2,62 +2,129 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Menu, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ChevronDown, Menu, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Container } from './container'
 
-const NAV_LINKS = [
+const INLINE_LINKS = [
   { label: 'About Abigail', href: '/about' },
   { label: 'Home Search', href: '/home-search/listings' },
   { label: 'Home Valuation', href: '/home-valuation' },
 ] as const
 
+const MENU_LINKS = [
+  { label: 'Home', href: '/' },
+  { label: 'Properties', href: '/properties' },
+  { label: 'Home Search', href: '/home-search/listings' },
+  { label: 'Home Valuation', href: '/home-valuation' },
+  { label: 'Neighborhoods', href: '/neighborhoods' },
+  { label: 'Testimonials', href: '/testimonials' },
+  { label: 'Blog', href: '/blog' },
+] as const
+
+const RESOURCE_LINKS = [
+  { label: 'About Abigail', href: '/about' },
+  { label: 'Buyers', href: '/buyers' },
+  { label: 'Sellers', href: '/sellers' },
+  { label: 'Options', href: '/options' },
+] as const
+
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+  const [resourcesOpen, setResourcesOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [visible, setVisible] = useState(true)
+  const lastYRef = useRef(0)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
+    const onScroll = () => {
+      const y = window.scrollY
+      setScrolled(y > 40)
+      // Hide when scrolling down past ~120px; show on any upward scroll.
+      const delta = y - lastYRef.current
+      if (y < 120) setVisible(true)
+      else if (delta > 6) setVisible(false)
+      else if (delta < -6) setVisible(true)
+      lastYRef.current = y
+    }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const headerClasses = scrolled
-    ? 'fixed inset-x-0 top-0 z-50 border-b border-black/5 bg-white text-site-text shadow-sm'
-    : 'absolute inset-x-0 top-0 z-50 text-white'
+  // Keep page scroll + pointer events enabled while the popout is open so
+  // the user can still read and interact with the underlying page. Escape
+  // still closes; the X button closes; clicking outside does not.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
+  const base =
+    'fixed inset-x-0 top-0 z-50 transition-[transform,background-color,box-shadow,color] duration-300 ease-out'
+  const bg = scrolled
+    ? 'border-b border-black/5 bg-white text-site-text shadow-sm'
+    : 'bg-transparent text-white'
+  // While the side panel is open, force the header to stay put. Because
+  // the popout is a fixed-position child of `<header>`, translating the
+  // header also translates the panel — we don't want that to happen
+  // mid-scroll while the menu is open.
+  const hidden = visible || open ? 'translate-y-0' : '-translate-y-full'
+
+  const close = () => {
+    setOpen(false)
+    setResourcesOpen(false)
+  }
 
   return (
-    <header className={headerClasses}>
-      <Container className="flex items-center justify-between py-4 lg:py-5">
+    <header className={`${base} ${bg} ${hidden}`}>
+      {/* Dark gradient backing for the transparent state so the white logo
+          + nav text stay legible even when the hero behind them is light
+          (e.g. the peach sunrise on Home). Fades out as you scroll into the
+          solid-white scrolled state. */}
+      {!scrolled ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 via-black/25 to-transparent"
+        />
+      ) : null}
+      <Container className="relative flex items-center py-3 lg:py-4">
         <Link
           href="/"
           aria-label="Abigail Anderson — home"
           className="block shrink-0"
         >
           <Image
-            src="/images/home-nav-logo.png"
+            src={
+              scrolled
+                ? '/images/home-nav-logo.jpg'
+                : '/images/home-nav-logo.png'
+            }
             alt="John L. Scott — Abigail Anderson"
             width={347}
             height={100}
             priority
             className={
-              scrolled
-                ? 'h-9 w-auto lg:h-10'
-                : 'h-10 w-auto brightness-0 invert lg:h-12'
+              scrolled ? 'h-12 w-auto lg:h-14' : 'h-12 w-auto lg:h-16'
             }
           />
         </Link>
 
+        {/* Centered primary nav — fills the space between logo and the
+            hamburger so it sits visually centered in the bar like live. */}
         <nav
-          aria-label="Primary"
-          className="hidden items-center gap-8 lg:flex"
+          aria-label="Primary quick links"
+          className="hidden flex-1 items-center justify-center gap-10 lg:flex"
         >
-          {NAV_LINKS.map((link) => (
+          {INLINE_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`font-body text-[14px] font-normal uppercase tracking-[0.1em] transition-opacity hover:opacity-80 ${
+              className={`font-body text-[14px] font-bold uppercase tracking-[0.14em] transition-opacity hover:opacity-80 ${
                 scrolled ? 'text-site-text' : 'text-white'
               }`}
             >
@@ -66,64 +133,127 @@ export function SiteHeader() {
           ))}
           <Link
             href="/contact"
-            className="rounded-full bg-site-gold px-6 py-2 font-display text-[10px] uppercase tracking-[0.04em] text-white transition-colors hover:bg-site-gold-dim"
+            className={`font-body text-[14px] font-bold uppercase tracking-[0.14em] transition-opacity hover:opacity-80 ${
+              scrolled ? 'text-site-text' : 'text-white'
+            }`}
           >
             Let&apos;s Connect
           </Link>
         </nav>
 
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          className={`p-2 lg:hidden ${scrolled ? 'text-site-text' : 'text-white'}`}
-        >
-          <Menu className="size-6" />
-        </button>
+        {/* Mobile + tablet: nav collapses, hamburger sits at far right;
+            desktop: hamburger after the centered nav. */}
+        <div className="ml-auto lg:ml-0">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={open}
+            aria-controls="site-menu-popout"
+            className={`p-1 transition-colors ${
+              scrolled ? 'text-site-text' : 'text-white'
+            }`}
+          >
+            <Menu className="size-7" strokeWidth={1.5} />
+          </button>
+        </div>
       </Container>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 text-white lg:hidden"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Mobile navigation"
-        >
-          <Container className="flex items-center justify-between py-5">
-            <span className="sr-only">Menu</span>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close menu"
-              className="ml-auto p-2"
-            >
-              <X className="size-6" />
-            </button>
-          </Container>
-          <nav
-            aria-label="Mobile"
-            className="flex flex-col items-center gap-8 pt-16"
+      {/* Popout panel — slides in from the right. No backdrop: the rest of
+          the page stays scrollable and clickable while the menu is open. */}
+      <div
+        id="site-menu-popout"
+        role="region"
+        aria-label="Site navigation"
+        aria-hidden={!open}
+        className={`fixed right-0 top-0 z-50 flex h-screen w-full max-w-[420px] flex-col bg-white text-site-text shadow-2xl transition-transform duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-black/10 px-6 py-5">
+          <span className="font-body text-[11px] font-bold uppercase tracking-[0.2em] text-site-text-muted">
+            Menu
+          </span>
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Close menu"
+            tabIndex={open ? 0 : -1}
+            className="p-2 text-site-text transition-colors hover:text-site-gold"
           >
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="font-body text-[18px] font-normal uppercase tracking-[0.1em]"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <Link
-              href="/contact"
-              onClick={() => setOpen(false)}
-              className="rounded-full bg-site-gold px-8 py-3 font-display text-[14px] uppercase tracking-[0.04em]"
-            >
-              Let&apos;s Connect
-            </Link>
-          </nav>
+            <X className="size-6" />
+          </button>
         </div>
-      )}
+
+        <nav aria-label="Site" className="flex-1 overflow-y-auto py-6">
+          <ul className="flex flex-col">
+            {MENU_LINKS.map((link) => (
+              <li key={link.href} className="border-b border-black/10">
+                <Link
+                  href={link.href}
+                  onClick={close}
+                  tabIndex={open ? 0 : -1}
+                  className="block px-6 py-5 text-center font-display text-[22px] uppercase tracking-[0.04em] text-site-text transition-colors hover:text-site-gold"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+            <li className="border-b border-black/10">
+              <button
+                type="button"
+                onClick={() => setResourcesOpen((v) => !v)}
+                aria-expanded={resourcesOpen}
+                tabIndex={open ? 0 : -1}
+                className="flex w-full items-center justify-center gap-2 px-6 py-5 font-display text-[22px] uppercase tracking-[0.04em] text-site-text transition-colors hover:text-site-gold"
+              >
+                Resources
+                <ChevronDown
+                  className={`size-5 transition-transform ${
+                    resourcesOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              {resourcesOpen && (
+                <ul className="bg-black/[0.03] pb-2">
+                  {RESOURCE_LINKS.map((r) => (
+                    <li key={r.href}>
+                      <Link
+                        href={r.href}
+                        onClick={close}
+                        tabIndex={open ? 0 : -1}
+                        className="block px-6 py-3 text-center font-body text-[13px] font-bold uppercase tracking-[0.18em] text-site-text transition-colors hover:text-site-gold"
+                      >
+                        {r.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+            <li className="border-b border-black/10">
+              <Link
+                href="/contact"
+                onClick={close}
+                tabIndex={open ? 0 : -1}
+                className="block px-6 py-5 text-center font-display text-[22px] uppercase tracking-[0.04em] text-site-text transition-colors hover:text-site-gold"
+              >
+                Let&apos;s Connect
+              </Link>
+            </li>
+            <li className="border-b border-black/10">
+              <Link
+                href="/home-search/listings"
+                onClick={close}
+                tabIndex={open ? 0 : -1}
+                className="block px-6 py-5 text-center font-display text-[22px] uppercase tracking-[0.04em] text-site-text transition-colors hover:text-site-gold"
+              >
+                My Search Portal
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </header>
   )
 }

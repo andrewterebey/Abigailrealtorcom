@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Container } from '@/components/site/container'
 
 type Neighborhood = {
@@ -23,11 +23,36 @@ const NEIGHBORHOODS: Neighborhood[] = [
 
 export function NeighborhoodsCarousel() {
   const trackRef = useRef<HTMLDivElement>(null)
+  const [hasOverflow, setHasOverflow] = useState(false)
 
-  function scrollBy(delta: number) {
+  useEffect(() => {
     const el = trackRef.current
     if (!el) return
-    el.scrollBy({ left: delta, behavior: 'smooth' })
+    const check = () => setHasOverflow(el.scrollWidth > el.clientWidth + 1)
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    window.addEventListener('resize', check)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', check)
+    }
+  }, [])
+
+  function scrollStep(direction: 1 | -1) {
+    const el = trackRef.current
+    if (!el) return
+    const step = Math.max(280, Math.floor(el.clientWidth * 0.6))
+    const max = el.scrollWidth - el.clientWidth
+    const atEnd = el.scrollLeft >= max - 2
+    const atStart = el.scrollLeft <= 2
+    if (direction === 1 && atEnd) {
+      el.scrollTo({ left: 0, behavior: 'smooth' })
+    } else if (direction === -1 && atStart) {
+      el.scrollTo({ left: max, behavior: 'smooth' })
+    } else {
+      el.scrollBy({ left: step * direction, behavior: 'smooth' })
+    }
   }
 
   return (
@@ -46,31 +71,35 @@ export function NeighborhoodsCarousel() {
             </h2>
           </div>
 
-          <div className="hidden items-center gap-4 lg:flex">
-            <button
-              type="button"
-              onClick={() => scrollBy(-360)}
-              className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors hover:text-site-gold"
-            >
-              Previous
-            </button>
-            <span aria-hidden className="text-site-text-muted/40">
-              |
-            </span>
-            <button
-              type="button"
-              onClick={() => scrollBy(360)}
-              className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors hover:text-site-gold"
-            >
-              Next
-            </button>
-          </div>
+          {hasOverflow && (
+            <div className="hidden items-center gap-4 lg:flex">
+              <button
+                type="button"
+                onClick={() => scrollStep(-1)}
+                className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors hover:text-site-gold"
+              >
+                Previous
+              </button>
+              <span aria-hidden className="text-site-text-muted/40">
+                |
+              </span>
+              <button
+                type="button"
+                onClick={() => scrollStep(1)}
+                className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors hover:text-site-gold"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </Container>
 
       <div
         ref={trackRef}
-        className="mt-10 flex gap-6 overflow-x-auto scroll-smooth px-[15px] pb-4 snap-x snap-mandatory lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className={`mt-10 flex gap-6 overflow-x-auto scroll-smooth px-[15px] pb-4 snap-x snap-mandatory lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+          hasOverflow ? '' : 'justify-center'
+        }`}
       >
         {NEIGHBORHOODS.map((n) => (
           <Link

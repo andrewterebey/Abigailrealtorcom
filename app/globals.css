@@ -187,7 +187,9 @@
     font-family: var(--font-display);
     font-weight: 400;
     text-transform: uppercase;
-    color: #000;
+    /* Inherit so headings on dark sections (hero, newsletter band) follow
+       the parent's text-white. Body sets a default heading color = #000. */
+    color: inherit;
     letter-spacing: 1px;
   }
   h1 { font-size: 70px; line-height: 1.25; }

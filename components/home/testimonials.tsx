@@ -86,7 +86,7 @@ export function Testimonials() {
 
         <Link
           href="/testimonials"
-          className="mt-10 inline-flex items-center justify-center bg-site-gold px-10 py-[18px] font-body text-[14px] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-site-gold-dim"
+          className="mt-10 inline-flex items-center justify-center bg-site-gold px-[46px] py-[20px] font-body text-[14px] font-bold uppercase tracking-[0.107em] text-white transition-colors hover:bg-site-gold-dim"
         >
           View All
         </Link>

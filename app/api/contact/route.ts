@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const contactSchema = z.object({
   name: z.string().min(1).max(200),
@@ -9,7 +10,33 @@ const contactSchema = z.object({
   intent: z.enum(['newsletter', 'contact', 'valuation']).optional(),
 })
 
+// Message max is 5000 chars; 16 KB is plenty of headroom for the full JSON
+// envelope while still keeping a giant payload from ever reaching Zod.
+const MAX_BODY_BYTES = 16 * 1024
+
 export async function POST(request: Request) {
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+
+  const rate = checkRateLimit(ip)
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rate.retryAfter ?? 60) },
+      },
+    )
+  }
+
+  // Cap body size before we even attempt to parse JSON. Anything larger than
+  // MAX_BODY_BYTES is either malicious or broken; either way we don't want it
+  // in memory.
+  const contentLength = Number(request.headers.get('content-length') ?? '0')
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: 'Payload too large' }, { status: 413 })
+  }
+
   let body: unknown
   try {
     body = await request.json()

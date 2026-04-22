@@ -43,6 +43,13 @@ next-env.d.ts
 # visual-diff workflow: local screenshots regenerate every run
 /screenshots/local/
 
+# diff-dom.ts script output — regenerated each run
+/screenshots/diff-dom/
+
+# Ad-hoc debug screenshots dropped in repo root during visual-diff sessions
+/live-*.png
+/local-*.png
+
 # Playwright MCP scratch artifacts
 .playwright-mcp/
 

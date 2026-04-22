@@ -16,20 +16,20 @@ const TILES: Tile[] = [
   {
     label: "I'm Buying",
     href: '/buyers',
-    image: '/images/home-portrait-image.png',
-    alt: 'Modern kitchen with waterfall island',
+    image: '/images/home-cta-buying.jpg',
+    alt: 'Modern dining and kitchen interior',
   },
   {
     label: "I'm Selling",
     href: '/sellers',
-    image: '/images/home-gallery-portrait.jpg',
+    image: '/images/home-cta-selling.jpg',
     alt: 'Cozy living room with wood stove',
   },
   {
-    label: "I'm Looking for Options",
+    label: "I'm Looking For Options",
     href: '/options',
-    image: '/images/home-background.png',
-    alt: 'Lakeside firepit at sunset',
+    image: '/images/home-cta-options.jpg',
+    alt: 'Modern hillside home at dusk',
   },
 ]
 
@@ -50,7 +50,7 @@ export function CtaTiles() {
         type="button"
         onClick={prev}
         aria-label="Previous option"
-        className="absolute left-0 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-site-gold text-white transition-colors hover:bg-site-gold-dim"
+        className="absolute left-0 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-site-gold text-white transition-colors hover:bg-site-gold-dim md:hidden"
       >
         <ChevronLeft className="size-5" />
       </button>
@@ -58,7 +58,7 @@ export function CtaTiles() {
         type="button"
         onClick={next}
         aria-label="Next option"
-        className="absolute right-0 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-site-gold text-white transition-colors hover:bg-site-gold-dim"
+        className="absolute right-0 top-1/2 z-20 flex size-12 -translate-y-1/2 items-center justify-center bg-site-gold text-white transition-colors hover:bg-site-gold-dim md:hidden"
       >
         <ChevronRight className="size-5" />
       </button>
@@ -75,7 +75,7 @@ export function CtaTiles() {
         <TileCard tile={TILES[index]} />
       </div>
 
-      <div className="flex justify-center gap-2 pb-6 pt-4" role="tablist" aria-label="Options">
+      <div className="flex justify-center gap-2 pb-6 pt-4 md:hidden" role="tablist" aria-label="Options">
         {TILES.map((tile, i) => (
           <button
             key={tile.href}

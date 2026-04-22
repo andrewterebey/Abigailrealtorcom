@@ -1,5 +1,6 @@
 'use client'
 
+import { Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Container } from '@/components/site/container'
@@ -22,7 +23,7 @@ export function Hero() {
   return (
     <section
       aria-label="Hero"
-      className="relative h-[78vh] min-h-[560px] w-full overflow-hidden text-white"
+      className="relative h-screen min-h-[600px] w-full overflow-hidden text-white"
     >
       <video
         autoPlay
@@ -39,7 +40,7 @@ export function Hero() {
 
       <div className="relative z-10 flex h-full items-center justify-center">
         <Container className="flex flex-col items-center text-center">
-          <h1 className="text-[44px] leading-[1.1] sm:text-[60px] lg:text-[70px]">
+          <h1 className="whitespace-nowrap text-[34px] leading-[1.1] sm:text-[60px] lg:text-[70px]">
             Abigail Anderson
           </h1>
           <p className="mt-4 font-body text-[14px] font-bold uppercase tracking-[0.14em]">
@@ -48,11 +49,13 @@ export function Hero() {
 
           <form
             onSubmit={onSubmit}
-            className="mt-10 w-full max-w-xl"
+            className="mt-10 w-full max-w-2xl"
             role="search"
             aria-label="Property search"
           >
-            <div className="mb-4 flex justify-center gap-2" role="tablist">
+            {/* BUY/RENT toggles — small pill buttons, gold tint when inactive,
+                opaque white when active, sitting flush above the input row. */}
+            <div className="mb-3 flex justify-center" role="tablist">
               {(['buy', 'rent'] as const).map((m) => (
                 <button
                   key={m}
@@ -60,10 +63,10 @@ export function Hero() {
                   role="tab"
                   aria-selected={mode === m}
                   onClick={() => setMode(m)}
-                  className={`px-5 py-1.5 font-body text-[12px] font-bold uppercase tracking-[0.14em] transition-colors ${
+                  className={`min-w-[80px] px-6 py-2 font-body text-[13px] font-bold uppercase tracking-[0.14em] transition-colors ${
                     mode === m
                       ? 'bg-white text-black'
-                      : 'border border-white/40 text-white hover:bg-white/10'
+                      : 'bg-site-gold/80 text-white hover:bg-site-gold'
                   }`}
                 >
                   {m}
@@ -71,21 +74,26 @@ export function Hero() {
               ))}
             </div>
 
-            <div className="flex items-stretch border border-white/70 bg-black/20">
+            {/* Stacks on mobile (matches live: input row, then full-width
+                Search button beneath) and goes side-by-side from sm up. */}
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row">
               <label htmlFor="hero-search" className="sr-only">
                 Search by address, city, or neighborhood
               </label>
-              <input
-                id="hero-search"
-                type="search"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by Address, City, or Neighborhood"
-                className="flex-1 bg-transparent px-4 py-3 text-[14px] text-white placeholder:text-white/70 focus:outline-none"
-              />
+              <div className="flex flex-1 items-center bg-white px-4">
+                <Search className="size-4 text-site-text-muted" aria-hidden />
+                <input
+                  id="hero-search"
+                  type="search"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search by Address, City, or Neighborhood"
+                  className="ml-2 min-w-0 flex-1 bg-transparent py-3 text-[14px] text-site-text placeholder:text-site-text-muted focus:outline-none"
+                />
+              </div>
               <button
                 type="submit"
-                className="border-l border-white/70 px-8 py-3 font-body text-[14px] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-white/10"
+                className="border border-white/70 bg-transparent px-10 py-3 font-body text-[14px] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-white/10"
               >
                 Search
               </button>

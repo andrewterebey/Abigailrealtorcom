@@ -30,7 +30,7 @@ All MLS/IDX data on the live site is replaced with placeholder data wired throug
 | ---------------- | ------------------------------------------- | ------------------------------------------------------------------- |
 | Framework        | **Next.js 15 (App Router) + TypeScript**    | SEO-critical for a realtor site; built-in image opt; Netlify-ready  |
 | Styling          | **Tailwind CSS v4**                         | Fast iteration; utility-first matches the screenshot-driven workflow |
-| UI primitives    | **shadcn/ui** (as needed)                   | Accessible defaults for forms, dialogs                              |
+| UI primitives    | **shadcn/ui** + **@base-ui/react**          | shadcn for common forms; Base UI for unstyled a11y primitives       |
 | Icons            | **lucide-react**                            |                                                                     |
 | Forms            | Netlify Forms (dev) / Resend (prod email)   | Zero-backend for MVP; Resend for transactional                      |
 | Maps             | **Leaflet** + OpenStreetMap tiles           | Free; sufficient for neighborhood pages                             |
@@ -54,34 +54,35 @@ If you ever feel tempted to add a dependency, stop and ask first.
 │  ├─ properties/
 │  │  ├─ page.tsx               ← listings grid → GET /api/listings
 │  │  └─ [slug]/page.tsx        ← listing detail → GET /api/listings/[id]
-│  ├─ home-search/page.tsx      ← IDX search UI → GET /api/listings
+│  ├─ home-search/
+│  │  ├─ page.tsx               ← redirects to /home-search/listings
+│  │  └─ listings/page.tsx      ← IDX search UI, URL-synced filters
 │  ├─ home-valuation/page.tsx
-│  ├─ neighborhoods/
-│  │  ├─ page.tsx
-│  │  └─ [slug]/page.tsx
-│  ├─ testimonials/page.tsx
-│  ├─ buyers/page.tsx
-│  ├─ sellers/page.tsx
-│  ├─ options/page.tsx
-│  ├─ blog/page.tsx
-│  ├─ contact/page.tsx
+│  ├─ neighborhoods/{page.tsx, [slug]/page.tsx}
+│  ├─ {testimonials, buyers, sellers, options, contact}/page.tsx
+│  ├─ blog/{page.tsx, [slug]/page.tsx}
+│  ├─ {privacy-policy, terms-and-conditions, dmca-notice}/page.tsx
+│  ├─ sitemap.ts                ← Next.js metadata route → /sitemap.xml
+│  ├─ robots.ts                 ← Next.js metadata route → /robots.txt
 │  └─ api/
-│     ├─ listings/
-│     │  ├─ route.ts            ← GET list with filters + pagination
-│     │  └─ [id]/route.ts       ← GET single listing
-│     └─ contact/route.ts       ← POST → dummy in dev, Resend in prod
+│     ├─ listings/{route.ts, [id]/route.ts}
+│     └─ contact/route.ts       ← POST; rate-limited (see §7.10)
 ├─ components/
 │  ├─ nav/                      ← header, mega menu, mobile drawer
-│  ├─ home/                     ← hero, cta-tiles, testimonials-carousel, neighborhoods-carousel, spotlight-listings, newsletter, contact-cta
-│  ├─ listings/                 ← listing-card, listing-grid, listing-detail
-│  ├─ forms/                    ← contact-form, newsletter-form
+│  ├─ home/                     ← hero, cta-tiles, testimonials, neighborhoods-carousel, spotlight-listings, newsletter, contact-cta
+│  ├─ listings/                 ← listing-card, listing-grid, listing-detail, listing-filters, home-search-client
+│  ├─ neighborhood/             ← score-card, stat-bar (detail-page widgets)
+│  ├─ site/                     ← site-header, site-footer, page-hero, legal-body
+│  ├─ forms/                    ← inquiry-form
 │  └─ ui/                       ← shadcn primitives
 ├─ lib/
-│  ├─ idx/
-│  │  ├─ provider.ts            ← IDXProvider interface (the contract)
-│  │  ├─ placeholder-provider.ts← current impl: reads /data/listings.json
-│  │  └─ index.ts               ← exports the active provider
+│  ├─ idx/                      ← provider.ts, placeholder-provider.ts, index.ts
 │  ├─ schemas.ts                ← Zod schemas for API boundary validation
+│  ├─ structured-data.ts        ← JSON-LD builders (RealEstateAgent, LocalBusiness, Residence)
+│  ├─ rate-limit.ts             ← in-memory token-bucket for /api/contact
+│  ├─ blog.ts                   ← BLOG_POSTS + minimal md→JSX renderer
+│  ├─ neighborhoods.ts          ← neighborhood md loader + parser
+│  ├─ legal.ts / legal-content.ts
 │  └─ utils.ts
 ├─ types/
 │  └─ listing.ts                ← shared TS types
@@ -102,7 +103,13 @@ If you ever feel tempted to add a dependency, stop and ask first.
 │  ├─ live/                     ← committed reference screenshots
 │  └─ local/                    ← gitignored, regenerated every run
 ├─ scripts/
-│  └─ capture-live.ts           ← one-shot script to refresh /screenshots/live
+│  ├─ capture-live.ts           ← refresh /screenshots/live from the real site
+│  ├─ capture-refs.ts           ← capture specific reference frames
+│  ├─ diff-page.ts              ← capture any local path at the three viewports
+│  ├─ diff-home.ts, diff-listings.ts, diff-neighborhoods.ts, diff-bellevue.ts
+│  ├─ diff-dom.ts               ← DOM-structure diff between live and local
+│  ├─ download-assets.ts        ← pull images/video from live site into /public
+│  └─ extract-content.ts        ← scrape verbatim copy from live into /content
 └─ .claude/
    └─ settings.json             ← MCP server config (see §5)
 ```
@@ -112,12 +119,24 @@ If you ever feel tempted to add a dependency, stop and ask first.
 ## 4. Development Commands
 
 ```bash
-npm run dev          # Next dev server at http://localhost:3000
-npm run build        # production build
+npm run dev          # Next dev server at http://localhost:3000 (turbopack)
+npm run build        # production build (turbopack)
 npm run start        # serve production build locally
-npm run lint         # eslint + typescript check
+npm run lint         # eslint && tsc --noEmit  (lint + strict typecheck)
 npm run capture-live # refresh /screenshots/live from the real site
 ```
+
+Ad-hoc scripts (run with `tsx scripts/<name>.ts`) live in `/scripts/` — see the
+layout in §3. No automated test suite is wired yet; `npm run test:idx` is
+referenced in §7.6 but not implemented (tracked in `TODO.md`).
+
+Env vars:
+
+| Var                          | When                                                      |
+| ---------------------------- | --------------------------------------------------------- |
+| `RESEND_API_KEY`             | Prod contact-form email. Unset in dev = console log only. |
+| `NEXT_PUBLIC_SITE_URL`       | Base URL for `sitemap.xml` / canonicals. Falls back to `https://abigailrealtor.com`. |
+| `NEXT_PUBLIC_SHOW_SOCIALS`   | Set to `true` to show the footer social-icon row. Hidden by default until real URLs land. |
 
 Always confirm `npm run dev` is running on port 3000 before taking local screenshots.
 
@@ -188,6 +207,15 @@ getComputedStyle(document.querySelector('h1.hero-title'))
 - `/screenshots/local/` is gitignored and regenerated every run.
 - Never declare a page "done" without a final 3-viewport local screenshot passing visual diff.
 - If the live site changes its layout mid-project, re-run `npm run capture-live` to refresh references.
+
+### 5.7 Script helpers for the loop
+
+`/scripts/diff-*.ts` automate parts of §5.4 so you don't have to re-drive the
+MCP by hand every iteration. `diff-page.ts` takes a path and captures the three
+viewports in one shot; `diff-dom.ts` diffs the rendered DOM structure (useful
+when screenshots look close but layout containers differ). Use them when you're
+iterating fast; drop back to the Playwright MCP when you need to inspect state,
+hover, or read computed styles.
 
 ---
 
@@ -340,9 +368,13 @@ const { items } = await res.json()
 
 **Never import `/data/listings.json` directly from a component or page.** If you're tempted, stop — use the API. This rule is what makes the future IDX swap a one-line change.
 
-### 7.6 Contract tests (`npm run test:idx`)
+### 7.6 Contract tests (`npm run test:idx`) — NOT YET IMPLEMENTED
 
-A small test suite in `/tests/idx.contract.test.ts` hits both `provider.list()` and `provider.get()` and asserts the Zod schemas pass. Any new provider implementation must pass these tests before being swapped in.
+Planned: a small test suite in `/tests/idx.contract.test.ts` that hits both
+`provider.list()` and `provider.get()` and asserts the Zod schemas pass. Any
+new provider implementation must pass these tests before being swapped in.
+No test runner is installed today — running `npm run test:idx` will fail.
+Writing the suite is tracked in `TODO.md` under "Tech debt / follow-ups".
 
 ### 7.7 Swapping to a real provider (future)
 
@@ -359,7 +391,16 @@ A small test suite in `/tests/idx.contract.test.ts` hits both `provider.list()` 
 
 `/data/listings.json`: 12–15 listings across King County at realistic prices ($500k–$3M), mixing Bellevue, Seattle, Newcastle, Kirkland, Shoreline, Renton. Property photos from Unsplash (real-estate category), downloaded to `/public/listings/`. All IDs prefixed `placeholder-` (e.g., `placeholder-nwm-0001`) — never use real MLS numbers that could collide.
 
-### 7.9 What NOT to do
+### 7.9 Contact API rate limiting
+
+`/api/contact` is rate-limited to **5 submissions / 10 minutes / IP** and
+rejects any payload larger than **16 KB** before parsing, so the form can't
+be used as a spam relay once Resend is wired. Implementation: in-memory
+token-bucket in `lib/rate-limit.ts`. Multi-instance deployments (e.g.,
+Netlify scaling up) will need a shared store (Redis / Upstash) — flagged
+inline in the file.
+
+### 7.10 What NOT to do
 
 - Don't scrape the NWMLS feed — licensed data, violates ToS.
 - Don't embed the current Luxury Presence site as an iframe.
@@ -369,21 +410,13 @@ A small test suite in `/tests/idx.contract.test.ts` hits both `provider.list()` 
 
 ---
 
-## 8. Pages to Build (in this order)
+## 8. Pages to Build
 
-1. **Home** — hero, about intro, 3 CTA tiles, testimonials, neighborhoods, spotlight listings, newsletter, contact CTA, Instagram, footer
-2. **About Abigail**
-3. **Properties** (listings grid)
-4. **Property Detail** (`/properties/[slug]`)
-5. **Home Search**
-6. **Home Valuation**
-7. **Neighborhoods** (index + 6 detail pages: Bellevue, Seattle, Newcastle, Eastside, Shoreline, Renton)
-8. **Testimonials**
-9. **Buyers / Sellers / Options**
-10. **Blog** (shell only — no posts needed yet)
-11. **Contact**
-
-Complete visual parity for page N before starting page N+1.
+The canonical build-order checklist with live status lives in **`TODO.md`**
+(under "Build checklist"). Work through it top-to-bottom and complete visual
+parity for page N before starting page N+1. Open questions and per-page
+follow-ups are tracked in the same file — consult it before starting a page
+so you don't re-litigate decisions Abigail has already weighed in on.
 
 ---
 
@@ -414,9 +447,11 @@ Complete visual parity for page N before starting page N+1.
 - Open Graph + Twitter card images per page
 - `structured-data.ts` with `RealEstateAgent` and `LocalBusiness` JSON-LD on the home page
 - `Product` / `Residence` JSON-LD on each listing page (placeholder data is fine)
-- `sitemap.xml` auto-generated via `next-sitemap`
-- `robots.txt` allowing all
-- Canonical URLs on every page
+- `sitemap.xml` and `robots.txt` served via Next.js metadata routes at
+  `app/sitemap.ts` and `app/robots.ts`. Sitemap base URL reads from
+  `NEXT_PUBLIC_SITE_URL` with a fallback to `https://abigailrealtor.com`.
+- Canonical URLs, `openGraph`, and `twitter` metadata on every page (see
+  `CHANGELOG.md` → SEO for the current coverage)
 
 ---
 
@@ -451,4 +486,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-04-21*
+*Last updated: 2026-04-22*
