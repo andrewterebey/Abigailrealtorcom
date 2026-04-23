@@ -5,7 +5,6 @@ import { notFound } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { Container } from '@/components/site/container'
 import { Eyebrow } from '@/components/site/section'
-import { ContactCta } from '@/components/home/contact-cta'
 import { ListingGrid } from '@/components/listings/listing-grid'
 import { ScoreCard } from '@/components/neighborhood/score-card'
 import { StatBar } from '@/components/neighborhood/stat-bar'
@@ -446,8 +445,6 @@ export default async function NeighborhoodDetailPage({ params }: PageProps) {
           </ul>
         </Container>
       </section>
-
-      <ContactCta />
     </main>
   )
 }

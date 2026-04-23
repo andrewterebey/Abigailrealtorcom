@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
-import { ContactCta } from '@/components/home/contact-cta'
 import { InquiryForm } from '@/components/forms/inquiry-form'
 import { Container } from '@/components/site/container'
 import { PageHero } from '@/components/site/page-hero'
@@ -91,8 +90,6 @@ export default function SellersPage() {
           <InquiryForm variant="property-inquiry" topic="sellers" />
         </Container>
       </Section>
-
-      <ContactCta />
     </main>
   )
 }

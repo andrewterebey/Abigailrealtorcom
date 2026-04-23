@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ContactCta } from '@/components/home/contact-cta'
+import { Newsletter } from '@/components/home/newsletter'
 import { Container } from '@/components/site/container'
 import { getAllPostMeta } from '@/lib/blog'
 
@@ -101,7 +101,11 @@ export default function BlogIndexPage() {
         </Container>
       </section>
 
-      <ContactCta />
+      {/* Live footer-band is the newsletter signup, not the Ready-to-Begin CTA. */}
+      <Newsletter
+        title="Receive Exclusive Listings In Your Inbox"
+        description="Are you interested in buying a home? Look no further than working with a real estate expert."
+      />
     </main>
   )
 }

@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ContactCta } from '@/components/home/contact-cta'
-import { InquiryForm } from '@/components/forms/inquiry-form'
 import { Container } from '@/components/site/container'
 import { Section, Eyebrow } from '@/components/site/section'
 
@@ -99,7 +97,7 @@ export default function HomeValuationPage() {
               <li>Sell For More</li>
             </ul>
             <Link
-              href="#valuation-form"
+              href="/contact?topic=valuation"
               className="mt-10 inline-flex items-center justify-center bg-site-gold px-[46px] py-[20px] font-body text-[14px] font-bold uppercase tracking-[0.107em] text-white transition-colors hover:bg-site-gold-dim"
             >
               Get a Free Home Valuation
@@ -113,7 +111,8 @@ export default function HomeValuationPage() {
         <Container>
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <article>
-              <h2 className="text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
+              <Eyebrow>Unlock Your Property Value</Eyebrow>
+              <h2 className="mt-3 text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
                 What&rsquo;s Your Property Worth?
               </h2>
               <p className="mt-6 font-body text-[15px] leading-[1.7] text-site-text">
@@ -281,24 +280,6 @@ export default function HomeValuationPage() {
         </Container>
       </Section>
 
-      {/* Valuation inquiry form. */}
-      <Section id="valuation-form" className="pt-0">
-        <Container>
-          <div className="mb-10 text-center">
-            <Eyebrow>Let&rsquo;s Connect</Eyebrow>
-            <h2 className="mt-3 text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
-              Request Your Home Valuation
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl font-body text-[15px] leading-[1.7] text-site-text">
-              Share a few details and Abigail will follow up with a
-              customized valuation for your property.
-            </p>
-          </div>
-          <InquiryForm variant="valuation" topic="valuation" submitLabel="Request Valuation" />
-        </Container>
-      </Section>
-
-      <ContactCta />
     </main>
   )
 }

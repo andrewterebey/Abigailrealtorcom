@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
-import { ContactCta } from '@/components/home/contact-cta'
 import { Container } from '@/components/site/container'
 import { PageHero } from '@/components/site/page-hero'
 import { Section } from '@/components/site/section'
@@ -48,7 +47,9 @@ export default function TestimonialsPage() {
 
       <Section>
         <Container>
-          <ul className="grid gap-12 md:grid-cols-2 md:gap-x-12 md:gap-y-16 lg:gap-x-20">
+          {/* Live lays each testimonial out in a single full-width column
+              with generous vertical spacing. */}
+          <ul className="mx-auto max-w-4xl space-y-16 md:space-y-20">
             {TESTIMONIALS.map((t) => (
               <li key={t.id}>
                 <article>
@@ -75,8 +76,6 @@ export default function TestimonialsPage() {
           </ul>
         </Container>
       </Section>
-
-      <ContactCta />
     </main>
   )
 }

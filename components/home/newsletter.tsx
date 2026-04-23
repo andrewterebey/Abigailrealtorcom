@@ -4,7 +4,17 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Container } from '@/components/site/container'
 
-export function Newsletter() {
+type NewsletterProps = {
+  /** Band heading — defaults to the home page copy. */
+  title?: string
+  /** Paragraph — defaults to the home page copy. */
+  description?: string
+}
+
+export function Newsletter({
+  title = 'Real Estate, Real Talk',
+  description = "Join Abigail Anderson\u2019s newsletter to receive curated updates on King County real estate, exclusive listings, design inspiration, and expert tips for buyers, sellers, and investors.",
+}: NewsletterProps = {}) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [consent, setConsent] = useState(false)
@@ -39,12 +49,10 @@ export function Newsletter() {
       <Container className="py-16 md:py-20 lg:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
-            Real Estate, Real Talk
+            {title}
           </h2>
           <p className="mx-auto mt-6 max-w-xl font-body text-[15px] leading-[1.7] text-white/80">
-            Join Abigail Anderson&rsquo;s newsletter to receive curated updates
-            on King County real estate, exclusive listings, design inspiration,
-            and expert tips for buyers, sellers, and investors.
+            {description}
           </p>
 
           <form

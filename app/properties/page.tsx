@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Container } from '@/components/site/container'
 import { ListingGrid } from '@/components/listings/listing-grid'
-import { ContactCta } from '@/components/home/contact-cta'
 import type { ListingSummary } from '@/types/listing'
 
 export const metadata: Metadata = {
@@ -21,8 +20,6 @@ export const metadata: Metadata = {
   },
 }
 
-const DEFAULT_LIMIT = 12
-
 type ApiResponse = {
   items: ListingSummary[]
   total: number
@@ -30,64 +27,30 @@ type ApiResponse = {
   offset: number
 }
 
-async function fetchListings(search: URLSearchParams): Promise<ApiResponse> {
+async function fetchListings(params: URLSearchParams): Promise<ApiResponse> {
   const hdrs = await headers()
   const host = hdrs.get('host') ?? 'localhost:3000'
   const protocol = host.startsWith('localhost') ? 'http' : 'https'
-  const qs = search.toString()
+  const qs = params.toString()
   const res = await fetch(
     `${protocol}://${host}/api/listings${qs ? `?${qs}` : ''}`,
     { next: { revalidate: 60 } },
   )
   if (!res.ok) {
-    return { items: [], total: 0, limit: DEFAULT_LIMIT, offset: 0 }
+    return { items: [], total: 0, limit: 20, offset: 0 }
   }
   return res.json()
 }
 
-type SearchParams = {
-  limit?: string
-  offset?: string
-  status?: string
-  city?: string
-}
-
-export default async function PropertiesPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>
-}) {
-  const sp = await searchParams
-  const rawLimit = Number.parseInt(sp.limit ?? '', 10)
-  const rawOffset = Number.parseInt(sp.offset ?? '', 10)
-  const limit =
-    Number.isFinite(rawLimit) && rawLimit > 0 && rawLimit <= 50
-      ? rawLimit
-      : DEFAULT_LIMIT
-  const offset =
-    Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0
-
-  const apiParams = new URLSearchParams()
-  apiParams.set('limit', String(limit))
-  apiParams.set('offset', String(offset))
-  if (sp.status) apiParams.set('status', sp.status)
-  if (sp.city) apiParams.set('city', sp.city)
-
-  const { items, total } = await fetchListings(apiParams)
-
-  const page = Math.floor(offset / limit) + 1
-  const pageCount = Math.max(1, Math.ceil(total / limit))
-  const hasPrev = offset > 0
-  const hasNext = offset + limit < total
-
-  const buildHref = (nextOffset: number) => {
-    const p = new URLSearchParams()
-    p.set('limit', String(limit))
-    p.set('offset', String(Math.max(0, nextOffset)))
-    if (sp.status) p.set('status', sp.status)
-    if (sp.city) p.set('city', sp.city)
-    return `/properties?${p.toString()}`
-  }
+export default async function PropertiesPage() {
+  // Live splits into two sections: FEATURED PROPERTIES (for-sale) and
+  // SOLD PROPERTIES (sold). Fetch both in parallel.
+  const forSaleParams = new URLSearchParams({ status: 'for-sale', limit: '20' })
+  const soldParams = new URLSearchParams({ status: 'sold', limit: '20' })
+  const [forSale, sold] = await Promise.all([
+    fetchListings(forSaleParams),
+    fetchListings(soldParams),
+  ])
 
   return (
     <main>
@@ -108,61 +71,72 @@ export default async function PropertiesPage({
           <h1 className="text-[44px] leading-[1.1] text-white md:text-[60px] lg:text-[70px]">
             Properties
           </h1>
-          <p className="mt-4 font-body text-[14px] font-bold uppercase tracking-[0.14em] text-white">
-            Homes Represented by Abigail Anderson
+        </Container>
+      </section>
+
+      <section
+        aria-label="Featured properties"
+        className="py-16 md:py-20 lg:py-24"
+      >
+        <Container>
+          <div className="mb-10 text-center">
+            <h2 className="text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
+              Featured Properties
+            </h2>
+          </div>
+          <ListingGrid
+            items={forSale.items}
+            emptyMessage="No featured properties at the moment."
+          />
+        </Container>
+      </section>
+
+      <section
+        aria-label="Sold properties"
+        className="pb-16 md:pb-20 lg:pb-24"
+      >
+        <Container>
+          <div className="mb-10 text-center">
+            <h2 className="text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
+              Sold Properties
+            </h2>
+          </div>
+          <ListingGrid
+            items={sold.items}
+            className="sm:grid-cols-2 lg:grid-cols-2"
+            emptyMessage="No sold properties to show yet."
+          />
+
+          <p className="mx-auto mt-16 max-w-4xl text-center font-body text-[13px] leading-[1.7] text-site-text-muted">
+            The IDX display contains information sourced from the Northwest
+            Multiple Listing Service. This data is intended solely for personal,
+            non-commercial use and is not to be utilized for any other purpose
+            except to identify potential properties for purchase. Although the
+            MLS data displayed is typically considered reliable, it is not
+            guaranteed to be accurate by the MLS. Buyers are responsible for
+            verifying the accuracy of all information and are advised to conduct
+            their own investigations or seek professional assistance.
           </p>
         </Container>
       </section>
 
-      <section aria-label="All listings" className="py-16 md:py-20 lg:py-24">
-        <Container>
-          <div className="flex flex-wrap items-end justify-between gap-4 pb-8">
-            <div>
-              <p className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-gold">
-                Featured Properties
-              </p>
-              <h2 className="mt-2 text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
-                Current &amp; Past Listings
-              </h2>
-            </div>
-            <p className="font-body text-[13px] uppercase tracking-[0.12em] text-site-text-muted">
-              {total} total · Page {page} of {pageCount}
-            </p>
-          </div>
-
-          <ListingGrid items={items} />
-
-          {(hasPrev || hasNext) && (
-            <nav
-              aria-label="Pagination"
-              className="mt-16 flex items-center justify-between"
-            >
-              {hasPrev ? (
-                <Link
-                  href={buildHref(offset - limit)}
-                  className="border border-black/15 bg-white px-6 py-3 font-body text-[12px] font-bold uppercase tracking-[0.14em] text-site-text hover:border-site-gold hover:text-site-gold"
-                >
-                  ← Previous
-                </Link>
-              ) : (
-                <span />
-              )}
-              {hasNext ? (
-                <Link
-                  href={buildHref(offset + limit)}
-                  className="border border-black/15 bg-white px-6 py-3 font-body text-[12px] font-bold uppercase tracking-[0.14em] text-site-text hover:border-site-gold hover:text-site-gold"
-                >
-                  Next →
-                </Link>
-              ) : (
-                <span />
-              )}
-            </nav>
-          )}
+      {/* Dark band CTA linking to the IDX search, matching live. */}
+      <section
+        aria-label="Start your property search"
+        className="bg-black text-white"
+      >
+        <Container className="flex flex-col items-center justify-between gap-6 py-10 text-center md:flex-row md:text-left">
+          <h2 className="text-[24px] leading-[1.2] text-white md:text-[30px]">
+            Start Your Property Search
+          </h2>
+          <Link
+            href="/home-search/listings"
+            className="inline-flex items-center justify-center bg-site-gold px-[46px] py-[20px] font-body text-[14px] font-bold uppercase tracking-[0.107em] text-white transition-colors hover:bg-site-gold-dim"
+          >
+            Learn More
+          </Link>
         </Container>
       </section>
-
-      <ContactCta />
     </main>
   )
 }

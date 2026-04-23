@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
-import { ContactCta } from '@/components/home/contact-cta'
-import { Testimonials } from '@/components/home/testimonials'
 import { Container } from '@/components/site/container'
 import { PageHero } from '@/components/site/page-hero'
 import { Section } from '@/components/site/section'
@@ -43,12 +41,16 @@ export default function AboutPage() {
   return (
     <main>
       <PageHero
-        title="About Abigail"
+        title="About Abigail Anderson"
         imageSrc="/images/about-background.jpg"
         imageAlt=""
       />
 
-      <Section>
+      {/* Live layout: portrait + the first two headings sit in a 2-col grid;
+          remaining headings (Seamless Transactions, Let's Make an Impact)
+          flow full-width below it. We reproduce that by rendering the 2-col
+          section first, then a single-column block for the rest. */}
+      <Section className="pb-0">
         <Container>
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
             <div className="relative aspect-[4/5] w-full overflow-hidden">
@@ -95,40 +97,46 @@ export default function AboutPage() {
                 maximize your investment. As a result, this meticulous
                 attention ensures you are well-represented in every deal.
               </p>
-
-              <h3 className="mt-10 text-[24px] leading-[1.2] md:text-[28px] lg:text-[30px]">
-                Seamless Transactions
-              </h3>
-              <p className="mt-4 font-body text-[15px] leading-[1.7] text-site-text">
-                From the initial consultation to the closing day, I streamline
-                the process. My goal is to make your real estate experience
-                smooth and stress-free. Furthermore, I am dedicated to
-                overcoming any hurdles that might appear during the buying or
-                selling process.
-              </p>
-              <p className="mt-4 font-body text-[15px] leading-[1.7] text-site-text">
-                Real Estate is My Passion. Ever since I was young, the
-                potential to transform lives through real estate has captivated
-                me. Therefore, I am committed to more than just transactions; I
-                help you navigate significant life transitions, whether opening
-                new doors or closing old ones.
-              </p>
-
-              <h3 className="mt-10 text-[24px] leading-[1.2] md:text-[28px] lg:text-[30px]">
-                Let&rsquo;s Make an Impact Together
-              </h3>
-              <p className="mt-4 font-body text-[15px] leading-[1.7] text-site-text">
-                Join me, Abigail Anderson, as we shape your future in King
-                County&rsquo;s dynamic real estate environment. Likewise, I am
-                here to support your journey, ensuring that every step we take
-                together leads toward achieving your dreams.
-              </p>
-              <p className="mt-4 font-body text-[15px] leading-[1.7] text-site-text">
-                Ready to start your real estate journey? Contact me today or
-                visit my contact page to schedule your personal consultation.
-              </p>
             </article>
           </div>
+        </Container>
+      </Section>
+
+      <Section className="pt-10 md:pt-12 lg:pt-14">
+        <Container>
+          <article className="max-w-none font-body text-[15px] leading-[1.7] text-site-text">
+            <h3 className="text-[24px] leading-[1.2] md:text-[28px] lg:text-[30px]">
+              Seamless Transactions
+            </h3>
+            <p className="mt-4">
+              From the initial consultation to the closing day, I streamline
+              the process. My goal is to make your real estate experience
+              smooth and stress-free. Furthermore, I am dedicated to
+              overcoming any hurdles that might appear during the buying or
+              selling process.
+            </p>
+            <p className="mt-4">
+              Real Estate is My Passion. Ever since I was young, the
+              potential to transform lives through real estate has captivated
+              me. Therefore, I am committed to more than just transactions; I
+              help you navigate significant life transitions, whether opening
+              new doors or closing old ones.
+            </p>
+
+            <h3 className="mt-10 text-[24px] leading-[1.2] md:text-[28px] lg:text-[30px]">
+              Let&rsquo;s Make an Impact Together
+            </h3>
+            <p className="mt-4">
+              Join me, Abigail Anderson, as we shape your future in King
+              County&rsquo;s dynamic real estate environment. Likewise, I am
+              here to support your journey, ensuring that every step we take
+              together leads toward achieving your dreams.
+            </p>
+            <p className="mt-4">
+              Ready to start your real estate journey? Contact me today or
+              visit my contact page to schedule your personal consultation.
+            </p>
+          </article>
         </Container>
       </Section>
 
@@ -192,10 +200,6 @@ export default function AboutPage() {
           </div>
         </Container>
       </section>
-
-      <Testimonials />
-
-      <ContactCta />
     </main>
   )
 }

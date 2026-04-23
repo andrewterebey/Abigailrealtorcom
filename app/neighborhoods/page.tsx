@@ -3,7 +3,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/site/container'
 import { Eyebrow } from '@/components/site/section'
-import { ContactCta } from '@/components/home/contact-cta'
 import {
   NEIGHBORHOODS,
   NEIGHBORHOOD_SLUGS,
@@ -74,7 +73,10 @@ export default function NeighborhoodsIndexPage() {
             ) : null}
           </div>
 
-          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Live: 3x2 grid of full-bleed image tiles with the city name
+              centered over a dark overlay. No separate caption/description
+              row below. */}
+          <ul className="grid grid-cols-1 gap-1 md:grid-cols-2 lg:grid-cols-3">
             {NEIGHBORHOOD_SLUGS.map((slug) => {
               const n = NEIGHBORHOODS[slug]
               return (
@@ -98,20 +100,6 @@ export default function NeighborhoodsIndexPage() {
                         </h3>
                       </div>
                     </div>
-                    <div className="mt-5 flex items-start gap-3">
-                      <span
-                        aria-hidden
-                        className="mt-1.5 h-4 w-px shrink-0 bg-site-gold"
-                      />
-                      <div>
-                        <span className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text transition-colors group-hover:text-site-gold">
-                          {n.name} &mdash; Learn More
-                        </span>
-                        <p className="mt-2 font-body text-[14px] leading-[1.6] text-site-text-muted">
-                          {n.blurb}
-                        </p>
-                      </div>
-                    </div>
                   </Link>
                 </li>
               )
@@ -120,7 +108,23 @@ export default function NeighborhoodsIndexPage() {
         </Container>
       </section>
 
-      <ContactCta />
+      {/* Dark band CTA — matches live. */}
+      <section
+        aria-label="Start your property search"
+        className="bg-black text-white"
+      >
+        <Container className="flex flex-col items-center justify-between gap-6 py-10 text-center md:flex-row md:text-left">
+          <h2 className="text-[24px] leading-[1.2] text-white md:text-[30px]">
+            Start Your Property Search
+          </h2>
+          <Link
+            href="/home-search/listings"
+            className="inline-flex items-center justify-center bg-site-gold px-[46px] py-[20px] font-body text-[14px] font-bold uppercase tracking-[0.107em] text-white transition-colors hover:bg-site-gold-dim"
+          >
+            Browse Homes
+          </Link>
+        </Container>
+      </section>
     </main>
   )
 }

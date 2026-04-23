@@ -2,9 +2,8 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ContactCta } from '@/components/home/contact-cta'
 import { Container } from '@/components/site/container'
-import { BLOG_POSTS, getPost, type Block } from '@/lib/blog'
+import { BLOG_POSTS, getAllPostMeta, getPost, type Block } from '@/lib/blog'
 
 export function generateStaticParams() {
   return BLOG_POSTS.map((p) => ({ slug: p.slug }))
@@ -114,8 +113,60 @@ export default async function BlogPostPage({ params }: PageProps) {
         </section>
       </article>
 
-      <ContactCta />
+      {/* Related posts band — matches the live "READ MORE ARTICLES" tray. */}
+      <ReadMoreArticles currentSlug={post.slug} />
     </main>
+  )
+}
+
+function ReadMoreArticles({ currentSlug }: { currentSlug: string }) {
+  const related = getAllPostMeta()
+    .filter((p) => p.slug !== currentSlug)
+    .slice(0, 3)
+  if (related.length === 0) return null
+  return (
+    <section
+      aria-label="Read more articles"
+      className="bg-black py-16 text-white md:py-20 lg:py-24"
+    >
+      <Container>
+        <h2 className="text-center text-[28px] leading-[1.2] text-white md:text-[34px] lg:text-[40px]">
+          Read More Articles
+        </h2>
+        <ul className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
+          {related.map((post) => (
+            <li key={post.slug}>
+              <Link
+                href={`/blog/${post.slug}`}
+                className="group relative block aspect-[4/3] overflow-hidden text-white"
+              >
+                <Image
+                  src={post.image}
+                  alt=""
+                  fill
+                  sizes="(min-width: 768px) 33vw, 100vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                />
+                <div className="absolute inset-0 bg-black/50 transition-colors group-hover:bg-black/60" />
+                <div className="absolute inset-0 flex items-end p-6">
+                  <span className="font-display text-[16px] uppercase leading-[1.3] tracking-[0.04em] md:text-[18px]">
+                    {post.title}
+                  </span>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-12 flex justify-center">
+          <Link
+            href="/blog"
+            className="inline-flex items-center justify-center bg-site-gold px-[46px] py-[20px] font-body text-[14px] font-bold uppercase tracking-[0.107em] text-white transition-colors hover:bg-site-gold-dim"
+          >
+            View All
+          </Link>
+        </div>
+      </Container>
+    </section>
   )
 }
 
