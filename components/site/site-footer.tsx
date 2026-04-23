@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Mail, MapPin, Phone } from 'lucide-react'
 import { Container } from './container'
+import { FooterMlsGridDisclaimer } from './footer-mls-grid'
 import { buildDisclaimerParagraphs } from '@/lib/legal'
 
 const CONTACT = {
@@ -132,11 +133,7 @@ export function SiteFooter() {
         </div>
       </Container>
 
-      <Container className="pb-10 pt-4 text-center text-[13px] leading-[1.7] text-site-text-muted">
-        <p className="mx-auto max-w-4xl">{disclaimer.mlsGrid}</p>
-        <p className="mt-6 font-semibold text-site-text">{disclaimer.brokerage}</p>
-        <p className="mt-1 text-site-text">{disclaimer.copyright}</p>
-      </Container>
+      <FooterMlsGridDisclaimer />
     </footer>
   )
 }
