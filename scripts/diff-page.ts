@@ -41,19 +41,49 @@ async function main() {
         content: 'window.__name = function(fn){return fn;};',
       })
       const page = await context.newPage()
-      // Accept either a full URL, a /path, or a slug ("about"). On MSYS bash
-      // a leading `/` gets mangled to a filesystem path, so we also strip any
-      // leading drive-prefix junk.
+      // Accepted forms:
+      //   - slug or path WITHOUT leading slash: "about", "neighborhoods/bellevue"   (preferred)
+      //   - full URL: "http://localhost:3000/about"
+      //   - leading-slash path: "/about"  -- works on Linux/macOS; on MSYS bash this
+      //     is silently rewritten to e.g. "C:/Program Files/Git/about" before the
+      //     script ever sees it. We try to undo the mangling but the safer habit
+      //     is to drop the leading slash.
       let rooted = rawPath
-      if (/^[A-Z]:\\|^[A-Z]:\//.test(rooted) || rooted.startsWith('C:/')) {
-        rooted = '/' + rooted.split(/[\\/]/).pop()!
+      if (/^[A-Z]:[\\/]/.test(rooted)) {
+        // MSYS-mangled. Known mount roots, longest first so /usr/ doesn't shadow /usr/bin/.
+        const msysRoots = [
+          'C:/Program Files/Git/usr',
+          'C:/Program Files/Git',
+          'C:\\Program Files\\Git\\usr',
+          'C:\\Program Files\\Git',
+          'C:/msys64',
+          'C:\\msys64',
+          process.cwd(),
+        ]
+        const norm = rooted.replace(/\\/g, '/')
+        const matched = msysRoots
+          .map((r) => r.replace(/\\/g, '/').replace(/\/+$/, ''))
+          .find((r) => norm.toLowerCase().startsWith(r.toLowerCase() + '/'))
+        if (matched) {
+          rooted = norm.slice(matched.length)
+          console.warn(
+            `  [warn] MSYS-mangled path detected; recovered as ${rooted}. ` +
+              `Prefer dropping the leading slash next time.`,
+          )
+        } else {
+          throw new Error(
+            `Path "${rooted}" looks MSYS-mangled but no known mount root matched. ` +
+              `Pass without leading slash (e.g. "neighborhoods/bellevue") or as full URL.`,
+          )
+        }
       }
       const url = /^https?:\/\//.test(rooted)
         ? rooted
         : `${LOCAL_BASE}${rooted.startsWith('/') ? '' : '/'}${rooted}`
       const outPath = path.join(OUT_DIR, `${rawSlug}-${v.name}.png`)
-      console.log(`# ${rawSlug} ${v.name}`)
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 })
+      console.log(`# ${rawSlug} ${v.name} -> ${url}`)
+      const resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 })
+      console.log(`  status=${resp?.status()} title=${await page.title()}`)
       await page.waitForLoadState('load', { timeout: 20000 }).catch(() => {})
       await page.evaluate(async () => {
         await new Promise<void>((resolve) => {
