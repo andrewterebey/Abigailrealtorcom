@@ -9,9 +9,7 @@ import { Section, Eyebrow } from '@/components/site/section'
 const META_TITLE = 'Get In Touch — Bellevue, WA Real Estate'
 const META_DESCRIPTION =
   'Reach out to Abigail Anderson for expert real estate services. Buy, sell, or rent properties with confidence. Contact her today for more information on listings!'
-// No dedicated contact background asset — fall back to the portrait hero
-// per CLAUDE.md guidance. Tracked in TODO.md.
-const META_IMAGE = '/images/home-portrait-main.jpg'
+const META_IMAGE = '/images/contact-background.jpg'
 
 export const metadata: Metadata = {
   title: META_TITLE,
@@ -36,7 +34,7 @@ export default function ContactPage() {
     <main>
       <PageHero
         title="Let's Connect"
-        imageSrc="/images/home-contact-background.jpg"
+        imageSrc="/images/contact-background.jpg"
         imageAlt=""
       />
 

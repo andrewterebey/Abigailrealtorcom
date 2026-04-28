@@ -104,6 +104,14 @@
     "alt": "",
     "bytes": 355603
   },
+  "contact-background.jpg": {
+    "pages": [
+      "contact"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/4b6c654b-266c-4d87-a2a0-32f01d756abd",
+    "alt": "",
+    "bytes": 425654
+  },
   "home-background.png": {
     "pages": [
       "home"
@@ -130,7 +138,11 @@
       "blog-king-county-investment",
       "blog-bellevue-investment-guide",
       "blog-seattle-first-time-buyers",
-      "blog-kirkland-lakeside"
+      "blog-kirkland-lakeside",
+      "testimonials",
+      "sellers",
+      "contact",
+      "dmca-notice"
     ],
     "sourceUrl": "https://media-production.lp-cdn.com/media/f8d27c76-fa2b-468b-b4e2-3618dc2281d5",
     "alt": "",
@@ -151,14 +163,17 @@
       "about",
       "properties",
       "home-valuation",
+      "testimonials",
+      "sellers",
       "options",
       "blog",
+      "contact",
+      "dmca-notice",
       "terms-and-conditions",
       "neighborhoods-bellevue",
       "neighborhoods-seattle",
       "neighborhoods-newcastle",
       "neighborhoods-eastside",
-      "neighborhoods-shoreline",
       "neighborhoods-renton",
       "blog-king-county-investment",
       "blog-bellevue-investment-guide",
@@ -187,7 +202,11 @@
       "blog-king-county-investment",
       "blog-bellevue-investment-guide",
       "blog-seattle-first-time-buyers",
-      "blog-kirkland-lakeside"
+      "blog-kirkland-lakeside",
+      "testimonials",
+      "sellers",
+      "contact",
+      "dmca-notice"
     ],
     "sourceUrl": "https://media-production.lp-cdn.com/media/b517d231-d9f5-4e15-870d-852a977c9204",
     "alt": "",
@@ -195,7 +214,8 @@
   },
   "home-gallery-portrait.jpg": {
     "pages": [
-      "home"
+      "home",
+      "contact"
     ],
     "sourceUrl": "https://media-production.lp-cdn.com/media/48c36d7c-4093-47c0-9cf9-204a4c2aa414",
     "alt": "",
@@ -219,7 +239,11 @@
       "blog-king-county-investment",
       "blog-bellevue-investment-guide",
       "blog-seattle-first-time-buyers",
-      "blog-kirkland-lakeside"
+      "blog-kirkland-lakeside",
+      "testimonials",
+      "sellers",
+      "contact",
+      "dmca-notice"
     ],
     "sourceUrl": "https://cdn.userway.org/widgetapp/images/spin_wh.svg",
     "alt": "Spinner: White decorative",
@@ -243,7 +267,11 @@
       "blog-king-county-investment",
       "blog-bellevue-investment-guide",
       "blog-seattle-first-time-buyers",
-      "blog-kirkland-lakeside"
+      "blog-kirkland-lakeside",
+      "testimonials",
+      "sellers",
+      "contact",
+      "dmca-notice"
     ],
     "sourceUrl": "https://cdn.userway.org/widgetapp/images/body_wh.svg",
     "alt": "",
@@ -268,7 +296,11 @@
       "blog-bellevue-investment-guide",
       "blog-seattle-first-time-buyers",
       "blog-kirkland-lakeside",
-      "home-search"
+      "home-search",
+      "testimonials",
+      "sellers",
+      "contact",
+      "dmca-notice"
     ],
     "sourceUrl": "https://media-production.lp-cdn.com/media/066743c8-02de-40af-b20f-9c9f5594ab09",
     "alt": "",
@@ -354,14 +386,17 @@
       "about",
       "properties",
       "home-valuation",
+      "testimonials",
+      "sellers",
       "options",
       "blog",
+      "contact",
+      "dmca-notice",
       "terms-and-conditions",
       "neighborhoods-bellevue",
       "neighborhoods-seattle",
       "neighborhoods-newcastle",
       "neighborhoods-eastside",
-      "neighborhoods-shoreline",
       "neighborhoods-renton",
       "blog-king-county-investment",
       "blog-bellevue-investment-guide",
@@ -374,7 +409,8 @@
   },
   "home-portrait-main.jpg": {
     "pages": [
-      "home"
+      "home",
+      "contact"
     ],
     "sourceUrl": "https://media-production.lp-cdn.com/media/998197ec-8781-4178-9291-27023edd73b1",
     "alt": "main",
@@ -448,5 +484,38 @@
     "sourceUrl": "https://media-production.lp-cdn.com/media/53ca722d-7b5e-46e2-a174-2812066d655a",
     "alt": "",
     "bytes": 28951
+  },
+  "sellers-background.jpg": {
+    "pages": [
+      "sellers"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/9d287f70-5af5-40a7-a52e-f7e2d2a0fcbe",
+    "alt": "",
+    "bytes": 481086
+  },
+  "sellers-image-main.jpg": {
+    "pages": [
+      "sellers",
+      "options"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/e65137f4-dd2b-4f5e-a6f3-ae49c8caecaa",
+    "alt": "main",
+    "bytes": 13442515
+  },
+  "testimonials-background.jpg": {
+    "pages": [
+      "testimonials"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/bf20a483-d25e-4b6e-beaa-96176a041d60",
+    "alt": "",
+    "bytes": 304083
+  },
+  "testimonials-testimonial.png": {
+    "pages": [
+      "testimonials"
+    ],
+    "sourceUrl": "https://media-production.lp-cdn.com/media/7f35b05f-7f23-41d2-b98f-9b6b944196a3",
+    "alt": "",
+    "bytes": 10419
   }
 }

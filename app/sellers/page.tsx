@@ -9,9 +9,7 @@ import { SectionPillBadge } from '@/components/site/section-pill-badge'
 const META_TITLE = 'Expert Advice for Selling in Bellevue, WA'
 const META_DESCRIPTION =
   "With the help of Abigail Anderson's professional selling recommendations, learn how to streamline and reap the benefits of the selling process in Washington!"
-// No `/public/images/sellers-background.jpg` exists yet — fall back to the
-// portrait hero. Tracked in TODO.md.
-const META_IMAGE = '/images/home-portrait-main.jpg'
+const META_IMAGE = '/images/sellers-background.jpg'
 
 export const metadata: Metadata = {
   title: META_TITLE,
@@ -36,7 +34,7 @@ export default function SellersPage() {
     <main>
       <PageHero
         title="Seller's Guide"
-        imageSrc="/images/home-gallery-portrait.jpg"
+        imageSrc="/images/sellers-background.jpg"
         imageAlt=""
       />
 
