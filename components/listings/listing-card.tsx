@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { Heart } from 'lucide-react'
 import type { ListingSummary } from '@/types/listing'
 import { cn } from '@/lib/utils'
 
@@ -26,6 +27,7 @@ function formatPrice(n: number): string {
 export function ListingCard({ listing, priority = false, className }: ListingCardProps) {
   const {
     slug,
+    mlsNumber,
     address,
     city,
     state,
@@ -56,18 +58,29 @@ export function ListingCard({ listing, priority = false, className }: ListingCar
           />
           <span
             className={cn(
-              'absolute left-4 top-4 bg-site-gold px-3 py-1 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-white',
+              'absolute left-4 top-4 rounded-full bg-site-gold px-3 py-1 font-body text-[11px] font-bold uppercase tracking-[0.14em] text-white shadow-sm',
               status === 'pending' && 'bg-black',
               status === 'sold' && 'bg-black',
             )}
           >
             {STATUS_LABEL[status]}
           </span>
+          {/* Decorative favorite — live's IDX has it functional behind a login gate;
+              we render the affordance without wiring it (no auth in scope). */}
+          <span
+            aria-hidden
+            className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-site-text shadow-sm transition-colors group-hover:bg-white"
+          >
+            <Heart className="h-4 w-4" strokeWidth={1.5} />
+          </span>
         </div>
       </Link>
 
       <div className="mt-5">
-        <Link href={`/properties/${slug}`} className="block">
+        <p className="font-body text-[11px] uppercase tracking-[0.14em] text-site-text-muted">
+          Provided by NWMLS
+        </p>
+        <Link href={`/properties/${slug}`} className="mt-1 block">
           <h3 className="text-[21px] leading-[1.3]">{address}</h3>
         </Link>
         <p className="mt-1 font-body text-[13px] uppercase tracking-[0.1em] text-site-text">
@@ -76,8 +89,11 @@ export function ListingCard({ listing, priority = false, className }: ListingCar
         <p className="mt-2 font-body text-[12px] uppercase tracking-[0.12em] text-site-text-muted">
           {beds} BD | {baths} BA | {sqft.toLocaleString()} sqft
         </p>
-        <p className="mt-3 font-body text-[17px] font-semibold text-site-text">
+        <p className="mt-3 font-display text-[22px] font-semibold leading-none text-site-text">
           {formatPrice(price)}
+        </p>
+        <p className="mt-3 font-body text-[11px] uppercase tracking-[0.14em] text-site-text-muted">
+          MLS# {mlsNumber}
         </p>
       </div>
     </article>
