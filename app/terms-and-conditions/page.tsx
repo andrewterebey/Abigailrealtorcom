@@ -42,7 +42,7 @@ export default async function TermsAndConditionsPage() {
       <PageHero title="Privacy Policy" />
       <section className="py-16 md:py-20 lg:py-24">
         <Container>
-          <div className="mx-auto max-w-3xl">
+          <div className="mx-auto max-w-[720px]">
             <LegalBody blocks={blocks} />
           </div>
         </Container>
