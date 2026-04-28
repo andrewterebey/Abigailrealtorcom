@@ -4,6 +4,7 @@ import { InquiryForm } from '@/components/forms/inquiry-form'
 import { Container } from '@/components/site/container'
 import { PageHero } from '@/components/site/page-hero'
 import { Section, Eyebrow } from '@/components/site/section'
+import { SectionPillBadge } from '@/components/site/section-pill-badge'
 
 const META_TITLE = 'Option Services | Bellevue, WA'
 const META_DESCRIPTION =
@@ -48,6 +49,7 @@ export default function OptionsPage() {
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover"
               />
+              <SectionPillBadge>Exclusive</SectionPillBadge>
             </div>
             <article>
               <Eyebrow>Tailored Support Every Step of the Way</Eyebrow>
