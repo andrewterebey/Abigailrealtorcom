@@ -1,7 +1,6 @@
-import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Container } from '@/components/site/container'
-import { ListingCard } from '@/components/listings/listing-card'
+import { SpotlightCarousel } from './spotlight-carousel'
 import type { ListingSummary } from '@/types/listing'
 
 type ApiResponse = {
@@ -16,7 +15,7 @@ async function getSpotlightListings(): Promise<ListingSummary[]> {
   const host = hdrs.get('host') ?? 'localhost:3000'
   const protocol = host.startsWith('localhost') ? 'http' : 'https'
   const res = await fetch(
-    `${protocol}://${host}/api/listings?status=for-sale&limit=3`,
+    `${protocol}://${host}/api/listings?status=for-sale&limit=6`,
     { next: { revalidate: 300 } },
   )
   if (!res.ok) return []
@@ -41,18 +40,7 @@ export async function SpotlightListings() {
           Spotlight Listings
         </h2>
 
-        <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-12 text-left sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item, idx) => (
-            <ListingCard key={item.id} listing={item} priority={idx < 2} />
-          ))}
-        </div>
-
-        <Link
-          href="/properties"
-          className="mt-14 inline-flex items-center justify-center bg-site-gold px-[46px] py-[20px] font-body text-[14px] font-bold uppercase tracking-[0.107em] text-white transition-colors hover:bg-site-gold-dim"
-        >
-          View All
-        </Link>
+        <SpotlightCarousel items={items} />
       </Container>
     </section>
   )

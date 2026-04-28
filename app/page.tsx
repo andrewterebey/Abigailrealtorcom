@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { ContactCta } from '@/components/home/contact-cta'
 import { CtaTiles } from '@/components/home/cta-tiles'
 import { GetToKnow } from '@/components/home/get-to-know'
 import { Hero } from '@/components/home/hero'
@@ -66,7 +65,6 @@ export default function Home() {
       <NeighborhoodsCarousel />
       <SpotlightListings />
       <Newsletter />
-      <ContactCta />
     </main>
   )
 }
