@@ -46,9 +46,10 @@ next-env.d.ts
 # diff-dom.ts script output — regenerated each run
 /screenshots/diff-dom/
 
-# Ad-hoc debug screenshots dropped in repo root during visual-diff sessions
-/live-*.png
-/local-*.png
+# Ad-hoc debug screenshots dropped in repo root during visual-diff sessions.
+# Real assets live under /public/ and /screenshots/, so any *.png at the repo
+# root is a stray. (See CLAUDE.md §5.6.)
+/*.png
 
 # Playwright MCP scratch artifacts
 .playwright-mcp/

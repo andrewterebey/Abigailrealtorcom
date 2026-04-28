@@ -14,6 +14,14 @@ This is a **client project for Abigail Anderson** — a pixel-accurate, from-scr
 
 All MLS/IDX data on the live site is replaced with placeholder data wired through a fake API layer that mirrors a real IDX provider's contract (see §7).
 
+### 1.0 Read these first, every session
+
+Before starting any task, skim these in order so you don't re-litigate decisions Abigail or I have already weighed in on:
+
+1. **`TODO.md`** — canonical build-order checklist, per-page status, and open questions
+2. **`CHANGELOG.md`** — what's already shipped and the running handoff agenda
+3. **This file** — workflow rules, IDX contract, branding constraints
+
 ### 1.1 Client context — read this
 
 - **All content, branding, copy, headshots, and photos on the live site are Abigail's intellectual property.** We keep them as-is. Download and reuse them locally. No find-and-replace pass at the end — this IS the real branding.
@@ -156,6 +164,8 @@ claude mcp add playwright -- npx -y @playwright/mcp@latest
 
 Verify with `claude mcp list` — you should see `playwright` in the output. If it's missing at session start, **stop and tell me** before writing any UI code.
 
+`playwright` is also a direct dev dependency (`package.json`), used by `/scripts/diff-*.ts` and `/scripts/capture-*.ts`. The MCP and the local install are separate: MCP drives interactive browser tools in this conversation; the local install powers the headless `tsx scripts/...` helpers.
+
 ### 5.2 The Playwright MCP tools Claude will use
 
 | Tool                        | Purpose                                 |
@@ -205,6 +215,7 @@ getComputedStyle(document.querySelector('h1.hero-title'))
 
 - Commit `/screenshots/live/` to git. These are the source of truth.
 - `/screenshots/local/` is gitignored and regenerated every run.
+- **Ad-hoc screenshots belong in `/screenshots/local/`, not the repo root.** `live-*.png` and `local-*.png` at root are gitignored, but other names (e.g. `footer-home.png`) will leak into commits — drop them under `/screenshots/local/` or delete after use.
 - Never declare a page "done" without a final 3-viewport local screenshot passing visual diff.
 - If the live site changes its layout mid-project, re-run `npm run capture-live` to refresh references.
 
@@ -435,7 +446,7 @@ so you don't re-litigate decisions Abigail has already weighed in on.
 11. **This is a paid client engagement — act accordingly.**
     - Don't hit Abigail's real phone/email/contact endpoints. Contact form in dev posts to `/api/contact` which logs to console only until `RESEND_API_KEY` is set in prod env.
     - Don't modify or attempt to access the live Luxury Presence site — we only read from it (screenshots, content, images).
-    - Don't push directly to a production branch. Work in `dev`; merge to `main` only after a local build passes and all three viewports pass visual diff.
+    - Don't push directly to `main`. Work on a feature branch (e.g. `feat/page-parity`, `fix/footer-disclaimer`) and merge to `main` only after `npm run lint` passes and all three viewports pass visual diff. PRs are preferred but solo merges are OK for trivial fixes.
     - Keep a running `CHANGELOG.md` of client-visible changes — it becomes the handoff review agenda.
 12. **Legal text is verbatim.** The NWMLS IDX disclaimer, DMCA notice, and privacy policy wording are copied exactly from the live site into `/content/legal/` and rendered unchanged. Don't paraphrase them, don't "clean them up."
 
@@ -486,4 +497,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-04-22*
+*Last updated: 2026-04-28*
