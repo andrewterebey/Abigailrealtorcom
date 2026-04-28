@@ -43,9 +43,9 @@ async function fetchListings(params: URLSearchParams): Promise<ApiResponse> {
 }
 
 export default async function PropertiesPage() {
-  // Live splits into two sections: FEATURED PROPERTIES (for-sale) and
-  // SOLD PROPERTIES (sold). Fetch both in parallel.
-  const forSaleParams = new URLSearchParams({ status: 'for-sale', limit: '20' })
+  // Live splits into two sections: FEATURED PROPERTIES (single highlighted
+  // for-sale listing) and SOLD PROPERTIES (full grid). Fetch both in parallel.
+  const forSaleParams = new URLSearchParams({ status: 'for-sale', limit: '1' })
   const soldParams = new URLSearchParams({ status: 'sold', limit: '20' })
   const [forSale, sold] = await Promise.all([
     fetchListings(forSaleParams),
@@ -84,10 +84,15 @@ export default async function PropertiesPage() {
               Featured Properties
             </h2>
           </div>
-          <ListingGrid
-            items={forSale.items}
-            emptyMessage="No featured properties at the moment."
-          />
+          {/* Featured = single highlighted listing on live; render in a centered
+              single-column lane so the card doesn't get stretched across 3 columns. */}
+          <div className="mx-auto max-w-md">
+            <ListingGrid
+              items={forSale.items}
+              className="!grid-cols-1 sm:!grid-cols-1 lg:!grid-cols-1"
+              emptyMessage="No featured properties at the moment."
+            />
+          </div>
         </Container>
       </section>
 
