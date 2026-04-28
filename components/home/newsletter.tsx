@@ -47,8 +47,10 @@ export function Newsletter({
       className="bg-black text-white"
     >
       <Container className="py-16 md:py-20 lg:py-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
+        <div className="mx-auto max-w-5xl text-center">
+          {/* Wider container so the longer "Receive Exclusive Listings In Your Inbox"
+              title (used on /blog) fits on one line at lg+, matching live. */}
+          <h2 className="text-balance text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
             {title}
           </h2>
           <p className="mx-auto mt-6 max-w-xl font-body text-[15px] leading-[1.7] text-white/80">
@@ -57,7 +59,7 @@ export function Newsletter({
 
           <form
             onSubmit={onSubmit}
-            className="mt-10 grid gap-4 sm:grid-cols-[1fr_1fr_auto]"
+            className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-[1fr_1fr_auto]"
             noValidate
           >
             <label className="sr-only" htmlFor="nl-name">
