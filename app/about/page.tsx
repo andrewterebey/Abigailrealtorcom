@@ -41,7 +41,13 @@ export default function AboutPage() {
   return (
     <main>
       <PageHero
-        title="About Abigail Anderson"
+        title={
+          <>
+            About Abigail
+            <br className="hidden lg:inline" /> Anderson
+          </>
+        }
+        ariaTitle="About Abigail Anderson"
         imageSrc="/images/about-background.jpg"
         imageAlt=""
       />

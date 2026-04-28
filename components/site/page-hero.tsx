@@ -2,7 +2,10 @@ import Image from 'next/image'
 import { Container } from '@/components/site/container'
 
 type PageHeroProps = {
-  title: string
+  /** Pass a string for a single line, or a React node to control line breaks. */
+  title: React.ReactNode
+  /** Used for aria-label when `title` is a node — falls back to the rendered text otherwise. */
+  ariaTitle?: string
   /** Background photo. Omit for a solid-black hero (legal/utility pages). */
   imageSrc?: string
   imageAlt?: string
@@ -18,6 +21,7 @@ type PageHeroProps = {
  */
 export function PageHero({
   title,
+  ariaTitle,
   imageSrc,
   imageAlt = '',
   eyebrow,
@@ -25,8 +29,8 @@ export function PageHero({
 }: PageHeroProps) {
   return (
     <section
-      aria-label={title}
-      className="relative h-[320px] w-full overflow-hidden bg-black text-white md:h-[380px] lg:h-[460px]"
+      aria-label={ariaTitle ?? (typeof title === 'string' ? title : undefined)}
+      className="relative h-[380px] w-full overflow-hidden bg-black text-white md:h-[460px] lg:h-[540px]"
     >
       {imageSrc ? (
         <>
