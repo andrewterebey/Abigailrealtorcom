@@ -96,12 +96,45 @@ export default function HomeValuationPage() {
               </li>
               <li>Sell For More</li>
             </ul>
-            <Link
-              href="/contact?topic=valuation"
-              className="mt-10 inline-flex items-center justify-center bg-site-gold px-[46px] py-[20px] font-body text-[14px] font-bold uppercase tracking-[0.107em] text-white transition-colors hover:bg-site-gold-dim"
+            {/* Inline address-input pill matching live. The live site wires this to
+                a 3rd-party autocomplete + instant-estimate service; we don't have
+                that widget so the form posts to /contact?topic=valuation as a
+                fallback. The visual treatment matches: white pill, map-pin icon,
+                amber submit button on the right. */}
+            <form
+              action="/contact"
+              method="get"
+              className="mt-10 flex w-full max-w-2xl items-stretch overflow-hidden rounded-full bg-white text-site-text shadow-lg"
             >
-              Get a Free Home Valuation
-            </Link>
+              <input type="hidden" name="topic" value="valuation" />
+              <span aria-hidden className="flex items-center pl-5 pr-2">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.7}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-5 text-site-text-muted"
+                >
+                  <path d="M21 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 1 1 18 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                name="address"
+                aria-label="Home address"
+                placeholder="Enter your home address"
+                className="flex-1 bg-transparent py-4 font-body text-[14px] text-site-text placeholder:text-site-text-muted focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="bg-site-gold px-6 py-4 font-body text-[12px] font-bold uppercase tracking-[0.14em] text-white transition-colors hover:bg-site-gold-dim md:px-8 md:text-[13px]"
+              >
+                Get a Free Home Valuation
+              </button>
+            </form>
           </Container>
         </div>
       </section>
@@ -145,7 +178,7 @@ export default function HomeValuationPage() {
             {FAQS.map((faq) => (
               <article
                 key={faq.q}
-                className="border border-site-gold/60 bg-white p-8 text-left"
+                className="border-l-4 border-site-gold bg-white p-8 text-left shadow-[0_1px_0_rgba(0,0,0,0.04)]"
               >
                 <h3 className="text-[18px] leading-[1.3] md:text-[20px]">
                   {faq.q}
