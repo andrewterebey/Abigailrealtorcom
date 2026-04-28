@@ -89,9 +89,13 @@ export function InquiryForm({
   const labelClass =
     'font-body text-[11px] font-bold uppercase tracking-[0.14em] text-site-text-muted'
 
+  // Contact variant stacks single-column to match live; property-inquiry and
+  // valuation keep the 2-col grid that live uses for the longer field list.
+  const gridCols = variant === 'contact' ? '' : 'md:grid-cols-2'
+
   return (
     <form onSubmit={onSubmit} className="mx-auto w-full max-w-3xl">
-      <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
+      <div className={`grid gap-x-10 gap-y-4 ${gridCols}`}>
         <div className="flex flex-col gap-2">
           <label htmlFor="inquiry-name" className={labelClass}>
             Full Name *
