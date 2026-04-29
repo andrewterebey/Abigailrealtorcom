@@ -2,9 +2,16 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ChevronDown, Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Container } from './container'
+
+// Routes whose top edge has no hero behind the header — they need the
+// solid-white treatment from y=0 instead of transparent-over-image.
+const ALWAYS_SOLID_ROUTES: ReadonlyArray<string | RegExp> = [
+  '/home-search/listings',
+]
 
 const INLINE_LINKS = [
   { label: 'About Abigail', href: '/about' },
@@ -35,6 +42,10 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false)
   const [visible, setVisible] = useState(true)
   const lastYRef = useRef(0)
+  const pathname = usePathname()
+  const forceSolid = ALWAYS_SOLID_ROUTES.some((r) =>
+    typeof r === 'string' ? r === pathname : r.test(pathname ?? ''),
+  )
 
   useEffect(() => {
     const onScroll = () => {
@@ -66,7 +77,8 @@ export function SiteHeader() {
 
   const base =
     'fixed inset-x-0 top-0 z-50 transition-[transform,background-color,box-shadow,color] duration-300 ease-out'
-  const bg = scrolled
+  const isSolid = scrolled || forceSolid
+  const bg = isSolid
     ? 'border-b border-black/5 bg-white text-site-text shadow-sm'
     : 'bg-transparent text-white'
   // While the side panel is open, force the header to stay put. Because
@@ -86,7 +98,7 @@ export function SiteHeader() {
           + nav text stay legible even when the hero behind them is light
           (e.g. the peach sunrise on Home). Fades out as you scroll into the
           solid-white scrolled state. */}
-      {!scrolled ? (
+      {!isSolid ? (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 via-black/25 to-transparent"
@@ -100,7 +112,7 @@ export function SiteHeader() {
         >
           <Image
             src={
-              scrolled
+              isSolid
                 ? '/images/home-nav-logo.jpg'
                 : '/images/home-nav-logo.png'
             }
@@ -109,7 +121,7 @@ export function SiteHeader() {
             height={100}
             priority
             className={
-              scrolled ? 'h-12 w-auto lg:h-14' : 'h-12 w-auto lg:h-16'
+              isSolid ? 'h-12 w-auto lg:h-14' : 'h-12 w-auto lg:h-16'
             }
           />
         </Link>
@@ -125,7 +137,7 @@ export function SiteHeader() {
               key={link.href}
               href={link.href}
               className={`font-body text-[14px] font-bold uppercase tracking-[0.14em] transition-opacity hover:opacity-80 ${
-                scrolled ? 'text-site-text' : 'text-white'
+                isSolid ? 'text-site-text' : 'text-white'
               }`}
             >
               {link.label}
@@ -134,7 +146,7 @@ export function SiteHeader() {
           <Link
             href="/contact"
             className={`font-body text-[14px] font-bold uppercase tracking-[0.14em] transition-opacity hover:opacity-80 ${
-              scrolled ? 'text-site-text' : 'text-white'
+              isSolid ? 'text-site-text' : 'text-white'
             }`}
           >
             Let&apos;s Connect
@@ -151,7 +163,7 @@ export function SiteHeader() {
             aria-expanded={open}
             aria-controls="site-menu-popout"
             className={`p-1 transition-colors ${
-              scrolled ? 'text-site-text' : 'text-white'
+              isSolid ? 'text-site-text' : 'text-white'
             }`}
           >
             <Menu className="size-7" strokeWidth={1.5} />

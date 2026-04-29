@@ -45,6 +45,7 @@ function toSummary(d: ListingDetail): ListingSummary {
     sqft,
     status,
     primaryImage,
+    coordinates,
   } = d
   return {
     id,
@@ -60,6 +61,7 @@ function toSummary(d: ListingDetail): ListingSummary {
     sqft,
     status,
     primaryImage,
+    coordinates,
   }
 }
 

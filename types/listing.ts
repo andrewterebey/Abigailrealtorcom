@@ -36,12 +36,15 @@ export interface ListingSummary {
   sqft: number
   status: ListingStatus
   primaryImage: string
+  /** Lat/lng for the search-results map. Real IDX feeds include this on
+   *  summary rows; we promote it from detail so the map view doesn't need
+   *  N+1 detail fetches just to plot pins. */
+  coordinates: { lat: number; lng: number }
 }
 
 export interface ListingDetail extends ListingSummary {
   description: string
   images: string[]
-  coordinates: { lat: number; lng: number }
   yearBuilt: number
   propertyType: PropertyType
   features: string[]

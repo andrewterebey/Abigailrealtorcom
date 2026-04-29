@@ -39,15 +39,15 @@ export const listingSummarySchema = z.object({
   sqft: z.number().int().nonnegative(),
   status: listingStatusSchema,
   primaryImage: z.string().min(1),
+  coordinates: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }),
 })
 
 export const listingDetailSchema = listingSummarySchema.extend({
   description: z.string().min(1),
   images: z.array(z.string().min(1)).min(1),
-  coordinates: z.object({
-    lat: z.number(),
-    lng: z.number(),
-  }),
   yearBuilt: z.number().int().min(1800).max(2100),
   propertyType: propertyTypeSchema,
   features: z.array(z.string().min(1)),
