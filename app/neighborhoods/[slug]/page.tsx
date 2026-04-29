@@ -6,6 +6,7 @@ import { Search } from 'lucide-react'
 import { Container } from '@/components/site/container'
 import { Eyebrow } from '@/components/site/section'
 import { ListingGrid } from '@/components/listings/listing-grid'
+import { ListingsMap } from '@/components/listings/listings-map'
 import { ScoreCard } from '@/components/neighborhood/score-card'
 import { StatBar } from '@/components/neighborhood/stat-bar'
 import type { ListingSummary } from '@/types/listing'
@@ -123,36 +124,20 @@ export default async function NeighborhoodDetailPage({ params }: PageProps) {
 
   return (
     <main>
-      {/* Hero */}
+      {/* Live opens directly on the property-listings block — no hero on
+          neighborhood detail pages. We render a small neighborhood-name eyebrow
+          above the H2 so the page still announces which neighborhood you're on. */}
       <section
-        aria-label={`${n.name} hero`}
-        className="relative flex min-h-[560px] items-center justify-center overflow-hidden text-white md:min-h-[640px] lg:min-h-[720px]"
-      >
-        <Image
-          src={n.heroImage}
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-black/25" aria-hidden />
-        <Container className="relative z-10 py-24 text-center md:py-28 lg:py-32">
-          <h1 className="text-[56px] uppercase leading-[1.05] tracking-[0.06em] text-white sm:text-[80px] lg:text-[104px]">
-            {parsed.title}
-          </h1>
-        </Container>
-      </section>
-
-      {/* Property Listings */}
-      <section
-        aria-label="Property Listings"
-        className="py-16 md:py-20 lg:py-24"
+        aria-label={`${n.name} property listings`}
+        className="pt-16 pb-16 md:pt-20 md:pb-20 lg:pt-24 lg:pb-24"
       >
         <Container>
-          <h2 className="text-center text-[28px] uppercase leading-[1.2] tracking-[0.1em] md:text-[36px] lg:text-[40px]">
+          <p className="text-center font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-gold">
+            {n.name}, WA
+          </p>
+          <h1 className="mt-3 text-center text-[28px] uppercase leading-[1.2] tracking-[0.1em] md:text-[36px] lg:text-[40px]">
             Property Listings
-          </h2>
+          </h1>
 
           {/* Non-interactive search input — the live site's IDX search widget
               is beyond scope for the neighborhood detail page (see TODO.md). */}
@@ -370,31 +355,26 @@ export default async function NeighborhoodDetailPage({ params }: PageProps) {
         </section>
       ))}
 
-      {/* Map placeholder */}
+      {/* Interactive Leaflet + OSM map centered on the neighborhood. */}
       <section className="py-14 md:py-16 lg:py-20">
         <Container>
           <Eyebrow>On the Map</Eyebrow>
           <h2 className="mt-3 text-[28px] leading-[1.2] md:text-[34px] lg:text-[38px]">
             {n.name} Area
           </h2>
-          <div
-            className="mt-8 flex aspect-[16/6] w-full items-center justify-center border border-black/10 bg-black/[0.04] text-center"
-            role="img"
-            aria-label={`Static placeholder map of ${n.name}`}
-          >
-            <div>
-              <p className="font-body text-[12px] font-bold uppercase tracking-[0.2em] text-site-text-muted">
-                Map preview
-              </p>
-              <p className="mt-2 font-body text-[14px] text-site-text">
-                {n.name}, WA &middot; {n.coords.lat.toFixed(4)},{' '}
-                {n.coords.lng.toFixed(4)}
-              </p>
-              <p className="mt-2 font-body text-[12px] text-site-text-muted">
-                Interactive Leaflet map to be wired up (see TODO.md).
-              </p>
-            </div>
-          </div>
+          <ListingsMap
+            className="mt-8 h-[400px] w-full md:h-[480px]"
+            center={n.coords}
+            zoom={12}
+            markers={[
+              {
+                id: typedSlug,
+                lat: n.coords.lat,
+                lng: n.coords.lng,
+              },
+            ]}
+            ariaLabel={`Map of ${n.name}, WA`}
+          />
         </Container>
       </section>
 

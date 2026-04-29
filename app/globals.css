@@ -199,3 +199,26 @@
   h5 { font-size: 17px; line-height: 1.5; }
   h6 { font-size: 16px; line-height: 1.5; }
 }
+
+/* Leaflet price-bubble marker — used by ListingsMap for IDX search markers. */
+.listings-map__price-bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #1a1a1a;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  padding: 4px 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.listings-map__price-bubble:hover {
+  background: #f59e0b;
+  color: #ffffff;
+}
