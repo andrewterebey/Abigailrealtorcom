@@ -9,6 +9,21 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Changed
+- All 12 placeholder listings now read as obviously fake. Addresses are
+  scrubbed to fictional streets ("100 Placeholder Lane", "200 Sample
+  Avenue", "300 Demo Drive", etc.) while keeping the real King County
+  cities and ZIPs so the city/zip filters still work. Descriptions
+  collapsed to a single line ("This is a placeholder listing — real
+  property details will appear here once the IDX integration is live.")
+  and feature bullets are now generic `Placeholder feature 1…7`. Listing
+  photos under `/public/listings/` switched from Unsplash JPGs to flat
+  gray SVGs labeled `PLACEHOLDER LISTING #01 / PRIMARY`, with `FRAME A/B/C`
+  variants for the gallery thumbnails — no real-looking photography is
+  shipped while we wait on a real IDX provider. New
+  `scripts/generate-listing-placeholders.ts` regenerates the SVG set;
+  `next.config.ts` opts in to `dangerouslyAllowSVG` so `next/image` can
+  serve them. The defensive image-URL filter in `listing-detail.tsx` is
+  removed now that every referenced frame exists on disk.
 - `/neighborhoods/[slug]` detail pages rebuilt to match the live site:
   full-bleed aerial hero with centered uppercase city name, a new
   `Property Listings` section that fetches up to 8 active listings via

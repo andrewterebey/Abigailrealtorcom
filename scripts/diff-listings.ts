@@ -13,7 +13,7 @@ const ROUTES: Array<{ name: string; path: string }> = [
   // Use a real slug from /data/listings.json.
   {
     name: 'properties-detail',
-    path: '/properties/142-104th-ave-ne-bellevue-98004',
+    path: '/properties/100-placeholder-lane-bellevue-98004',
   },
   { name: 'home-search-listings', path: '/home-search/listings' },
 ]

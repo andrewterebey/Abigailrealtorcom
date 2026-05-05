@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="Placeholder listing 01 Primary">
+  <rect width="1200" height="900" fill="#e5e7eb"/>
+  <rect x="40" y="40" width="1120" height="820" fill="none" stroke="#9ca3af" stroke-width="3" stroke-dasharray="14 10"/>
+  <g transform="translate(540 280)" fill="none" stroke="#6b7280" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 90 L60 25 L120 90 L120 175 L0 175 Z"/>
+    <path d="M44 175 L44 120 L76 120 L76 175"/>
+    <path d="M75 25 L75 10 L100 10 L100 50"/>
+  </g>
+  <text x="600" y="600" text-anchor="middle" fill="#374151" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="60" font-weight="800" letter-spacing="4">PLACEHOLDER LISTING #01</text>
+  <text x="600" y="660" text-anchor="middle" fill="#6b7280" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" font-weight="500" letter-spacing="3">PRIMARY</text>
+  <text x="600" y="820" text-anchor="middle" fill="#9ca3af" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="20" font-weight="500" letter-spacing="2">NOT A REAL PROPERTY</text>
+</svg>

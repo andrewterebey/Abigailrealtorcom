@@ -50,15 +50,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
     mlsNumber,
   } = listing
 
-  // Filter to image paths we can verify render — placeholder data currently
-  // references `-a`/`-b` variants that don't exist on disk, so drop any path
-  // that doesn't match the base `placeholder-NN.jpg` pattern. When a real IDX
-  // provider is wired in (CLAUDE.md §7.7) this filter becomes a no-op since
-  // every URL in the array will resolve.
-  const validImages = (images?.length ? images : [primaryImage]).filter((src) =>
-    /^\/listings\/placeholder-\d+\.jpg$/.test(src),
-  )
-  const gallery = validImages.length > 0 ? validImages : [primaryImage]
+  const gallery = images?.length ? images : [primaryImage]
   const thumbs = gallery.slice(1, 5)
 
   return (
