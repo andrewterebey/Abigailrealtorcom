@@ -14,13 +14,15 @@ This is a **client project for Abigail Anderson** — a pixel-accurate, from-scr
 
 All MLS/IDX data on the live site is replaced with placeholder data wired through a fake API layer that mirrors a real IDX provider's contract (see §7).
 
-### 1.0 Read these first, every session
+### 1.0 Session-start checklist
 
-Before starting any task, skim these in order so you don't re-litigate decisions Abigail or I have already weighed in on:
+Before starting any task:
 
-1. **`TODO.md`** — canonical build-order checklist, per-page status, and open questions
-2. **`CHANGELOG.md`** — what's already shipped and the running handoff agenda
-3. **This file** — workflow rules, IDX contract, branding constraints
+1. Skim **`TODO.md`** — canonical build-order checklist, per-page status, and open questions.
+2. Skim **`CHANGELOG.md`** — what's already shipped and the running handoff agenda.
+3. Skim **this file** — workflow rules, IDX contract, branding constraints.
+4. Verify the Playwright MCP is registered: `claude mcp list` should include `playwright`. If missing, **stop and tell me** before any UI work (install instructions in §5.1).
+5. Confirm `npm run dev` is running on `http://localhost:3000` before taking local screenshots.
 
 ### 1.1 Client context — read this
 
@@ -134,9 +136,13 @@ npm run lint         # eslint && tsc --noEmit  (lint + strict typecheck)
 npm run capture-live # refresh /screenshots/live from the real site
 ```
 
+These are the only scripts in `package.json`. **No test runner is installed** —
+`npm test` and `npm run test:idx` (referenced in §7.6) will fail until the
+contract suite lands. Run `npm run lint` before declaring any task done; it's
+the only automated correctness check we have.
+
 Ad-hoc scripts (run with `tsx scripts/<name>.ts`) live in `/scripts/` — see the
-layout in §3. No automated test suite is wired yet; `npm run test:idx` is
-referenced in §7.6 but not implemented (tracked in `TODO.md`).
+layout in §3.
 
 Env vars:
 
@@ -232,22 +238,20 @@ hover, or read computed styles.
 
 ## 6. Design Tokens
 
-Extract these from the live site using `browser_evaluate` on the root element — **do not guess**.
+**Source of truth: `app/globals.css`.** Tokens were extracted from
+`https://abigailrealtor.com` on 2026-04-21 via `browser_evaluate` against the
+live site. The header comment in `globals.css` records the raw measured values
+(fonts, font sizes per heading level, section padding, container width, gold
+accent `#DEAB33`, etc.) so future-you can re-verify without re-measuring.
 
-Placeholders until first extraction pass:
+Highlights you'll reach for often:
+- Display font: **Forum** (`var(--font-display)`); body: **Poppins** (`var(--font-body)`). Both loaded via `next/font` in the root layout.
+- Brand gold: `#DEAB33` (`--color-site-gold`), dim `#B58822`. Mapped onto `--primary`/`--accent`/`--ring` in the shadcn token set.
+- Container: `1440px` (`--container-site`); section vertical rhythm: `96px` (`--spacing-section`).
+- Headings are uppercase, `letter-spacing: 1px`, weight 400 — set globally in `@layer base`. Sizes `h1..h6 = 70/43/30/21/17/16px`.
+- Corner radius is **0** everywhere — the live site has no rounded corners. Don't add `rounded-*` utilities without a deliberate reason.
 
-```
---color-primary:    TBD   /* appears to be a warm neutral / cream */
---color-accent:     TBD   /* gold/brass button accents */
---color-text:       TBD
---color-muted:      TBD
---font-display:     TBD   /* serif — likely Canela, Tiempos, or Didot family */
---font-body:        TBD   /* sans — likely Söhne, Inter, or similar */
---content-max-w:    TBD   /* probably 1280–1440px */
---radius:           TBD
-```
-
-Document the final values in `app/globals.css` as CSS custom properties and mirror them in `tailwind.config.ts`.
+If a value looks wrong, **re-measure via Playwright against the live site** before changing tokens — don't tweak by eye. Update the comment in `globals.css` alongside any change so the provenance stays accurate.
 
 ---
 
@@ -497,4 +501,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-04-28*
+*Last updated: 2026-05-05*

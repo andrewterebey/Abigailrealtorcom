@@ -8,6 +8,11 @@ unless they change behavior on the site.
 
 ## Unreleased
 
+### Fixed
+- Listing detail gallery: removed the 4px black gap between thumbnail
+  tiles so the four gallery frames read as a single continuous strip
+  instead of cards floating on a black background.
+
 ### Changed
 - All 12 placeholder listings now read as obviously fake. Addresses are
   scrubbed to fictional streets ("100 Placeholder Lane", "200 Sample

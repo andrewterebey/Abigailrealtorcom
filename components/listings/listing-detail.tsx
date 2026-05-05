@@ -73,7 +73,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
           </span>
         </div>
         {thumbs.length > 0 && (
-          <div className="grid grid-cols-2 gap-1 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-0 md:grid-cols-4">
             {thumbs.map((src, i) => (
               <div
                 key={src}
