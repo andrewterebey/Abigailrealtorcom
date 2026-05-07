@@ -135,12 +135,16 @@ export function ListingsMap({
   }, [center.lat, center.lng, zoom, markers])
 
   return (
-    <div className="flex flex-col">
+    // Outer wrapper inherits the consumer's sizing (e.g. h-full from
+    // home-search's split pane, h-[400px] from the neighborhood detail).
+    // Inner ref div is flex-1 so the map fills the available height after
+    // the small attribution caption.
+    <div className={`flex flex-col ${className ?? 'h-[480px] w-full'}`}>
       <div
         ref={ref}
         role="region"
         aria-label={ariaLabel}
-        className={className ?? 'h-[480px] w-full bg-neutral-100'}
+        className="w-full min-h-0 flex-1 bg-neutral-100"
       />
       {/* License-required attribution. Kept small and below the map per
           CLAUDE.md §10 (legal text is non-negotiable, but presentation is). */}
