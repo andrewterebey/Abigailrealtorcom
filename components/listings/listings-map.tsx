@@ -40,6 +40,7 @@ export function ListingsMap({
   useEffect(() => {
     let mounted = true
     let map: import('leaflet').Map | null = null
+    let resizeObserver: ResizeObserver | null = null
 
     void (async () => {
       const L = await import('leaflet')
@@ -54,6 +55,16 @@ export function ListingsMap({
         // below the map instead — still license-compliant, less visual noise.
         attributionControl: false,
       })
+
+      // Recompute the tile pyramid whenever the container resizes — without
+      // this, opening the nav popout (or any other layout shift after init)
+      // leaves Leaflet rendering tiles at stale dimensions, producing white
+      // gridline gaps and a wrong-zoom view.
+      const mapInstance = map
+      resizeObserver = new ResizeObserver(() => {
+        mapInstance.invalidateSize()
+      })
+      resizeObserver.observe(ref.current)
 
       // Carto Voyager — softer palette, gold-friendly cartography. Same OSM
       // data, prettier rendering. Free for non-commercial; for higher traffic
@@ -118,6 +129,7 @@ export function ListingsMap({
 
     return () => {
       mounted = false
+      resizeObserver?.disconnect()
       map?.remove()
     }
   }, [center.lat, center.lng, zoom, markers])
