@@ -200,6 +200,15 @@
   h6 { font-size: 16px; line-height: 1.5; }
 }
 
+/* Leaflet's internal panes (.leaflet-tile-pane @ z:200, .leaflet-marker-pane
+   @ z:600, etc.) participate in the root stacking context unless their
+   container creates its own. Without this, the gold pin and tiles render
+   over the site-header popout panel (z:50). `isolation: isolate` creates
+   a stacking context without needing a literal z-index. */
+.leaflet-container {
+  isolation: isolate;
+}
+
 /* Leaflet price-bubble marker — used by ListingsMap for IDX search markers. */
 .listings-map__price-bubble {
   display: inline-flex;
