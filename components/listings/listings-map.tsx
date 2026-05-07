@@ -49,6 +49,10 @@ export function ListingsMap({
         center: [center.lat, center.lng],
         zoom,
         scrollWheelZoom: false,
+        // The default Leaflet attribution control puts a "Leaflet | ..." line
+        // in the corner of the map. We render attribution as a small caption
+        // below the map instead — still license-compliant, less visual noise.
+        attributionControl: false,
       })
 
       // Carto Voyager — softer palette, gold-friendly cartography. Same OSM
@@ -57,8 +61,6 @@ export function ListingsMap({
       L.tileLayer(
         'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
         {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
           subdomains: 'abcd',
           maxZoom: 20,
         },
@@ -68,6 +70,16 @@ export function ListingsMap({
 
       const layer = L.layerGroup().addTo(map)
       const bounds = L.latLngBounds([])
+
+      // Custom pin SVG used when no price-bubble label is provided. Built as
+      // a divIcon so we don't rely on Leaflet's bundled marker images, which
+      // don't resolve under Turbopack (404 on marker-icon.png + shadow).
+      const pinHtml = `
+        <svg viewBox="0 0 32 44" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M16 1c8.3 0 15 6.7 15 15 0 11-15 27-15 27S1 27 1 16C1 7.7 7.7 1 16 1Z"
+                fill="#DEAB33" stroke="#7A5912" stroke-width="1.25"/>
+          <circle cx="16" cy="16" r="5.5" fill="#fff"/>
+        </svg>`
 
       for (const m of markers) {
         const point: import('leaflet').LatLngExpression = [m.lat, m.lng]
@@ -82,7 +94,14 @@ export function ListingsMap({
                 iconAnchor: [35, 28],
               }),
             })
-          : L.marker(point)
+          : L.marker(point, {
+              icon: L.divIcon({
+                className: 'listings-map__pin',
+                html: pinHtml,
+                iconSize: [32, 44],
+                iconAnchor: [16, 44],
+              }),
+            })
 
         marker.addTo(layer)
         if (m.href) {
@@ -104,11 +123,35 @@ export function ListingsMap({
   }, [center.lat, center.lng, zoom, markers])
 
   return (
-    <div
-      ref={ref}
-      role="region"
-      aria-label={ariaLabel}
-      className={className ?? 'h-[480px] w-full bg-neutral-100'}
-    />
+    <div className="flex flex-col">
+      <div
+        ref={ref}
+        role="region"
+        aria-label={ariaLabel}
+        className={className ?? 'h-[480px] w-full bg-neutral-100'}
+      />
+      {/* License-required attribution. Kept small and below the map per
+          CLAUDE.md §10 (legal text is non-negotiable, but presentation is). */}
+      <p className="mt-2 text-right font-body text-[10px] leading-tight text-site-text-muted">
+        Map data &copy;{' '}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-site-gold"
+        >
+          OpenStreetMap
+        </a>{' '}
+        contributors &middot;{' '}
+        <a
+          href="https://carto.com/attributions"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-site-gold"
+        >
+          CARTO
+        </a>
+      </p>
+    </div>
   )
 }

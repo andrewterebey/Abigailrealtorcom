@@ -222,3 +222,16 @@
   background: #f59e0b;
   color: #ffffff;
 }
+
+/* Custom Leaflet pin (single-marker case) — replaces the default raster
+   marker icons that don't bundle correctly under Turbopack. */
+.listings-map__pin {
+  background: transparent;
+  border: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+.listings-map__pin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
