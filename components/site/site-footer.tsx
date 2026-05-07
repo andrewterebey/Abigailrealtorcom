@@ -117,24 +117,21 @@ export function SiteFooter() {
               Privacy Policy
             </Link>
           </p>
-          {/* Socials are gated behind NEXT_PUBLIC_SHOW_SOCIALS until real URLs land
-              (per CLAUDE.md §4). The hrefs are still "#" placeholders — shipping
-              them would put broken links in the footer of every page. */}
-          {process.env.NEXT_PUBLIC_SHOW_SOCIALS === 'true' ? (
-            <ul className="flex items-center gap-3">
-              {SOCIALS.map(({ label, href, Icon }) => (
-                <li key={label}>
-                  <a
-                    href={href}
-                    aria-label={label}
-                    className="flex size-9 items-center justify-center rounded-full bg-site-gold text-white transition-colors hover:bg-site-gold-dim"
-                  >
-                    <Icon className="size-[14px]" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+          {/* Hrefs are "#" placeholders pending real URLs from Abigail (see
+              CLAUDE.md §11 open questions). Wire them up before go-live. */}
+          <ul className="flex items-center gap-3">
+            {SOCIALS.map(({ label, href, Icon }) => (
+              <li key={label}>
+                <a
+                  href={href}
+                  aria-label={label}
+                  className="flex size-9 items-center justify-center rounded-full bg-site-gold text-white transition-colors hover:bg-site-gold-dim"
+                >
+                  <Icon className="size-[14px]" />
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       </Container>
 

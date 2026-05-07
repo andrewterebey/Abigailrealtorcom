@@ -19,18 +19,18 @@ const INLINE_LINKS = [
   { label: 'Home Valuation', href: '/home-valuation' },
 ] as const
 
+// Popout-only links — items already in INLINE_LINKS (About Abigail,
+// Home Search, Home Valuation) are intentionally omitted to avoid duplicating
+// the always-visible top nav inside the slide-out panel.
 const MENU_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Properties', href: '/properties' },
-  { label: 'Home Search', href: '/home-search/listings' },
-  { label: 'Home Valuation', href: '/home-valuation' },
   { label: 'Neighborhoods', href: '/neighborhoods' },
   { label: 'Testimonials', href: '/testimonials' },
   { label: 'Blog', href: '/blog' },
 ] as const
 
 const RESOURCE_LINKS = [
-  { label: 'About Abigail', href: '/about' },
   { label: 'Buyers', href: '/buyers' },
   { label: 'Sellers', href: '/sellers' },
   { label: 'Options', href: '/options' },
@@ -63,9 +63,8 @@ export function SiteHeader() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Keep page scroll + pointer events enabled while the popout is open so
-  // the user can still read and interact with the underlying page. Escape
-  // still closes; the X button closes; clicking outside does not.
+  // Escape closes the popout. Click-outside closes via the transparent
+  // backdrop rendered when `open`.
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -171,8 +170,18 @@ export function SiteHeader() {
         </div>
       </Container>
 
-      {/* Popout panel — slides in from the right. No backdrop: the rest of
-          the page stays scrollable and clickable while the menu is open. */}
+      {/* Transparent click-catcher: closes the popout when the user clicks
+          anywhere outside it. Sits behind the panel (z-40) but above page
+          content (which is outside the header's z-50 stacking context). */}
+      {open ? (
+        <div
+          aria-hidden
+          onClick={close}
+          className="fixed inset-0 z-40 bg-transparent"
+        />
+      ) : null}
+
+      {/* Popout panel — slides in from the right. */}
       <div
         id="site-menu-popout"
         role="region"
@@ -242,16 +251,6 @@ export function SiteHeader() {
                   ))}
                 </ul>
               )}
-            </li>
-            <li className="border-b border-black/10">
-              <Link
-                href="/contact"
-                onClick={close}
-                tabIndex={open ? 0 : -1}
-                className="block px-6 py-5 text-center font-display text-[22px] uppercase tracking-[0.04em] text-site-text transition-colors hover:text-site-gold"
-              >
-                Let&apos;s Connect
-              </Link>
             </li>
             <li className="border-b border-black/10">
               <Link

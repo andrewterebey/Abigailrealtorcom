@@ -233,7 +233,7 @@ export default async function NeighborhoodDetailPage({ params }: PageProps) {
               {around.title}
             </h2>
             {aroundIntro ? (
-              <p className="mt-5 max-w-3xl font-body text-[15px] leading-[1.7] text-white/80 md:text-[16px]">
+              <p className="mt-5 max-w-3xl font-body text-[15px] leading-[1.7] text-white md:text-[16px]">
                 {aroundIntro}
               </p>
             ) : null}
@@ -246,7 +246,6 @@ export default async function NeighborhoodDetailPage({ params }: PageProps) {
                     score={t.score}
                     label={t.label}
                     category={t.category}
-                    className="border-white/10 bg-white/[0.04] text-white"
                   />
                 ))}
               </div>
@@ -258,7 +257,7 @@ export default async function NeighborhoodDetailPage({ params }: PageProps) {
                   Points of Interest
                 </h3>
                 {poi.intro ? (
-                  <p className="mt-4 max-w-3xl font-body text-[15px] leading-[1.7] text-white/80 md:text-[16px]">
+                  <p className="mt-4 max-w-3xl font-body text-[15px] leading-[1.7] text-white md:text-[16px]">
                     {poi.intro}
                   </p>
                 ) : null}
@@ -266,9 +265,16 @@ export default async function NeighborhoodDetailPage({ params }: PageProps) {
                   <ul className="mt-6 flex flex-wrap gap-3">
                     {poi.chips.map((chip) => (
                       <li key={chip}>
-                        <span className="inline-flex items-center border border-white/30 px-4 py-2 font-body text-[12px] font-bold uppercase tracking-[0.12em] text-white/80">
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${chip} ${n.name} WA`,
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center border border-white/50 px-4 py-2 font-body text-[12px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-site-gold hover:bg-site-gold hover:text-black"
+                        >
                           {chip}
-                        </span>
+                        </a>
                       </li>
                     ))}
                   </ul>
