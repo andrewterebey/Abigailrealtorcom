@@ -171,13 +171,16 @@ export function SiteHeader() {
       </Container>
 
       {/* Transparent click-catcher: closes the popout when the user clicks
-          anywhere outside it. Sits behind the panel (z-40) but above page
-          content (which is outside the header's z-50 stacking context). */}
+          anywhere outside it. Uses explicit h-screen/w-screen (not inset-0)
+          because the header has `transition: transform`, which makes browsers
+          treat it as a containing block for fixed descendants — `inset-0`
+          would then collapse to the header's ~96px height instead of filling
+          the viewport, and clicks below the header would slip through. */}
       {open ? (
         <div
           aria-hidden
           onClick={close}
-          className="fixed inset-0 z-40 bg-transparent"
+          className="fixed left-0 top-0 z-40 h-screen w-screen bg-transparent"
         />
       ) : null}
 
@@ -187,7 +190,7 @@ export function SiteHeader() {
         role="region"
         aria-label="Site navigation"
         aria-hidden={!open}
-        className={`fixed right-0 top-0 z-50 flex h-screen w-full max-w-[420px] flex-col bg-white text-site-text shadow-2xl transition-transform duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`fixed right-0 top-0 z-50 flex h-screen w-full max-w-[420px] flex-col bg-white text-site-text shadow-2xl transition-transform duration-[240ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
