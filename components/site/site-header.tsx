@@ -252,16 +252,6 @@ export function SiteHeader() {
                 </ul>
               )}
             </li>
-            <li className="border-b border-black/10">
-              <Link
-                href="/home-search/listings"
-                onClick={close}
-                tabIndex={open ? 0 : -1}
-                className="block px-6 py-5 text-center font-display text-[22px] uppercase tracking-[0.04em] text-site-text transition-colors hover:text-site-gold"
-              >
-                My Search Portal
-              </Link>
-            </li>
           </ul>
         </nav>
       </div>
