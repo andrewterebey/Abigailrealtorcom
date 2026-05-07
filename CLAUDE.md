@@ -63,6 +63,8 @@ If you ever feel tempted to add a dependency, stop and ask first.
 │  ├─ about/page.tsx
 │  ├─ properties/
 │  │  ├─ page.tsx               ← listings grid → GET /api/listings
+│  │  ├─ sale/page.tsx          ← for-sale filter view
+│  │  ├─ sold/page.tsx          ← sold filter view
 │  │  └─ [slug]/page.tsx        ← listing detail → GET /api/listings/[id]
 │  ├─ home-search/
 │  │  ├─ page.tsx               ← redirects to /home-search/listings
@@ -119,7 +121,8 @@ If you ever feel tempted to add a dependency, stop and ask first.
 │  ├─ diff-home.ts, diff-listings.ts, diff-neighborhoods.ts, diff-bellevue.ts
 │  ├─ diff-dom.ts               ← DOM-structure diff between live and local
 │  ├─ download-assets.ts        ← pull images/video from live site into /public
-│  └─ extract-content.ts        ← scrape verbatim copy from live into /content
+│  ├─ extract-content.ts        ← scrape verbatim copy from live into /content
+│  └─ generate-listing-placeholders.ts ← regenerate /public/listings SVG stand-ins
 └─ .claude/
    └─ settings.json             ← MCP server config (see §5)
 ```
@@ -135,6 +138,12 @@ npm run start        # serve production build locally
 npm run lint         # eslint && tsc --noEmit  (lint + strict typecheck)
 npm run capture-live # refresh /screenshots/live from the real site
 ```
+
+Both `dev` and `build` use **Turbopack** (`next dev --turbopack` /
+`next build --turbopack`), not Webpack. If you hit a build issue that looks
+loader- or plugin-related, check whether the advice you're following assumes
+Webpack — Turbopack handles a few things differently (e.g., custom webpack
+config in `next.config.ts` is ignored).
 
 These are the only scripts in `package.json`. **No test runner is installed** —
 `npm test` and `npm run test:idx` (referenced in §7.6) will fail until the
