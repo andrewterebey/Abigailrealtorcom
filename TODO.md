@@ -18,9 +18,13 @@ parts of the build and should be resolved at or before the handoff review.
       Connect" CTAs.
 - [ ] **Blog** — will she write posts? If yes, CMS choice: MDX in repo, Sanity,
       or Contentful?
-- [ ] **Real IDX provider** — NWMLS direct (requires broker-level access through
-      John L. Scott) vs. a licensed reseller (Realtyna, iHomefinder, Showcase
-      IDX). She should loop in her John L. Scott broker on this.
+- [~] **Real IDX provider** — DECIDED: NWMLS via MLS Grid. Vendor application
+      in progress (Terebey Technologies LLC); setup fee paid. Next action is
+      ours: build a demo-data staging site for NWMLS review, then "Resubmit to
+      MLS" in MLS Grid. Requirements + source PDFs in
+      `content/legal/nwmls-idx-vendor-requirements.md` and
+      `content/legal/nwmls/`. NWMLS contact: Shelli Hoernlein, idx@nwmls.com.
+      See the MLS Grid integration tasks under "Tech debt / follow-ups".
 - [ ] **Analytics** — is Plausible fine, or does she want Google Analytics 4
       for compatibility with Luxury Presence reporting?
 - [ ] **Home valuation** — the live page is a form that feeds into a
@@ -168,3 +172,43 @@ Pages in build order. Complete visual parity for page N before starting N+1.
       something Abigail licensed directly. Before go-live: confirm the
       license transfers when the site leaves Luxury Presence, or swap for a
       licensed/original replacement clip.
+
+## NWMLS / MLS Grid IDX integration
+
+Real listing data, gating production go-live. Full requirements + source PDFs:
+`content/legal/nwmls-idx-vendor-requirements.md` and `content/legal/nwmls/`.
+The provider is NOT a drop-in — MLS Grid is a replication API, not a
+query-through proxy (see CLAUDE.md §7.7).
+
+- [ ] **Confirm NWMLS `OriginatingSystemName`** — the MLS Grid docs use `actris`
+      as the sample value; find NWMLS's real value at
+      `docs.mlsgrid.com/api-documentation/api-version-2.0#originatingsystemname`.
+      Every API request filters on it.
+- [ ] **Stand up a sync worker** — cron / scheduled function replicating MLS
+      Grid → a local datastore every ~15 min: poll `ModificationTimestamp gt
+      [max seen]` per resource (Property, Member, Office, OpenHouse), follow
+      `@odata.nextLink`, honor `MlgCanView` deletes, send
+      `Accept-Encoding: gzip,deflate`. Decide the datastore (Postgres/Supabase?).
+- [ ] **Local media hosting** — store MLS Grid media locally (never hot-link;
+      never re-download — URLs are immutable). Media downloads require the OAuth
+      token in the `user-agent` header.
+- [ ] **Strip prefixed keyfield values** before public display (`ListingKey`,
+      `ListingId`, `ListAgentMlsId`, `ListOfficeKey/MlsId`, `MemberMlsId`,
+      `OfficeMlsId`, OpenHouse keys); reattach when querying the API.
+- [ ] **Implement `lib/idx/nwmls-provider.ts`** against the local store,
+      satisfying the existing `IDXProvider` contract; swap the one line in
+      `lib/idx/index.ts`.
+- [ ] **Build the demo-data staging site** (MLS Grid Demo subscription, separate
+      token) that replicates production, then "Resubmit to MLS" in MLS Grid for
+      NWMLS review. Required before production approval.
+- [ ] **Respect rate limits** — ≤2 req/s, ≤7,200/hr, ≤4 GB/hr, ≤40,000/24hr,
+      ≤60 GB/24hr; email support@mlsgrid.com for a "Grace Period" before the
+      bulk initial import.
+- [ ] **Render the approved NWMLS three-trees icon** (`content/legal/nwmls/
+      Symbol-*.{jpg,png}`) wherever NWMLS listing data is displayed, alongside
+      the existing IDX disclaimer + reciprocity attribution.
+- [ ] **Read the NWMLS legal PDFs** (`DataUsePolicy_2023.pdf`,
+      `MLS Grid IDX Rule 10-29-2025.pdf`, `Rules 27 189 190 194 196.pdf`,
+      `NWMLS - Data Use Compliance Policy Eff 05012024.pdf`,
+      `IDX Guidance_v2_February2026.pdf`) and fold any display/field obligations
+      not yet captured into the reference doc before go-live.

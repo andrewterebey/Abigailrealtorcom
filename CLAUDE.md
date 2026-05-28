@@ -54,6 +54,10 @@ If you ever feel tempted to add a dependency, stop and ask first.
 
 ## 3. Repository Layout
 
+Imports use the `@/*` alias mapped to the repo root (configured in
+`tsconfig.json`), e.g. `import { provider } from '@/lib/idx'`. Prefer it over
+deep relative paths.
+
 ```
 /
 ├─ CLAUDE.md                    ← this file
@@ -402,14 +406,39 @@ Writing the suite is tracked in `TODO.md` under "Tech debt / follow-ups".
 
 ### 7.7 Swapping to a real provider (future)
 
-1. Implement `IDXProvider` in e.g. `/lib/idx/nwmls-provider.ts`.
+The active provider — NWMLS via **MLS Grid** — is in vendor-approval. Binding
+requirements (compliance, API v2 rules, rate limits, prefixed-keyfield handling)
+and the source PDFs live in **`content/legal/nwmls-idx-vendor-requirements.md`**
+and **`content/legal/nwmls/`**. Read that before implementing — the points below
+are the short version.
+
+The swap at the **UI/API boundary** is one line:
+
+1. Implement `IDXProvider` in `/lib/idx/nwmls-provider.ts`.
 2. Change one line in `/lib/idx/index.ts`:
    ```ts
    // export const provider: IDXProvider = new PlaceholderProvider()
-   export const provider: IDXProvider = new NWMLSProvider(process.env.NWMLS_KEY!)
+   export const provider: IDXProvider = new NWMLSProvider(/* ... */)
    ```
 3. Run `npm run test:idx` to verify the contract.
 4. Deploy.
+
+**But the provider itself is not a drop-in.** MLS Grid is a **replication API,
+not a query-through proxy** — you don't fetch-per-request the way
+`PlaceholderProvider` reads JSON. A faithful `NWMLSProvider` implies new
+infrastructure that does NOT exist yet:
+
+- A **sync job** (cron / scheduled function) replicating MLS Grid → a local
+  datastore every ~15 min, honoring the `MlgCanView` delete flag, stripping
+  prefixed keyfields before display, and copying media locally (never hot-link
+  MLS Grid media URLs).
+- `NWMLSProvider.list()/get()` then query that local store, satisfying the
+  existing `IDXProvider` contract unchanged.
+
+So "one-line swap" is true only for the boundary in §7.5/§7.7 — scope the
+datastore + sync worker + local media hosting before promising a timeline.
+NWMLS also requires a **demo-data staging site** for review before production
+approval is granted.
 
 ### 7.8 Placeholder data
 
@@ -487,7 +516,7 @@ Flagged here so we don't hit them mid-build. Track status in `TODO.md`.
 - **Instagram feed** — handle + approach: static screenshot grid, Instagram Basic Display API (requires her FB developer account), or a third-party widget (Elfsight, LightWidget)?
 - **Calendly / booking link** — does she have one? If so, add to "Let's Connect" CTAs.
 - **Blog** — will she write posts? If yes, CMS choice: MDX in repo, Sanity, or Contentful?
-- **Real IDX provider** — NWMLS direct (requires broker-level access through John L. Scott) vs. a licensed reseller (Realtyna, iHomefinder, Showcase IDX). She should loop in her John L. Scott broker on this.
+- **Real IDX provider** — DECIDED: NWMLS via **MLS Grid**. Vendor application is in progress (Terebey Technologies LLC). Next step is a demo-data staging site for NWMLS review. Requirements + source docs in `content/legal/nwmls-idx-vendor-requirements.md`. (Originally weighed against resellers Realtyna / iHomefinder / Showcase IDX.)
 - **Analytics** — is Plausible fine, or does she want Google Analytics 4 for compatibility with Luxury Presence reporting?
 - **Home valuation** — the live page is a form that feeds into a third-party tool. Which provider? (HomeBot, HouseCanary, or a simple contact-form-with-intent.)
 - **Domain / DNS cutover plan** — how and when do we point `abigailrealtor.com` DNS from Luxury Presence → Netlify?

@@ -56,3 +56,10 @@ next-env.d.ts
 
 # Claude Code per-user settings
 .claude/settings.local.json
+
+# NWMLS / MLS Grid licensing source documents — internal reference only.
+# Sensitive (payment receipt, good-standing cert) and heavy binaries; not
+# production assets. Kept locally; the distilled requirements live in
+# content/legal/nwmls-idx-vendor-requirements.md. Production-displayed assets
+# (e.g. the NWMLS three-tree icon) get a tracked copy under /public/images/.
+/content/legal/nwmls/
