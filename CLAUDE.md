@@ -177,7 +177,7 @@ Install the Playwright MCP server:
 claude mcp add playwright -- npx -y @playwright/mcp@latest
 ```
 
-Verify with `claude mcp list` — you should see `playwright` in the output. If it's missing at session start, **stop and tell me** before writing any UI code.
+Verify with `claude mcp list` — you should see a `playwright` line in the output. If the command prints `No MCP servers configured.` or lists other servers but not `playwright`, **stop and tell me** before writing any UI code — don't try to re-install it yourself.
 
 `playwright` is also a direct dev dependency (`package.json`), used by `/scripts/diff-*.ts` and `/scripts/capture-*.ts`. The MCP and the local install are separate: MCP drives interactive browser tools in this conversation; the local install powers the headless `tsx scripts/...` helpers.
 
@@ -510,4 +510,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-05-05*
+*Last updated: 2026-05-28*
