@@ -179,6 +179,38 @@ export function mapMediaUrls(raw: ResoRecord): string[] {
   return photos
 }
 
+// ── features ──────────────────────────────────────────────────────────────────
+/** Flatten a curated set of RESO feature fields (arrays or comma-strings) into
+ *  a deduped list for the detail page. */
+function collectFeatures(raw: ResoRecord): string[] {
+  const fields = [
+    'InteriorFeatures',
+    'ExteriorFeatures',
+    'Appliances',
+    'Flooring',
+    'ArchitecturalStyle',
+    'View',
+    'LotFeatures',
+  ]
+  const out: string[] = []
+  for (const f of fields) {
+    const v = raw[f]
+    if (Array.isArray(v)) {
+      for (const item of v) {
+        const s = str(item)
+        if (s) out.push(s)
+      }
+    } else {
+      const s = str(v)
+      if (s) for (const part of s.split(',')) {
+        const t = part.trim()
+        if (t) out.push(t)
+      }
+    }
+  }
+  return Array.from(new Set(out)).slice(0, 14)
+}
+
 // ── duplicates ──────────────────────────────────────────────────────────────
 /** When present, this listing is a duplicate; the sync should keep only the
  *  primary (the listing whose id equals this value) ([GUID #4]). */
@@ -224,13 +256,21 @@ export function mapResoToListing(raw: ResoRecord): ListingDetail | null {
   const hasCoords = lat !== undefined && lng !== undefined
   const showOnMap = !addressWithheld && bool(raw.NWM_ShowMapLink) !== false && hasCoords
 
-  // Baths: prefer the total integer; else full + half/2.
+  // Baths: prefer the total integer; else NWMLS full + ¾ + ½ math.
   const baths =
     num(raw.BathroomsTotalInteger) ??
-    (num(raw.BathroomsFull) ?? 0) + (num(raw.BathroomsHalf) ?? 0) * 0.5
+    (num(raw.BathroomsFull) ?? 0) +
+      (num(raw.BathroomsThreeQuarter) ?? 0) * 0.75 +
+      (num(raw.BathroomsHalf) ?? 0) * 0.5
 
   const sqft =
     num(raw.LivingArea) ?? num(raw.AboveGradeFinishedArea) ?? num(raw.BuildingAreaTotal) ?? 0
+
+  // Sold listings show the close price; everything else shows the list price.
+  const displayPrice =
+    statusInfo.status === 'sold'
+      ? (num(raw.ClosePrice) ?? num(raw.ListPrice) ?? 0)
+      : (num(raw.ListPrice) ?? 0)
 
   const slugBase = addressWithheld ? [mlsNumber] : [composedAddress, city, zip]
   const slug = slugify(slugBase) || `listing-${id}`
@@ -243,7 +283,7 @@ export function mapResoToListing(raw: ResoRecord): ListingDetail | null {
     city,
     state,
     zip,
-    price: Math.max(0, Math.round(num(raw.ListPrice) ?? 0)),
+    price: Math.max(0, Math.round(displayPrice)),
     beds: Math.max(0, Math.round(num(raw.BedroomsTotal) ?? 0)),
     baths: Math.max(0, baths),
     sqft: Math.max(0, Math.round(sqft)),
@@ -264,7 +304,7 @@ export function mapResoToListing(raw: ResoRecord): ListingDetail | null {
     description: str(raw.PublicRemarks) ?? 'Contact agent for details.',
     yearBuilt: num(raw.YearBuilt),
     propertyType: mapPropertyType(raw),
-    features: [],
+    features: collectFeatures(raw),
     schoolDistrict: str(raw.HighSchoolDistrict) ?? str(raw.ElementarySchoolDistrict),
     listingAgent: str(raw.ListAgentFullName),
     // dataAsOf is stamped by the sync (this mapper is clock-free).

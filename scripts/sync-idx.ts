@@ -56,10 +56,27 @@ const MEDIA_DIR = path.join(ROOT, 'public', 'idx')
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+// Global rate gate — MLS Grid enforces ≤2 requests/second across ALL requests
+// (API + media). We space everything ≥550ms apart to stay safely under it.
+let lastRequestAt = 0
+async function gate(minMs = 550): Promise<void> {
+  const wait = Math.max(0, lastRequestAt + minMs - Date.now())
+  if (wait) await sleep(wait)
+  lastRequestAt = Date.now()
+}
+
+function intEnv(name: string, fallback: number): number {
+  const v = process.env[name]
+  if (v === undefined || v.trim() === '') return fallback
+  const n = Number.parseInt(v, 10)
+  return Number.isFinite(n) && n >= 0 ? n : fallback
+}
+
 type ODataPage = { value?: ResoRecord[]; '@odata.nextLink'?: string }
 
 async function fetchJson(url: string, token: string): Promise<ODataPage> {
   for (let attempt = 1; attempt <= 4; attempt++) {
+    await gate()
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -110,20 +127,34 @@ async function downloadMedia(
     } catch {
       /* not present — download below */
     }
-    const res = await fetch(urls[i], {
-      // MLS Grid requires the OAuth token as the user-agent for media.
-      headers: { 'User-Agent': token },
-    })
-    if (!res.ok) {
-      console.warn(`  ⚠ media ${urls[i]} → ${res.status}; skipping`)
-      continue
-    }
-    const buf = Buffer.from(await res.arrayBuffer())
+    const buf = await fetchMediaBuffer(urls[i], token)
+    if (!buf) continue // already warned
     await fs.writeFile(abs, buf)
     local.push(publicPath)
-    await sleep(250) // stay well under 2 req/s
   }
   return local
+}
+
+/** Fetch one media file, respecting the rate gate and backing off on 429.
+ *  MLS Grid requires the OAuth token as the user-agent for media. */
+async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | null> {
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    await gate()
+    const res = await fetch(url, { headers: { 'User-Agent': token } })
+    if (res.status === 429 || res.status >= 500) {
+      const w = attempt * 4000
+      console.warn(`  ↻ media ${res.status}; backoff ${w}ms (attempt ${attempt})`)
+      await sleep(w)
+      continue
+    }
+    if (!res.ok) {
+      console.warn(`  ⚠ media → ${res.status}; skipping`)
+      return null
+    }
+    return Buffer.from(await res.arrayBuffer())
+  }
+  console.warn(`  ⚠ media still rate-limited after retries; skipping`)
+  return null
 }
 
 async function main() {
@@ -138,22 +169,38 @@ async function main() {
   const apiBase = process.env.MLSGRID_API_BASE ?? 'https://api.mlsgrid.com/v2'
   const originatingSystem = process.env.MLSGRID_ORIGINATING_SYSTEM ?? 'nwmls'
 
-  const filter = `OriginatingSystemName eq '${originatingSystem}' and MlgCanView eq true`
-  let url: string | undefined =
-    `${apiBase}/Property?$filter=${encodeURIComponent(filter)}&$expand=Media&$top=1000`
+  // Demo caps — the NWMLS demo feed has ~10k listings (and the feed clusters by
+  // status), so we query each status separately and take a slice of each. This
+  // guarantees the demo shows every status type and keeps media volume small.
+  // Set a cap to 0 for unlimited. The PRODUCTION feed would drop these caps and
+  // use a DB-backed sync (see CLAUDE.md §7.7).
+  const MAX_LISTINGS = intEnv('MLSGRID_MAX_LISTINGS', 75)
+  const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', 6)
 
-  console.log(`Syncing MLS Grid feed (OriginatingSystemName='${originatingSystem}')…`)
+  // StandardStatus values to pull, one slice each, for status variety.
+  const STATUS_QUERIES = [
+    "StandardStatus eq 'Active'",
+    "StandardStatus eq 'Active Under Contract'",
+    "StandardStatus eq 'Pending'",
+    "StandardStatus eq 'Closed'",
+  ]
+  const perStatus = MAX_LISTINGS
+    ? Math.ceil(MAX_LISTINGS / STATUS_QUERIES.length)
+    : 1000
+
+  console.log(
+    `Syncing MLS Grid feed (OriginatingSystemName='${originatingSystem}', ` +
+      `~${perStatus}/status, max ${MAX_LISTINGS || '∞'} listings × ${MAX_PHOTOS || '∞'} photos)…`,
+  )
 
   const rawRecords: ResoRecord[] = []
-  let page = 0
-  while (url) {
-    page++
+  for (const statusClause of STATUS_QUERIES) {
+    const filter = `OriginatingSystemName eq '${originatingSystem}' and MlgCanView eq true and ${statusClause}`
+    const url = `${apiBase}/Property?$filter=${encodeURIComponent(filter)}&$expand=Media&$top=${perStatus}`
     const data = await fetchJson(url, token)
     const batch = data.value ?? []
     rawRecords.push(...batch)
-    console.log(`  page ${page}: ${batch.length} records (total ${rawRecords.length})`)
-    url = data['@odata.nextLink']
-    if (url) await sleep(600) // ≤2 req/s
+    console.log(`  ${statusClause}: ${batch.length} records`)
   }
 
   // Drop duplicate listings, keeping the primary ([GUID #4]).
@@ -177,22 +224,69 @@ async function main() {
     listings.push(mapped)
   }
 
-  // Localize media + stamp the "data obtained as of" timestamp.
+  // Keep a status-diverse subset so the demo shows every status type ([no
+  // silent caps] — we log exactly what was dropped).
+  const selected = MAX_LISTINGS ? selectDiverse(listings, MAX_LISTINGS) : listings
+  const cappedListings = listings.length - selected.length
+
+  // Localize media (capped) + stamp the "data obtained as of" timestamp.
+  // MLSGRID_SKIP_MEDIA=true writes the snapshot without downloading photos
+  // (useful while the media host is in a rate-limit cooldown, or for fast
+  // data-only iteration). Photos fall back to the NO_PHOTO placeholder.
+  const skipMedia = process.env.MLSGRID_SKIP_MEDIA === 'true'
   const dataAsOf = new Date().toISOString()
-  for (const listing of listings) {
-    const localImages = await downloadMedia(listing.id, listing.images, token)
-    listing.images = localImages.length ? localImages : [NO_PHOTO]
+  for (const listing of selected) {
+    if (skipMedia) {
+      listing.images = [NO_PHOTO]
+    } else {
+      const urls = MAX_PHOTOS ? listing.images.slice(0, MAX_PHOTOS) : listing.images
+      const localImages = await downloadMedia(listing.id, urls, token)
+      listing.images = localImages.length ? localImages : [NO_PHOTO]
+    }
     listing.primaryImage = listing.images[0]
     listing.dataAsOf = dataAsOf
   }
+  if (skipMedia) console.log('  (MLSGRID_SKIP_MEDIA=true — photos not downloaded)')
 
   await fs.mkdir(path.dirname(SNAPSHOT_PATH), { recursive: true })
-  await fs.writeFile(SNAPSHOT_PATH, JSON.stringify(listings, null, 2) + '\n', 'utf8')
+  await fs.writeFile(SNAPSHOT_PATH, JSON.stringify(selected, null, 2) + '\n', 'utf8')
 
+  const byStatus = selected.reduce<Record<string, number>>((acc, l) => {
+    acc[l.status] = (acc[l.status] ?? 0) + 1
+    return acc
+  }, {})
   console.log(
-    `\nDone. ${listings.length} listings written to data/mlsgrid-demo.json ` +
-      `(${suppressed} suppressed, ${duplicates} duplicates dropped).`,
+    `\nDone. ${selected.length} listings written to data/mlsgrid-demo.json ` +
+      `(${suppressed} suppressed, ${duplicates} duplicates dropped, ` +
+      `${cappedListings} over the ${MAX_LISTINGS}-listing demo cap).`,
   )
+  console.log(`  by status: ${JSON.stringify(byStatus)}`)
+  if (cappedListings > 0) {
+    console.log(
+      `  NOTE: demo is a capped sample of the ~feed; raise MLSGRID_MAX_LISTINGS to include more.`,
+    )
+  }
+}
+
+/** Round-robin across status buckets so a capped demo still surfaces every
+ *  status type (for-sale, contingent, pending, sold). */
+function selectDiverse(listings: ListingDetail[], max: number): ListingDetail[] {
+  const buckets = new Map<string, ListingDetail[]>()
+  for (const l of listings) {
+    const arr = buckets.get(l.status) ?? []
+    arr.push(l)
+    buckets.set(l.status, arr)
+  }
+  const queues = [...buckets.values()]
+  const out: ListingDetail[] = []
+  let i = 0
+  while (out.length < max && queues.some((q) => q.length > 0)) {
+    const q = queues[i % queues.length]
+    const next = q.shift()
+    if (next) out.push(next)
+    i++
+  }
+  return out
 }
 
 main().catch((err) => {
