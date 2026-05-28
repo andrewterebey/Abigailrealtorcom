@@ -74,13 +74,18 @@ function HomeSearchInner() {
 
   const markers: MapMarker[] = useMemo(
     () =>
-      items.map((l) => ({
-        id: l.id,
-        lat: l.coordinates.lat,
-        lng: l.coordinates.lng,
-        label: formatPriceShort(l.price),
-        href: `/properties/${l.slug}`,
-      })),
+      items
+        // NWMLS: listings with showOnMap === false (NWM_ShowMapLink) or a
+        // withheld address must not be pinned, but still appear in the list
+        // ([GUID #12/#13]). undefined = allowed (placeholder data).
+        .filter((l) => l.showOnMap !== false)
+        .map((l) => ({
+          id: l.id,
+          lat: l.coordinates.lat,
+          lng: l.coordinates.lng,
+          label: formatPriceShort(l.price),
+          href: `/properties/${l.slug}`,
+        })),
     [items],
   )
 

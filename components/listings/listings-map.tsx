@@ -167,6 +167,9 @@ export function ListingsMap({
         >
           CARTO
         </a>
+        {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' && (
+          <> &middot; IDX data courtesy of NWMLS</>
+        )}
       </p>
     </div>
   )

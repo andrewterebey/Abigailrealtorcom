@@ -19,6 +19,7 @@
  */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+import sharp from 'sharp'
 import {
   mapResoToListing,
   duplicatePrimaryId,
@@ -59,7 +60,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 // Global rate gate — MLS Grid enforces ≤2 requests/second across ALL requests
 // (API + media). We space everything ≥550ms apart to stay safely under it.
 let lastRequestAt = 0
-async function gate(minMs = 550): Promise<void> {
+async function gate(minMs = 700): Promise<void> {
   const wait = Math.max(0, lastRequestAt + minMs - Date.now())
   if (wait) await sleep(wait)
   lastRequestAt = Date.now()
@@ -98,12 +99,6 @@ async function fetchJson(url: string, token: string): Promise<ODataPage> {
   throw new Error(`MLS Grid request failed after retries: ${url}`)
 }
 
-function extFromUrl(url: string): string {
-  const clean = url.split('?')[0]
-  const ext = path.extname(clean).toLowerCase()
-  return /^\.(jpe?g|png|webp|gif)$/.test(ext) ? ext : '.jpg'
-}
-
 /** Download one listing's photos into public/idx/<id>/ and return local paths.
  *  Media is immutable, so skip files that already exist ([Best Practices]). */
 async function downloadMedia(
@@ -116,8 +111,8 @@ async function downloadMedia(
   await fs.mkdir(dir, { recursive: true })
   const local: string[] = []
   for (let i = 0; i < urls.length; i++) {
-    const ext = extFromUrl(urls[i])
-    const file = `${String(i).padStart(2, '0')}${ext}`
+    // Re-encoded to jpeg on download, so the extension is always .jpg.
+    const file = `${String(i).padStart(2, '0')}.jpg`
     const abs = path.join(dir, file)
     const publicPath = `/idx/${id}/${file}`
     try {
@@ -127,18 +122,37 @@ async function downloadMedia(
     } catch {
       /* not present — download below */
     }
+    // Reuse-only mode: don't fetch missing media (e.g. during a media-host
+    // rate-limit cooldown). Listings without cached photos fall back to NO_PHOTO.
+    if (process.env.MLSGRID_NO_FETCH === 'true') continue
     const buf = await fetchMediaBuffer(urls[i], token)
     if (!buf) continue // already warned
-    await fs.writeFile(abs, buf)
+    await fs.writeFile(abs, await downscale(buf))
     local.push(publicPath)
   }
   return local
 }
 
+// Downscale to keep the deploy small. Proportional resize preserves the NWMLS
+// watermark (modifying/removing it is prohibited; scaling the whole image is
+// not) — see [GUID #1]. withoutEnlargement keeps small originals untouched.
+const PHOTO_MAX_WIDTH = 1400
+async function downscale(buf: Buffer): Promise<Buffer> {
+  try {
+    return await sharp(buf)
+      .rotate() // honor EXIF orientation
+      .resize({ width: PHOTO_MAX_WIDTH, withoutEnlargement: true })
+      .jpeg({ quality: 80, mozjpeg: true })
+      .toBuffer()
+  } catch {
+    return buf // if sharp can't process it, store the original
+  }
+}
+
 /** Fetch one media file, respecting the rate gate and backing off on 429.
  *  MLS Grid requires the OAuth token as the user-agent for media. */
 async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | null> {
-  for (let attempt = 1; attempt <= 4; attempt++) {
+  for (let attempt = 1; attempt <= 6; attempt++) {
     await gate()
     const res = await fetch(url, { headers: { 'User-Agent': token } })
     if (res.status === 429 || res.status >= 500) {

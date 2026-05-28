@@ -45,6 +45,10 @@ export function ListingDetail({ listing }: ListingDetailProps) {
     features,
     schoolDistrict,
     mlsNumber,
+    brokerageName,
+    coBrokerageName,
+    cdom,
+    dataAsOf,
   } = listing
 
   const gallery = images?.length ? images : [primaryImage]
@@ -101,6 +105,18 @@ export function ListingDetail({ listing }: ListingDetailProps) {
             <p className="mt-3 font-body text-[15px] uppercase tracking-[0.12em] text-site-text">
               {city}, {state} {zip}
             </p>
+
+            {/* NWMLS-required listing-brokerage + source attribution. Real feed
+                data only (brokerageName); placeholder data stays unbranded. */}
+            {brokerageName && (
+              <p className="mt-3 font-body text-[14px] leading-[1.6] text-site-text">
+                Listing courtesy of {brokerageName}
+                {status === 'sold' && coBrokerageName
+                  ? ` · Buyer brokerage: ${coBrokerageName}`
+                  : ''}
+                <span className="text-site-text-muted"> · Sourced via NWMLS</span>
+              </p>
+            )}
 
             <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 border-y border-black/10 py-6 md:grid-cols-4">
               <div>
@@ -178,6 +194,22 @@ export function ListingDetail({ listing }: ListingDetailProps) {
                   </dt>
                   <dd>{(listing.statusLabel ?? STATUS_LABELS[status])}</dd>
                 </div>
+                {typeof cdom === 'number' && (
+                  <div className="flex items-center justify-between">
+                    <dt className="uppercase tracking-[0.1em] text-site-text-muted">
+                      Days on Market
+                    </dt>
+                    <dd>{cdom}</dd>
+                  </div>
+                )}
+                {status === 'sold' && coBrokerageName && (
+                  <div className="flex items-center justify-between">
+                    <dt className="uppercase tracking-[0.1em] text-site-text-muted">
+                      Buyer Brokerage
+                    </dt>
+                    <dd className="text-right">{coBrokerageName}</dd>
+                  </div>
+                )}
                 {schoolDistrict && (
                   <div className="flex items-center justify-between">
                     <dt className="uppercase tracking-[0.1em] text-site-text-muted">
@@ -209,6 +241,24 @@ export function ListingDetail({ listing }: ListingDetailProps) {
             </div>
           </aside>
         </div>
+
+        {/* NWMLS/MLS Grid required listing-level disclaimer ([GRID §24]). Shown
+            for genuine feed data only (dataAsOf set by the sync). */}
+        {dataAsOf && (
+          <p className="mt-12 border-t border-black/10 pt-6 font-body text-[12px] leading-[1.6] text-site-text-muted">
+            Based on information submitted to the MLS GRID as of{' '}
+            {new Date(dataAsOf).toLocaleString('en-US', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+            })}
+            . All data is obtained from various sources and may not have been
+            verified by broker or MLS GRID. All information should be
+            independently reviewed and verified for accuracy. Properties may or
+            may not be listed by the office/agent presenting the information.
+            Listing data courtesy of the Northwest Multiple Listing Service
+            (NWMLS).
+          </p>
+        )}
       </Container>
     </article>
   )
