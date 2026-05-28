@@ -127,7 +127,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
                 <dt className="font-body text-[11px] font-bold uppercase tracking-[0.14em] text-site-text-muted">
                   Year
                 </dt>
-                <dd className="mt-1 text-[24px] leading-none">{yearBuilt}</dd>
+                <dd className="mt-1 text-[24px] leading-none">{yearBuilt ?? '—'}</dd>
               </div>
             </dl>
 

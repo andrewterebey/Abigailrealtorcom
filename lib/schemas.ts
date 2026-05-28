@@ -61,7 +61,7 @@ export const listingSummarySchema = z.object({
 export const listingDetailSchema = listingSummarySchema.extend({
   description: z.string().min(1),
   images: z.array(z.string().min(1)).min(1),
-  yearBuilt: z.number().int().min(1800).max(2100),
+  yearBuilt: z.number().int().min(1800).max(2100).optional(),
   propertyType: propertyTypeSchema,
   features: z.array(z.string().min(1)),
   schoolDistrict: z.string().min(1).optional(),

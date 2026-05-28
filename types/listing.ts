@@ -92,7 +92,8 @@ export interface ListingSummary {
 export interface ListingDetail extends ListingSummary {
   description: string
   images: string[]
-  yearBuilt: number
+  /** Optional — land and some new-construction listings have no year built. */
+  yearBuilt?: number
   propertyType: PropertyType
   features: string[]
   schoolDistrict?: string
