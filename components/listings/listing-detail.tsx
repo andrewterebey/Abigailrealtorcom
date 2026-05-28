@@ -1,16 +1,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import type { ListingDetail as ListingDetailType } from '@/types/listing'
+import {
+  STATUS_LABELS,
+  type ListingDetail as ListingDetailType,
+} from '@/types/listing'
 import { Container } from '@/components/site/container'
 
 type ListingDetailProps = {
   listing: ListingDetailType
-}
-
-const STATUS_LABEL: Record<ListingDetailType['status'], string> = {
-  'for-sale': 'For Sale',
-  pending: 'Pending',
-  sold: 'Sold',
 }
 
 const PROPERTY_TYPE_LABEL: Record<ListingDetailType['propertyType'], string> = {
@@ -69,7 +66,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
             priority
           />
           <span className="absolute left-6 top-6 bg-site-gold px-4 py-1.5 font-body text-[12px] font-bold uppercase tracking-[0.14em] text-white">
-            {STATUS_LABEL[status]}
+            {(listing.statusLabel ?? STATUS_LABELS[status])}
           </span>
         </div>
         {thumbs.length > 0 && (
@@ -179,7 +176,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
                   <dt className="uppercase tracking-[0.1em] text-site-text-muted">
                     Status
                   </dt>
-                  <dd>{STATUS_LABEL[status]}</dd>
+                  <dd>{(listing.statusLabel ?? STATUS_LABELS[status])}</dd>
                 </div>
                 {schoolDistrict && (
                   <div className="flex items-center justify-between">

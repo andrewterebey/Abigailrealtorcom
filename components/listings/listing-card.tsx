@@ -1,19 +1,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Heart } from 'lucide-react'
-import type { ListingSummary } from '@/types/listing'
+import { STATUS_LABELS, type ListingSummary } from '@/types/listing'
 import { cn } from '@/lib/utils'
 
 type ListingCardProps = {
   listing: ListingSummary
   priority?: boolean
   className?: string
-}
-
-const STATUS_LABEL: Record<ListingSummary['status'], string> = {
-  'for-sale': 'For Sale',
-  pending: 'Pending',
-  sold: 'Sold',
 }
 
 function formatPrice(n: number): string {
@@ -63,7 +57,7 @@ export function ListingCard({ listing, priority = false, className }: ListingCar
               status === 'sold' && 'bg-black',
             )}
           >
-            {STATUS_LABEL[status]}
+            {listing.statusLabel ?? STATUS_LABELS[status]}
           </span>
           {/* Decorative favorite — live's IDX has it functional behind a login gate;
               we render the affordance without wiring it (no auth in scope). */}

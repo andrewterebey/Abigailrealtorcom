@@ -1,6 +1,11 @@
 import { z } from 'zod'
 
-export const listingStatusSchema = z.enum(['for-sale', 'pending', 'sold'])
+export const listingStatusSchema = z.enum([
+  'for-sale',
+  'contingent',
+  'pending',
+  'sold',
+])
 
 export const propertyTypeSchema = z.enum([
   'single-family',
@@ -43,6 +48,14 @@ export const listingSummarySchema = z.object({
     lat: z.number(),
     lng: z.number(),
   }),
+  // NWMLS/MLS Grid compliance fields — optional because fabricated placeholder
+  // data omits them (and must not carry NWMLS branding). See types/listing.ts.
+  statusLabel: z.string().min(1).optional(),
+  brokerageName: z.string().min(1).optional(),
+  coBrokerageName: z.string().min(1).optional(),
+  cdom: z.number().int().nonnegative().optional(),
+  showOnMap: z.boolean().optional(),
+  dataAsOf: z.string().min(1).optional(),
 })
 
 export const listingDetailSchema = listingSummarySchema.extend({
