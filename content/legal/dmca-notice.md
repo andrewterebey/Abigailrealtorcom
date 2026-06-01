@@ -3,6 +3,14 @@ Source: https://abigailrealtor.com/dmca-notice
 Captured: 2026-04-21
 This text is LEGALLY REQUIRED and rendered VERBATIM per CLAUDE.md §9.12.
 Do not paraphrase, reformat, or "clean up" the body copy below.
+
+DEVIATION (client-directed): the DMCA-agent e-mail was changed from the
+captured personal address to the placeholder `dmca@abigailrealtor.com` — the
+captured one was incorrect and exposed a personal inbox. Set the real DMCA-agent
+e-mail before go-live (and per MLS Grid IDX Rule §30, forward received notices
+to DMCAnotice@MLSGrid.com within 24h). TODO: confirm whether the "By mail" name
++ home address below should also be replaced with the John L. Scott business
+address before launch.
 -->
 ---
 title: "DMCA Notice | Abigail Anderson | Bellevue, WA Real Estate"
@@ -50,7 +58,7 @@ By mail:
 By e-mail:
 
 **Abigail Giliana Aviva Anderson**
-gilibriz@gmail.com
+dmca@abigailrealtor.com
 
 If you give notice of copyright infringement by e-mail, an agent may begin investigating the alleged copyright infringement; however, we must receive your signed statement by mail or as an attachment to your e-mail before we are required to take any action.
 
