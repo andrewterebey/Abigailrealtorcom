@@ -118,6 +118,13 @@ function HomeSearchInner() {
                 {loading ? 'Loading…' : `${total.toLocaleString()} results`}
               </p>
             </div>
+            {/* NWMLS exclusion disclosure ([GRID §9]) — required because this
+                view shows a curated subset of the feed. */}
+            {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' && (
+              <p className="mb-5 font-body text-[12px] leading-[1.5] text-site-text-muted">
+                Some IDX listings have been excluded from this website.
+              </p>
+            )}
             {error ? (
               <p className="py-16 text-center font-body text-[14px] uppercase tracking-[0.14em] text-red-600">
                 {error}

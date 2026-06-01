@@ -164,6 +164,15 @@ Env vars:
 | `RESEND_API_KEY`             | Prod contact-form email. Unset in dev = console log only. |
 | `NEXT_PUBLIC_SITE_URL`       | Base URL for `sitemap.xml` / canonicals. Falls back to `https://abigailrealtor.com`. |
 | `NEXT_PUBLIC_SHOW_SOCIALS`   | Set to `true` to show the footer social-icon row. Hidden by default until real URLs land. |
+| `MLSGRID_TOKEN`              | MLS Grid OAuth2 token (server-only secret). **Set → site serves the synced NWMLS feed via `MLSGridProvider`; unset → `PlaceholderProvider` with NWMLS branding off.** Use the DEMO token for staging. |
+| `MLSGRID_API_BASE`           | MLS Grid API base. **Demo data lives at `https://api-demo.mlsgrid.com/v2`**; production is `https://api.mlsgrid.com/v2` (the default). |
+| `MLSGRID_ORIGINATING_SYSTEM` | NWMLS `OriginatingSystemName` filter — `nwmls` (default). |
+| `NEXT_PUBLIC_IDX_NWMLS`      | `true` to show NWMLS attribution/disclaimers in the UI. Set on the IDX (demo/prod) site. |
+| `NEXT_PUBLIC_NOINDEX`        | `true` on staging/review deploys → `robots.txt` blocks indexing. |
+
+Sync env (optional; defaults in `scripts/sync-idx.ts`): `MLSGRID_MAX_LISTINGS` (75), `MLSGRID_MAX_PHOTOS` (6), `MLSGRID_SKIP_MEDIA`/`MLSGRID_NO_FETCH` (data-only / reuse-only runs). Copy `.env.example` → `.env.local` (gitignored) for local secrets.
+
+**IDX data layer:** `npm run sync:idx` pulls the MLS Grid feed → `data/mlsgrid-demo.json` + `public/idx/` (both gitignored, regenerated at build). MLS Grid is a *replication* API, not query-through (≤2 req/s, refresh ≥12h); the sync downscales photos via `sharp` and enforces NWMLS display-suppression. See `content/legal/nwmls-idx-vendor-requirements.md`.
 
 Always confirm `npm run dev` is running on port 3000 before taking local screenshots.
 
