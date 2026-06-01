@@ -4,13 +4,14 @@ Captured: 2026-04-21
 This text is LEGALLY REQUIRED and rendered VERBATIM per CLAUDE.md §9.12.
 Do not paraphrase, reformat, or "clean up" the body copy below.
 
-DEVIATION (client-directed): the DMCA-agent e-mail was changed from the
-captured personal address to the placeholder `dmca@abigailrealtor.com` — the
-captured one was incorrect and exposed a personal inbox. Set the real DMCA-agent
-e-mail before go-live (and per MLS Grid IDX Rule §30, forward received notices
-to DMCAnotice@MLSGrid.com within 24h). TODO: confirm whether the "By mail" name
-+ home address below should also be replaced with the John L. Scott business
-address before launch.
+DEVIATION (client-directed): the captured DMCA agent contact exposed personal
+info, so it was replaced —
+  • e-mail: personal Gmail → placeholder `dmca@abigailrealtor.com`
+  • name: full legal name → "Abigail Anderson"
+  • "By mail" address: personal home address → John L. Scott business address
+    (11040 Main St Suite 200, Bellevue, WA 98004)
+Set the REAL DMCA-agent e-mail before go-live (and per MLS Grid IDX Rule §30,
+forward received notices to DMCAnotice@MLSGrid.com within 24h).
 -->
 ---
 title: "DMCA Notice | Abigail Anderson | Bellevue, WA Real Estate"
@@ -52,12 +53,13 @@ Notices of the foregoing copyright issues should be sent as follows:
 
 By mail:
 
-**Abigail Giliana Aviva Anderson**
-12400 SE 38th St suite 50753 Bellevue,  WA  98006
+**Abigail Anderson**
+11040 Main St Suite 200
+Bellevue, WA 98004
 
 By e-mail:
 
-**Abigail Giliana Aviva Anderson**
+**Abigail Anderson**
 dmca@abigailrealtor.com
 
 If you give notice of copyright infringement by e-mail, an agent may begin investigating the alleged copyright infringement; however, we must receive your signed statement by mail or as an attachment to your e-mail before we are required to take any action.
