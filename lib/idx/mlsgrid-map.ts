@@ -218,10 +218,36 @@ export function duplicatePrimaryId(raw: ResoRecord): string | undefined {
   return deprefix(str(raw.NWM_PrimaryListingId))
 }
 
+// ── display eligibility ───────────────────────────────────────────────────────
+/**
+ * Whether a record may be shown on an IDX site, per its MlgCanUse tags. MLS Grid
+ * tags each record with the Use Cases it qualifies for (IDX / VOW / BO / PT); a
+ * record NOT marked IDX (e.g. VOW-only or BO-only) must never appear on an IDX
+ * site even when MlgCanView is true
+ * (docs: api-documentation/api-version-2.0#mlgcanuse-field).
+ *
+ * MlgCanUse is `Collection(Edm.String)`. We fail-closed when the tag is present
+ * but omits IDX. When the field is entirely absent/empty we allow the record —
+ * some MLS Grid sample payloads omit it. ⚠️ Verify against a real demo snapshot
+ * (`npm run sync:idx` → inspect data/mlsgrid-demo.json); if the NWMLS demo feed
+ * populates MlgCanUse, tighten the absent case below to fail-closed too.
+ */
+function canDisplayForIdx(raw: ResoRecord): boolean {
+  const v = raw.MlgCanUse
+  if (!Array.isArray(v) || v.length === 0) return true // absent/empty — see note
+  return v.some((u) => typeof u === 'string' && u.trim().toUpperCase() === 'IDX')
+}
+
 // ── main mapper ───────────────────────────────────────────────────────────────
 export function mapResoToListing(raw: ResoRecord): ListingDetail | null {
   // Hard exclusions first.
   if (bool(raw.MlgCanView) === false) return null
+  // Use-case gate: VOW-only / BO-only / PT records must never appear on the IDX
+  // site, even with MlgCanView true (docs: api-version-2.0#mlgcanuse-field).
+  if (!canDisplayForIdx(raw)) return null
+  // Seller opt-out of ALL internet display → suppress the listing entirely. (The
+  // narrower address-only opt-out, InternetAddressDisplayYN, is handled below.)
+  if (bool(raw.InternetEntireListingDisplayYN) === false) return null
   const statusInfo = mapStatus(raw)
   if (!statusInfo) return null
 

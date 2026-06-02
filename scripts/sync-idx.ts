@@ -198,9 +198,21 @@ async function main() {
     "StandardStatus eq 'Pending'",
     "StandardStatus eq 'Closed'",
   ]
-  const perStatus = MAX_LISTINGS
+  // MLS Grid caps $expand requests at 1000 records/request — a larger $top
+  // errors out. We also read only the first page per status here (no
+  // @odata.nextLink follow), which is fine for a capped demo; the production
+  // path is a DB-backed sync that pages via nextLink (see CLAUDE.md §7.7).
+  const EXPAND_TOP_CAP = 1000
+  const requestedPerStatus = MAX_LISTINGS
     ? Math.ceil(MAX_LISTINGS / STATUS_QUERIES.length)
-    : 1000
+    : EXPAND_TOP_CAP
+  const perStatus = Math.min(requestedPerStatus, EXPAND_TOP_CAP)
+  if (requestedPerStatus > EXPAND_TOP_CAP) {
+    console.warn(
+      `  ⚠ requested ~${requestedPerStatus}/status exceeds the ${EXPAND_TOP_CAP}-record ` +
+        `$expand cap; capping at ${EXPAND_TOP_CAP}. For larger pulls add @odata.nextLink paging.`,
+    )
+  }
 
   console.log(
     `Syncing MLS Grid feed (OriginatingSystemName='${originatingSystem}', ` +

@@ -103,11 +103,22 @@ Prefix list: https://docs.mlsgrid.com/api-documentation/api-version-2.0/#prefixe
   `ModificationTimestamp` received so far.
 - Deletes: `MlgCanView eq true` = distributable; flips to `false` = marked for
   deletion, remove from your DB.
+- Display eligibility — enforced at the data boundary in `lib/idx/mlsgrid-map.ts`
+  (`mapResoToListing`):
+  - `MlgCanUse` — only records whose array contains `IDX` may be shown on this
+    IDX site. VOW-only / BO-only / PT records must be suppressed even when
+    `MlgCanView` is true (docs `#mlgcanuse-field`). We fail-closed when the tag
+    is present but omits `IDX`; absent/empty is allowed pending demo-payload
+    verification (see the code note).
+  - `InternetEntireListingDisplayYN eq false` → seller opted the whole listing
+    out of internet display: suppress entirely. (`InternetAddressDisplayYN eq
+    false` → suppress the address text and never plot it on a map.)
 - Media: store locally. **Never hot-link MLS Grid Media URLs**, and never
   re-download (media is immutable; a change yields a new URL).
 - Field naming: MLS-mapped fields use RESO Data Dictionary `StandardName`;
   native fields carry an MLS Local Fields prefix.
-- Pagination: OData — `$top=5000` (5000-record cap/query), `$skip`, `$count=true`.
+- Pagination: OData — `$top` ≤ 5000/query, **but ≤ 1000 when `$expand` is used**
+  (a larger `$top` errors); `$skip`, `$count=true`, follow `@odata.nextLink`.
 - Searchable replication fields: `ModificationTimestamp`, `OriginatingSystemName`,
   `StandardStatus`, `ListingId`, `MlgCanView`.
 
