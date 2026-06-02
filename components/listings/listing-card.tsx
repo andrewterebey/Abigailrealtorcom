@@ -99,7 +99,10 @@ export function ListingCard({ listing, priority = false, className }: ListingCar
           <p className="mt-3 font-body text-[12px] leading-[1.5] text-site-text">
             Listing courtesy of {brokerageName}
             {status === 'sold' && coBrokerageName ? ` · Buyer: ${coBrokerageName}` : ''}
-            <span className="text-site-text-muted"> · Sourced via NWMLS</span>
+            <span className="text-site-text-muted">
+              {' '}
+              · Northwest Multiple Listing Service, as distributed by MLS GRID
+            </span>
           </p>
         )}
       </div>

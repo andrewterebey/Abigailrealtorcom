@@ -114,7 +114,10 @@ export function ListingDetail({ listing }: ListingDetailProps) {
                 {status === 'sold' && coBrokerageName
                   ? ` · Buyer brokerage: ${coBrokerageName}`
                   : ''}
-                <span className="text-site-text-muted"> · Sourced via NWMLS</span>
+                <span className="text-site-text-muted">
+                  {' '}
+                  · Northwest Multiple Listing Service, as distributed by MLS GRID
+                </span>
               </p>
             )}
 
@@ -255,8 +258,8 @@ export function ListingDetail({ listing }: ListingDetailProps) {
             verified by broker or MLS GRID. All information should be
             independently reviewed and verified for accuracy. Properties may or
             may not be listed by the office/agent presenting the information.
-            Listing data courtesy of the Northwest Multiple Listing Service
-            (NWMLS).
+            Listing data courtesy of the Northwest Multiple Listing Service, as
+            distributed by MLS GRID.
           </p>
         )}
       </Container>

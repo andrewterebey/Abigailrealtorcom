@@ -4,6 +4,7 @@ import { Mail, MapPin, Phone } from 'lucide-react'
 import { Container } from './container'
 import { FooterMlsGridDisclaimer } from './footer-mls-grid'
 import { buildDisclaimerParagraphs } from '@/lib/legal'
+import { getSnapshotDataAsOf } from '@/lib/idx/mlsgrid-provider'
 
 const CONTACT = {
   name: 'Abigail Anderson',
@@ -20,8 +21,15 @@ const SOCIALS = [
   { label: 'TikTok', href: '#', Icon: TikTokIcon },
 ] as const
 
-export function SiteFooter() {
-  const disclaimer = buildDisclaimerParagraphs()
+export async function SiteFooter() {
+  // MLS Grid IDX Rule §24 requires the "as of …" timestamp to be the date/time
+  // the data was OBTAINED. In branded (real-feed) mode use the snapshot's
+  // dataAsOf stamp; otherwise (placeholder/home-only) fall back to render time.
+  const branded = process.env.NEXT_PUBLIC_IDX_NWMLS === 'true'
+  const dataAsOf = branded ? await getSnapshotDataAsOf() : undefined
+  const disclaimer = buildDisclaimerParagraphs(
+    dataAsOf ? new Date(dataAsOf) : new Date(),
+  )
   const currentYear = new Date().getUTCFullYear()
 
   return (
@@ -135,7 +143,7 @@ export function SiteFooter() {
         </div>
       </Container>
 
-      <FooterMlsGridDisclaimer />
+      <FooterMlsGridDisclaimer disclaimer={disclaimer} />
     </footer>
   )
 }

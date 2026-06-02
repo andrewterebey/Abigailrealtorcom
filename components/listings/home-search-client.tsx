@@ -118,6 +118,16 @@ function HomeSearchInner() {
                 {loading ? 'Loading…' : `${total.toLocaleString()} results`}
               </p>
             </div>
+            {/* NWMLS/MLS Grid source identification ([GRID §23]) — must appear
+                on the first page where listings are displayed. NOTE: §23 also
+                requires the MLS GRID approved logo/icon here; that asset is
+                still pending (see TODO.md) — text alone is not sufficient. */}
+            {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' && (
+              <p className="mb-2 font-body text-[12px] leading-[1.5] text-site-text-muted">
+                Listings courtesy of the Northwest Multiple Listing Service, as
+                distributed by MLS GRID.
+              </p>
+            )}
             {/* NWMLS exclusion disclosure ([GRID §9]) — required because this
                 view shows a curated subset of the feed. */}
             {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' && (

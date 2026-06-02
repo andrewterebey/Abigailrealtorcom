@@ -12,6 +12,12 @@ info, so it was replaced —
     (11040 Main St Suite 200, Bellevue, WA 98004)
 Set the REAL DMCA-agent e-mail before go-live (and per MLS Grid IDX Rule §30,
 forward received notices to DMCAnotice@MLSGrid.com within 24h).
+
+ADDED (MLS Grid IDX Rule §30): the two mandated copyright-notification
+paragraphs below ("Copyright Infringement Notification (MLS Grid / NWMLS)") are
+the exact language Rule §30 requires every IDX site to display conspicuously.
+These were NOT on the Luxury Presence original; they are required for NWMLS/MLS
+Grid IDX approval. Keep them verbatim.
 -->
 ---
 title: "DMCA Notice | Abigail Anderson | Bellevue, WA Real Estate"
@@ -32,6 +38,12 @@ Buttons: `Let's Connect`
 Digital Millennium Copyright Act Notice
 
 Claims of Copyright Infringement & Related Issues (17 USC § 512 et seq.)
+
+### Copyright Infringement Notification (MLS Grid / NWMLS)
+
+The Digital Millennium Copyright Act of 1998, 17 U.S.C. § 512 (the "DMCA") provides recourse for copyright owners who believe that material appearing on the Internet infringes their rights under U.S. copyright law. If you believe in good faith that any content or material made available in connection with our website or services infringes your copyright, you (or your agent) may send us a notice requesting that the content or material be removed, or access to it blocked. Notices must be sent in writing by email to: [dmca@abigailrealtor.com](mailto:dmca@abigailrealtor.com).
+
+The DMCA requires that your notice of alleged copyright infringement include the following information: (1) description of the copyrighted work that is the subject of claimed infringement; (2) description of the alleged infringing content and information sufficient to permit us to locate the content; (3) contact information for you, including your address, telephone number and email address; (4) a statement by you that you have a good faith belief that the content in the manner complained of is not authorized by the copyright owner, or its agent, or by the operation of any law; (5) a statement by you, signed under penalty of perjury, that the information in the notification is accurate and that you have the authority to enforce the copyrights that are claimed to be infringed; and (6) a physical or electronic signature of the copyright owner or a person authorized to act on the copyright owner's behalf. Failure to include all of the above information may result in the delay of the processing of your complaint.
 
 We respect the intellectual property rights of others. Anyone who believes their work has been reproduced in a way that constitutes copyright infringement may notify our agent by providing the following information:
 

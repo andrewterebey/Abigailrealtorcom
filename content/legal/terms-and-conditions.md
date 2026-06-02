@@ -3,6 +3,16 @@ Source: https://abigailrealtor.com/terms-and-conditions
 Captured: 2026-04-21
 This text is LEGALLY REQUIRED and rendered VERBATIM per CLAUDE.md §9.12.
 Do not paraphrase, reformat, or "clean up" the body copy below.
+
+DEVIATION (vendor migration): the captured policy named Luxury Presence Inc.
+(the old platform vendor) as the Service Provider and routed all privacy / CCPA /
+data-subject requests to support@luxurypresence.com and Luxury Presence's Austin,
+TX legal address. Because the site is moving OFF Luxury Presence, those contacts
+are no longer correct. Section 11(III), Section 12, and Section 14(iv) were
+repointed to Abigail Anderson's John L. Scott business contact (matching the
+dmca-notice.md deviation). ⚠️ Abigail must confirm the real privacy / data-rights
+contact (and whether a dedicated privacy@ alias or named processor is preferred)
+before go-live.
 -->
 ---
 title: "Privacy Policy | Abigail Anderson | Bellevue, WA Real Estate"
@@ -121,7 +131,7 @@ Abigail Anderson uses SMS Text Messaging to confirm appointments, send reminders
 **(ii) Unsubscribing from SMS Text Messaging**
 You can cancel the SMS service at any time. Just text "**STOP**". After you send the SMS message "**STOP**" to us, we will send you an SMS message to confirm that you have been unsubscribed. After this, you will no longer receive SMS messages from us. If you want to join again, just sign up as you did the first time, and we will start sending SMS messages to you again.
 **(III) Assistance**
-If you are experiencing issues with the messaging program, you can reply with the keyword "**HELP**" for more assistance, or you can get help directly at [support@luxurypresence.com](mailto:support@luxurypresence.com)
+If you are experiencing issues with the messaging program, you can reply with the keyword "**HELP**" for more assistance, or you can get help directly at [abigaila@johnlscott.com](mailto:abigaila@johnlscott.com)
 **(IV) Carrier Liability**
 Carriers are not liable for delayed or undelivered messages.
 **(V) Frequency and Data Rates**
@@ -129,14 +139,12 @@ Message and data rates may apply for any messages sent to you from us and to us 
 **(VI) Other Privacy Questions**
 If you have any questions regarding privacy, please read this Privacy Policy and Terms of Use.
 12. **How to Contact Us**
-You may contact us through our Service Provider.
+You may contact us using the information below.
 Abigail Anderson
-C/O Luxury Presence Inc.
-ATTN: Legal Department
-3135 3232 E Cesar Chavez Street
-Suite 1-300
-Austin, TX 78702
-Or via [support@luxurypresence.com](mailto:support@luxurypresence.com)
+John L. Scott Real Estate
+11040 Main St Suite 200
+Bellevue, WA 98004
+Or via [abigaila@johnlscott.com](mailto:abigaila@johnlscott.com)
 13. **Changes to this Privacy Policy and Terms of Use**
 We reserve the right to modify this Privacy Policy and Terms of Use at any time. If we make material changes to this Privacy Policy and Terms of Use, we will notify you by updating the date of this Privacy Policy and Terms of Use and posting it on this website.
 14. **Notice of Collection and Additional Rights for California Residents**
@@ -151,7 +159,7 @@ You have the right to request that we delete any Personal Data about you that we
 ***(iii) Authorized Agents***
 You may designate an authorized agent to make requests on your behalf. You must provide an authorized agent written permission to submit a request on your behalf, and we may require that you verify your identity directly with us. Alternatively, an authorized agent that has been provided power of attorney pursuant to Probate Code sections 4000-4465 may submit a request on your behalf.
 ***(iv) Methods for Submitting Consumer Requests and Our Response to Requests***
-You may submit a request to know and requests to delete Personal Data about you via email at [support@luxurypresence.com](mailto:support@luxurypresence.com) or at the mailing address provided in Section 12.
+You may submit a request to know and requests to delete Personal Data about you via email at [abigaila@johnlscott.com](mailto:abigaila@johnlscott.com) or at the mailing address provided in Section 12.
 Upon receipt of a request, we may ask you for additional information to verify your identity. Any additional information you provide will be used only to verify your identity and not for any other purpose. We will acknowledge the receipt of your request within ten (10) business days of receipt. Subject to our ability to verify your identity, we will respond to your request within 45 calendar days of receipt. If we require more time (up to 90 days), we will inform you of the reason and extension period in writing.
 Any disclosures we provide will only cover the 12-month period preceding the verifiable consumer request's receipt. The response we provide will also explain the reasons we cannot comply with a request, if applicable. We do not charge a fee to process or respond to your verifiable consumer request unless it is excessive, repetitive, or manifestly unfounded. If we determine that the request warrants a fee, we will tell you why we made that decision and provide you with a cost estimate before completing your request.
 ***(v) The Right to Non-Discrimination***

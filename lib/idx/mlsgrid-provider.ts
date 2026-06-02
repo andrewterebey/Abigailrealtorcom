@@ -40,6 +40,17 @@ async function loadAll(): Promise<ListingDetail[]> {
   return cache
 }
 
+/**
+ * The "data obtained as of" timestamp the sync (scripts/sync-idx.ts) stamps on
+ * every snapshot record. Drives the MLS Grid IDX Rule §24 disclaimer — which
+ * must reflect the date/time the MLS GRID Data was *obtained*, not page-render
+ * time. Returns undefined when no snapshot exists (placeholder mode / unsynced).
+ */
+export async function getSnapshotDataAsOf(): Promise<string | undefined> {
+  const all = await loadAll()
+  return all[0]?.dataAsOf
+}
+
 function matches(listing: ListingDetail, f: ListingFilter): boolean {
   if (f.city && listing.city.toLowerCase() !== f.city.toLowerCase()) return false
   if (f.minPrice !== undefined && listing.price < f.minPrice) return false
