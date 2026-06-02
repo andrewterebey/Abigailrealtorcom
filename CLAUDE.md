@@ -92,7 +92,8 @@ deep relative paths.
 │  ├─ forms/                    ← inquiry-form
 │  └─ ui/                       ← shadcn primitives
 ├─ lib/
-│  ├─ idx/                      ← provider.ts, placeholder-provider.ts, index.ts
+│  ├─ idx/                      ← provider.ts (contract), index.ts (env-selected active provider),
+│  │                              placeholder-provider.ts, mlsgrid-provider.ts, mlsgrid-map.ts
 │  ├─ schemas.ts                ← Zod schemas for API boundary validation
 │  ├─ structured-data.ts        ← JSON-LD builders (RealEstateAgent, LocalBusiness, Residence)
 │  ├─ rate-limit.ts             ← in-memory token-bucket for /api/contact
@@ -126,9 +127,11 @@ deep relative paths.
 │  ├─ diff-dom.ts               ← DOM-structure diff between live and local
 │  ├─ download-assets.ts        ← pull images/video from live site into /public
 │  ├─ extract-content.ts        ← scrape verbatim copy from live into /content
-│  └─ generate-listing-placeholders.ts ← regenerate /public/listings SVG stand-ins
+│  ├─ generate-listing-placeholders.ts ← regenerate /public/listings SVG stand-ins
+│  └─ sync-idx.ts               ← replicate MLS Grid feed → data/mlsgrid-demo.json + public/idx (npm run sync:idx)
 └─ .claude/
-   └─ settings.json             ← MCP server config (see §5)
+   └─ settings.local.json       ← local Claude Code settings. The Playwright MCP is
+                                   registered separately via `claude mcp add` (project scope; see §5.1)
 ```
 
 ---
@@ -279,7 +282,7 @@ If a value looks wrong, **re-measure via Playwright against the live site** befo
 
 ## 7. IDX / MLS — Fake API Layer
 
-The live site is fed by **NWMLS via IDX**. We're building a fake API layer that matches the *shape* of a real IDX integration. Frontend code calls our own `/api/listings` endpoints — it never reads `/data/listings.json` directly. Swapping to a real IDX provider later (NWMLS direct, Realtyna, iHomefinder, Showcase IDX) is a **one-line change** in `/lib/idx/index.ts`, not a UI refactor.
+The live site is fed by **NWMLS via IDX**. Our `/lib/idx` layer puts every data source behind one `IDXProvider` contract, so the frontend calls our own `/api/listings` endpoints and never reads `/data/listings.json` directly. Two providers exist behind that contract — a fabricated `PlaceholderProvider` and the real `MLSGridProvider` (NWMLS) — and `/lib/idx/index.ts` picks one by env (`MLSGRID_TOKEN`; see §7.1, §7.7). Selecting a source is a **config flip, not a UI refactor**.
 
 ### 7.1 Architecture
 
@@ -289,13 +292,19 @@ UI components
 /app/api/listings/route.ts           ← Next.js route handlers:
 /app/api/listings/[id]/route.ts        validate query → call provider → validate response
     ↓ import { provider } from '@/lib/idx'
-/lib/idx/index.ts                    ← exports the ACTIVE provider (one line swap)
+/lib/idx/index.ts                    ← exports the ACTIVE provider, selected by env (see below)
     ↓
-/lib/idx/placeholder-provider.ts     ← current impl: reads /data/listings.json
-
-   future swap:
-/lib/idx/nwmls-provider.ts           ← or realtyna, ihomefinder, etc.
+   MLSGRID_TOKEN unset:
+/lib/idx/placeholder-provider.ts     ← fabricated sample data; reads /data/listings.json; NWMLS branding OFF
+   MLSGRID_TOKEN set:
+/lib/idx/mlsgrid-provider.ts         ← genuine licensed NWMLS data; reads the data/mlsgrid-demo.json
+                                       snapshot built by `npm run sync:idx` (scripts/sync-idx.ts)
 ```
+
+Both implement the same `IDXProvider` contract; `index.ts` picks one at module
+load based on `MLSGRID_TOKEN`. This env switch is a deliberate legal guardrail:
+fabricated data can never be served while a licensed feed is configured. NWMLS
+attribution in the UI is gated *separately* by `NEXT_PUBLIC_IDX_NWMLS` (see §4).
 
 ### 7.2 The `IDXProvider` interface (`/lib/idx/provider.ts`)
 
@@ -413,41 +422,37 @@ new provider implementation must pass these tests before being swapped in.
 No test runner is installed today — running `npm run test:idx` will fail.
 Writing the suite is tracked in `TODO.md` under "Tech debt / follow-ups".
 
-### 7.7 Swapping to a real provider (future)
+### 7.7 The real provider — MLS Grid (NWMLS)
 
-The active provider — NWMLS via **MLS Grid** — is in vendor-approval. Binding
-requirements (compliance, API v2 rules, rate limits, prefixed-keyfield handling)
-and the source PDFs live in **`content/legal/nwmls-idx-vendor-requirements.md`**
-and **`content/legal/nwmls/`**. Read that before implementing — the points below
-are the short version.
+The real provider — NWMLS via **MLS Grid** — **is implemented**, not future
+work. Binding requirements (compliance, API v2 rules, rate limits,
+prefixed-keyfield handling) and the source PDFs live in
+**`content/legal/nwmls-idx-vendor-requirements.md`** and
+**`content/legal/nwmls/`**. Read that before changing anything in the IDX layer.
 
-The swap at the **UI/API boundary** is one line:
+**What exists today:**
 
-1. Implement `IDXProvider` in `/lib/idx/nwmls-provider.ts`.
-2. Change one line in `/lib/idx/index.ts`:
-   ```ts
-   // export const provider: IDXProvider = new PlaceholderProvider()
-   export const provider: IDXProvider = new NWMLSProvider(/* ... */)
-   ```
-3. Run `npm run test:idx` to verify the contract.
-4. Deploy.
+- `lib/idx/mlsgrid-provider.ts` implements `IDXProvider`. It does **not**
+  fetch-per-request — MLS Grid is a **replication API, not a query-through
+  proxy**. It reads a committed-at-build snapshot (`data/mlsgrid-demo.json`) and
+  just filters + paginates, the same role `PlaceholderProvider` plays.
+- `scripts/sync-idx.ts` (`npm run sync:idx`) is the replication step: it pulls
+  the feed, honors the `MlgCanView` delete flag, strips prefixed keyfields,
+  enforces NWMLS display-suppression, downscales photos via `sharp`, and writes
+  media locally to `public/idx/` (never hot-link MLS Grid media URLs).
+  `lib/idx/mlsgrid-map.ts` maps the raw MLS Grid records onto our types.
+- `lib/idx/index.ts` selects the provider by `MLSGRID_TOKEN` (§7.1) — there is
+  no manual one-line code edit to make; flipping the env var is the swap.
 
-**But the provider itself is not a drop-in.** MLS Grid is a **replication API,
-not a query-through proxy** — you don't fetch-per-request the way
-`PlaceholderProvider` reads JSON. A faithful `NWMLSProvider` implies new
-infrastructure that does NOT exist yet:
+**What's still future (do NOT promise a timeline without scoping):**
 
-- A **sync job** (cron / scheduled function) replicating MLS Grid → a local
-  datastore every ~15 min, honoring the `MlgCanView` delete flag, stripping
-  prefixed keyfields before display, and copying media locally (never hot-link
-  MLS Grid media URLs).
-- `NWMLSProvider.list()/get()` then query that local store, satisfying the
-  existing `IDXProvider` contract unchanged.
-
-So "one-line swap" is true only for the boundary in §7.5/§7.7 — scope the
-datastore + sync worker + local media hosting before promising a timeline.
-NWMLS also requires a **demo-data staging site** for review before production
-approval is granted.
+- The sync runs **on demand / at build**, not on a schedule. County-scale IDX
+  search needs a **real datastore + scheduled cron** (replicate every ~15 min)
+  in place of the static snapshot + file read. The `IDXProvider` surface stays
+  identical when that lands — swap the file read in `mlsgrid-provider.ts` for a
+  DB query, nothing in the UI/API changes.
+- NWMLS requires a **demo-data staging site** for review before production
+  approval is granted (use the DEMO token + `api-demo.mlsgrid.com`; see §4).
 
 ### 7.8 Placeholder data
 
