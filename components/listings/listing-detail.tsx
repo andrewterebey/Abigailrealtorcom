@@ -114,7 +114,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
                 {status === 'sold' && coBrokerageName
                   ? ` · Buyer brokerage: ${coBrokerageName}`
                   : ''}
-                <span className="text-site-text-muted">
+                <span>
                   {' '}
                   · Northwest Multiple Listing Service, as distributed by MLS GRID
                 </span>
@@ -241,6 +241,20 @@ export function ListingDetail({ listing }: ListingDetailProps) {
               >
                 Back to Listings
               </Link>
+
+              {/* MLS Grid IDX Rule §22: the email or phone provided by the
+                  Member Participant must appear adjacent to the listing
+                  (alongside brokerage name, listing #, and status). */}
+              <p className="mt-5 text-center font-body text-[14px] leading-[1.6] text-site-text">
+                Listing presented by Abigail Anderson
+                <br />
+                <a
+                  href="tel:+14252362853"
+                  className="font-semibold underline underline-offset-4 hover:text-site-gold"
+                >
+                  (425) 236-2853
+                </a>
+              </p>
             </div>
           </aside>
         </div>
