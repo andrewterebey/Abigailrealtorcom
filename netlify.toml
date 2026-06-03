@@ -1,0 +1,19 @@
+# Netlify build configuration.
+#
+# The Next.js runtime is auto-detected by Netlify — no plugin or publish
+# directory needs to be set here. We override ONLY the build command, because
+# the IDX data the site serves is gitignored and must be regenerated on the
+# build host:
+#   - data/mlsgrid-demo.json  (the listing snapshot MLSGridProvider reads)
+#   - public/idx/<id>/*.jpg   (listing photos downloaded from the MLS Grid feed)
+#
+# `sync:idx` is gated on MLSGRID_TOKEN so a no-token deploy still builds (it then
+# serves the fabricated placeholder data with NWMLS branding OFF). When the
+# token IS set, the sync pulls the licensed NWMLS feed before `next build`.
+#
+# NOTE: a netlify.toml build command OVERRIDES any command set in the Netlify
+# dashboard. Set the secrets/flags (MLSGRID_TOKEN, MLSGRID_API_BASE,
+# MLSGRID_ORIGINATING_SYSTEM, NEXT_PUBLIC_IDX_NWMLS, NEXT_PUBLIC_NOINDEX) under
+# Site settings → Environment, not here.
+[build]
+  command = "if [ -n \"$MLSGRID_TOKEN\" ]; then npm run sync:idx; fi && npm run build"
