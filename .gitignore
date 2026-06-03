@@ -53,6 +53,11 @@ next-env.d.ts
 # root is a stray. (See CLAUDE.md §5.6.)
 /*.png
 
+# Ad-hoc working/scratch files dropped in the repo root (e.g. draft emails,
+# notes) — not site assets and not needed for publishing. Same rationale as the
+# stray-PNG rule above. Real docs (README, CLAUDE, TODO, CHANGELOG) are *.md.
+/*.txt
+
 # Playwright MCP scratch artifacts
 .playwright-mcp/
 
