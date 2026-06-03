@@ -106,19 +106,27 @@ export function ListingDetail({ listing }: ListingDetailProps) {
               {city}, {state} {zip}
             </p>
 
-            {/* NWMLS-required listing-brokerage + source attribution. Real feed
-                data only (brokerageName); placeholder data stays unbranded. */}
-            {brokerageName && (
-              <p className="mt-3 font-body text-[14px] leading-[1.6] text-site-text">
-                Listing courtesy of {brokerageName}
-                {status === 'sold' && coBrokerageName
-                  ? ` · Buyer brokerage: ${coBrokerageName}`
-                  : ''}
-                <span>
-                  {' '}
-                  · Northwest Multiple Listing Service, as distributed by MLS GRID
-                </span>
-              </p>
+            {/* NWMLS attribution, immediately adjacent to the property info on
+                the detail page. NWMLS confirmed (2026-06, idx@nwmls.com) that
+                the text attribution suffices in lieu of the three-tree icon AND
+                that it must sit immediately adjacent to the property info here.
+                Line 2 is the exact NWMLS-approved string. Gated on dataAsOf =
+                genuine feed data, so placeholder data stays unbranded. */}
+            {dataAsOf && (
+              <div className="mt-3 font-body text-[14px] leading-[1.6] text-site-text">
+                {brokerageName && (
+                  <p>
+                    Listing courtesy of {brokerageName}
+                    {status === 'sold' && coBrokerageName
+                      ? ` · Buyer brokerage: ${coBrokerageName}`
+                      : ''}
+                  </p>
+                )}
+                <p className={brokerageName ? 'mt-1' : undefined}>
+                  Listings courtesy of the Northwest Multiple Listing Service, as
+                  distributed by MLS GRID
+                </p>
+              </div>
             )}
 
             <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 border-y border-black/10 py-6 md:grid-cols-4">
