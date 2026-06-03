@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { IdxSearchToolbar } from './idx-search-toolbar'
 import { ListingGrid } from './listing-grid'
 import { ListingsMap, type MapMarker } from './listings-map'
-import type { ListingSummary } from '@/types/listing'
+import { ACTIVE_STATUSES, type ListingSummary } from '@/types/listing'
 
 const ALLOWED_KEYS = [
   'city',
@@ -85,6 +85,9 @@ function HomeSearchInner() {
           lng: l.coordinates.lng,
           label: formatPriceShort(l.price),
           href: `/properties/${l.slug}`,
+          // NWMLS §E.5: Pending/Sold ("Non-Active") pins must be visually
+          // distinct from Active/Contingent on the map.
+          inactive: !ACTIVE_STATUSES.includes(l.status),
         })),
     [items],
   )

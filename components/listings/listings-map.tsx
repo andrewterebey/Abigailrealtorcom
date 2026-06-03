@@ -11,6 +11,10 @@ export type MapMarker = {
   label?: string
   /** Optional click destination — sets cursor to pointer and pushes via window.location. */
   href?: string
+  /** When true (Pending/Sold = "Non-Active"), render the marker in a distinct
+   *  color, per NWMLS Data Use Policy §E.5 (the map must distinguish Non-Active
+   *  listings from Active ones). Active/Contingent markers stay the default. */
+  inactive?: boolean
 }
 
 type ListingsMapProps = {
@@ -99,7 +103,7 @@ export function ListingsMap({
         const marker = m.label
           ? L.marker(point, {
               icon: L.divIcon({
-                className: 'listings-map__price-bubble',
+                className: `listings-map__price-bubble${m.inactive ? ' listings-map__price-bubble--inactive' : ''}`,
                 html: `<span>${m.label}</span>`,
                 iconSize: [70, 28],
                 iconAnchor: [35, 28],

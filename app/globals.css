@@ -232,6 +232,20 @@
   color: #ffffff;
 }
 
+/* Non-Active listings (Pending / Sold) get a visually distinct marker, per
+   NWMLS Data Use Policy §E.5 (map display must distinguish Non-Active listings
+   from Active ones by distinct/conspicuous color). Mirrors the dark status
+   badge used on listing cards. */
+.listings-map__price-bubble--inactive {
+  background: #1a1a1a;
+  color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.25);
+}
+.listings-map__price-bubble--inactive:hover {
+  background: #000000;
+  color: #ffffff;
+}
+
 /* Custom Leaflet pin (single-marker case) — replaces the default raster
    marker icons that don't bundle correctly under Turbopack. */
 .listings-map__pin {
