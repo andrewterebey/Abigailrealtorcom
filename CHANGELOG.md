@@ -9,6 +9,16 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- Listing detail (NWMLS IDX compliance, per idx@nwmls.com review): the
+  full-bleed photo hero is kept (matches abigailrealtor.com), but the crop is
+  now anchored to the **bottom-right** so the NWMLS watermark baked into each
+  feed photo stays visible on the main image and the gallery thumbnails — the
+  IDX Guidance requires the watermark visible on all property displays except
+  search-results thumbnails, and the old centered cover-crop clipped it off.
+  The listing-firm attribution ("Listing courtesy of …") now sits immediately
+  beneath the main photo, adjacent to it, while the NWMLS source line stays
+  next to the property details. Required to clear the two issues NWMLS flagged
+  before resubmitting the staging site for review.
 - Listing detail gallery: removed the 4px black gap between thumbnail
   tiles so the four gallery frames read as a single continuous strip
   instead of cards floating on a black background.

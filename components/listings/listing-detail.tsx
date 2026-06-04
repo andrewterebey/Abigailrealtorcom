@@ -56,21 +56,25 @@ export function ListingDetail({ listing }: ListingDetailProps) {
 
   return (
     <article>
-      <section
-        aria-label="Listing gallery"
-        className="relative bg-black"
-      >
+      {/* Full-bleed hero covering the top of the screen, matching
+          abigailrealtor.com. The NWMLS watermark is baked into the bottom-right
+          of every feed photo and "may not be modified, removed, or hidden ...
+          required visible on all property displays" [IDX Guidance §1]. The wide
+          cover-crop would clip it (which the NWMLS reviewer flagged, 2026-06),
+          so we anchor the crop to the bottom-right (object-right-bottom): the
+          banner stays full-bleed while the watermark is never cropped out. */}
+      <section aria-label="Listing gallery" className="relative bg-black">
         <div className="relative aspect-[16/9] w-full md:aspect-[21/9]">
           <Image
             src={gallery[0]}
             alt={`${address}, ${city}, ${state} ${zip}`}
             fill
             sizes="100vw"
-            className="object-cover"
+            className="object-cover object-right-bottom"
             priority
           />
           <span className="absolute left-6 top-6 bg-site-gold px-4 py-1.5 font-body text-[12px] font-bold uppercase tracking-[0.14em] text-white">
-            {(listing.statusLabel ?? STATUS_LABELS[status])}
+            {listing.statusLabel ?? STATUS_LABELS[status]}
           </span>
         </div>
         {thumbs.length > 0 && (
@@ -85,11 +89,23 @@ export function ListingDetail({ listing }: ListingDetailProps) {
                   alt={`${address} — photo ${i + 2}`}
                   fill
                   sizes="(min-width: 768px) 25vw, 50vw"
-                  className="object-cover"
+                  className="object-cover object-right-bottom"
                 />
               </div>
             ))}
           </div>
+        )}
+        {/* Listing-FIRM attribution immediately adjacent to the main photo(s),
+            per the NWMLS reviewer (idx@nwmls.com, 2026-06) + MLS Grid IDX §22.
+            Gated on dataAsOf so placeholder mode stays unbranded. The NWMLS
+            *source* line stays next to the property info below. */}
+        {dataAsOf && brokerageName && (
+          <p className="bg-white px-6 py-3 font-body text-[12px] leading-[1.5] text-site-text">
+            Listing courtesy of {brokerageName}
+            {status === 'sold' && coBrokerageName
+              ? ` · Buyer brokerage: ${coBrokerageName}`
+              : ''}
+          </p>
         )}
       </section>
 
@@ -106,27 +122,18 @@ export function ListingDetail({ listing }: ListingDetailProps) {
               {city}, {state} {zip}
             </p>
 
-            {/* NWMLS attribution, immediately adjacent to the property info on
-                the detail page. NWMLS confirmed (2026-06, idx@nwmls.com) that
-                the text attribution suffices in lieu of the three-tree icon AND
-                that it must sit immediately adjacent to the property info here.
-                Line 2 is the exact NWMLS-approved string. Gated on dataAsOf =
-                genuine feed data, so placeholder data stays unbranded. */}
+            {/* NWMLS *source* attribution, immediately adjacent to the property
+                info. NWMLS confirmed (2026-06, idx@nwmls.com) the text
+                attribution suffices in lieu of the three-tree icon and must sit
+                immediately adjacent to the property info here. This is the exact
+                NWMLS-approved string. The listing-FIRM attribution sits adjacent
+                to the main photo above. Gated on dataAsOf so placeholder data
+                stays unbranded. */}
             {dataAsOf && (
-              <div className="mt-3 font-body text-[14px] leading-[1.6] text-site-text">
-                {brokerageName && (
-                  <p>
-                    Listing courtesy of {brokerageName}
-                    {status === 'sold' && coBrokerageName
-                      ? ` · Buyer brokerage: ${coBrokerageName}`
-                      : ''}
-                  </p>
-                )}
-                <p className={brokerageName ? 'mt-1' : undefined}>
-                  Listings courtesy of the Northwest Multiple Listing Service, as
-                  distributed by MLS GRID
-                </p>
-              </div>
+              <p className="mt-3 font-body text-[14px] leading-[1.6] text-site-text">
+                Listings courtesy of the Northwest Multiple Listing Service, as
+                distributed by MLS GRID
+              </p>
             )}
 
             <dl className="mt-8 grid grid-cols-2 gap-x-8 gap-y-6 border-y border-black/10 py-6 md:grid-cols-4">
