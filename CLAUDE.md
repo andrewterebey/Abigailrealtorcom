@@ -249,6 +249,7 @@ getComputedStyle(document.querySelector('h1.hero-title'))
 - **Ad-hoc screenshots belong in `/screenshots/local/`, not the repo root.** `live-*.png` and `local-*.png` at root are gitignored, but other names (e.g. `footer-home.png`) will leak into commits — drop them under `/screenshots/local/` or delete after use.
 - Never declare a page "done" without a final 3-viewport local screenshot passing visual diff.
 - If the live site changes its layout mid-project, re-run `npm run capture-live` to refresh references.
+- **Parity never overrides legal display rules.** When matching the live site on any listing page, do not remove or alter the NWMLS display elements in §7.11 (source attribution, member contact, Non-Active map distinction, IDX disclaimer) — flag the conflict instead.
 
 ### 5.7 Script helpers for the loop
 
@@ -475,6 +476,29 @@ inline in the file.
 - Don't import `/data/listings.json` from UI code — always through the API.
 - Don't ship real listing-agent names or broker contact info in placeholder data.
 
+### 7.11 NWMLS display compliance — load-bearing UI, do NOT regress
+
+The listing UI carries **legally-mandated display elements**, not stylistic
+choices. They are required by the NWMLS Data Use Policy and MLS Grid IDX Rules
+(source PDFs in `content/legal/nwmls/`, distilled in
+`content/legal/nwmls-idx-vendor-requirements.md`) and were added across the
+recent `fix(legal): …` commits. All of them are gated behind
+`NEXT_PUBLIC_IDX_NWMLS` (off → fabricated placeholder mode, on → licensed feed):
+
+- **Source attribution** on every listing card/detail (`listing-card.tsx`,
+  `listing-detail.tsx`) — the originating brokerage/MLS line per Rule 22 & idx@nwmls.com.
+- **Member contact adjacent to the listing** (Rule 22) — broker/agent contact must sit next to the listing data.
+- **Non-Active listings visually distinguished on the map** (Data Use Policy §E.5) — see `listings-map.tsx`.
+- **Site-wide IDX disclaimer + exclusion disclosure** — `footer-mls-grid.tsx`, `site-footer.tsx`.
+- **`MlgCanUse` / `MlgCanView` gating** at the data layer — `lib/idx/mlsgrid-map.ts` enforces whole-listing opt-out and display suppression before anything reaches the UI.
+
+**The §5 visual-parity loop is the main way these get broken.** The live
+Luxury Presence site does NOT render some of these the same way, so "make local
+match live" can tempt you to delete an attribution line or the map legend. Don't.
+If a parity fix would remove or alter any element above, stop and flag it —
+keeping these is a higher priority than pixel parity. Treat their copy as
+verbatim legal text (§9.12).
+
 ---
 
 ## 8. Pages to Build
@@ -553,4 +577,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-05-28*
+*Last updated: 2026-06-04*
