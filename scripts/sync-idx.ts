@@ -213,16 +213,16 @@ async function main() {
   // procedure (content/legal/nwmls-idx-vendor-requirements.md).
   //
   // MEDIA is the bottleneck: MLS Grid throttles to ≤2 req/s, so fetching photos
-  // for all ~13k listings would blow the Netlify build window. We download photos
-  // for only MLSGRID_MEDIA_MAX_LISTINGS listings (status-diverse; 0 = all) at up
-  // to MAX_PHOTOS each; the rest keep their full data and show the NO_PHOTO
-  // placeholder. Raising MEDIA_MAX_LISTINGS adds ~0.7s × listings × photos to the
-  // build (for broad thumbnail coverage, set MAX_PHOTOS=1 + a higher
-  // MEDIA_MAX_LISTINGS). PRODUCTION needs persistent media hosting + a scheduled
-  // sync (see CLAUDE.md §7.7).
+  // for all ~13k listings would blow the Netlify build window. Defaults favor
+  // BREADTH for the demo — one (primary) photo each for MEDIA_MAX_LISTINGS=700
+  // status-diverse listings — so the search grid looks populated; the rest keep
+  // full data and show the NO_PHOTO placeholder. Cost ≈ 0.7s × listings × photos
+  // (~8 min here). Raise MAX_PHOTOS for richer detail galleries, or
+  // MEDIA_MAX_LISTINGS for wider coverage (watch the build timeout). PRODUCTION
+  // needs persistent media hosting + a scheduled sync (see CLAUDE.md §7.7).
   const MAX_LISTINGS = intEnv('MLSGRID_MAX_LISTINGS', 0)
-  const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', 6)
-  const MEDIA_MAX_LISTINGS = intEnv('MLSGRID_MEDIA_MAX_LISTINGS', 150)
+  const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', 1)
+  const MEDIA_MAX_LISTINGS = intEnv('MLSGRID_MEDIA_MAX_LISTINGS', 700)
 
   // MLS Grid caps $expand requests at 1000 records/page (a larger $top errors),
   // so we request 1000/page and follow @odata.nextLink until it is absent —
