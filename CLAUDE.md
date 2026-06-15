@@ -84,13 +84,13 @@ deep relative paths.
 │     ├─ listings/{route.ts, [id]/route.ts}
 │     └─ contact/route.ts       ← POST; rate-limited (see §7.10)
 ├─ components/
-│  ├─ nav/                      ← header, mega menu, mobile drawer
-│  ├─ home/                     ← hero, cta-tiles, testimonials, neighborhoods-carousel, spotlight-listings, newsletter, contact-cta
-│  ├─ listings/                 ← listing-card, listing-grid, listing-detail, listing-filters, home-search-client
+│  ├─ nav/                      ← (empty placeholder; header/nav/mega-menu/drawer live in site/site-header.tsx)
+│  ├─ home/                     ← hero, intro-band, get-to-know, cta-tiles, testimonials, neighborhoods-carousel, spotlight-listings, spotlight-carousel, newsletter, contact-cta
+│  ├─ listings/                 ← listing-card, listing-grid, listing-detail, idx-search-toolbar, listings-map, home-search-client
 │  ├─ neighborhood/             ← score-card, stat-bar (detail-page widgets)
-│  ├─ site/                     ← site-header, site-footer, page-hero, legal-body
+│  ├─ site/                     ← site-header (nav + mega menu + mobile drawer), site-footer, footer-mls-grid, page-hero, legal-body, container, section, section-pill-badge
 │  ├─ forms/                    ← inquiry-form
-│  └─ ui/                       ← shadcn primitives
+│  └─ ui/                       ← shadcn primitives (button)
 ├─ lib/
 │  ├─ idx/                      ← provider.ts (contract), index.ts (env-selected active provider),
 │  │                              placeholder-provider.ts, mlsgrid-provider.ts, mlsgrid-map.ts
@@ -112,7 +112,8 @@ deep relative paths.
 │  └─ neighborhoods/*.md
 ├─ data/
 │  ├─ listings.json             ← placeholder IDX data (never imported from UI)
-│  └─ neighborhoods.json
+│  └─ mlsgrid-demo.json         ← gitignored MLS Grid snapshot built by `npm run sync:idx` (read by MLSGridProvider)
+│                                  (neighborhood data is NOT here — it lives in content/neighborhoods/*.md via lib/neighborhoods.ts)
 ├─ public/
 │  ├─ images/                   ← assets downloaded from live site
 │  └─ listings/                 ← placeholder listing photos
@@ -173,7 +174,7 @@ Env vars:
 | `NEXT_PUBLIC_IDX_NWMLS`      | `true` to show NWMLS attribution/disclaimers in the UI. Set on the IDX (demo/prod) site. |
 | `NEXT_PUBLIC_NOINDEX`        | `true` on staging/review deploys → `robots.txt` blocks indexing. |
 
-Sync env (optional; defaults in `scripts/sync-idx.ts`): `MLSGRID_MAX_LISTINGS` (75), `MLSGRID_MAX_PHOTOS` (6), `MLSGRID_SKIP_MEDIA`/`MLSGRID_NO_FETCH` (data-only / reuse-only runs). Copy `.env.example` → `.env.local` (gitignored) for local secrets.
+Sync env (optional; defaults in `scripts/sync-idx.ts`): `MLSGRID_MAX_LISTINGS` (0 = all listing data), `MLSGRID_MAX_PHOTOS` (6/listing), `MLSGRID_MEDIA_MAX_LISTINGS` (150 — how many listings get photos; 0 = all), `MLSGRID_SKIP_MEDIA`/`MLSGRID_NO_FETCH` (data-only / reuse-only runs). Defaults ingest the **entire** demo feed's *data* (paging every `@odata.nextLink`) so NWMLS can review every listing's fields, but **bound photo downloads** — MLS Grid throttles media to ≤2 req/s, so fetching all ~13k listings' photos would exceed the Netlify build window. Listings without downloaded photos keep their data and show a `NO_PHOTO` placeholder. Production needs persistent media hosting + a scheduled sync (§7.7). Copy `.env.example` → `.env.local` (gitignored) for local secrets.
 
 **IDX data layer:** `npm run sync:idx` pulls the MLS Grid feed → `data/mlsgrid-demo.json` + `public/idx/` (both gitignored, regenerated at build). MLS Grid is a *replication* API, not query-through (≤2 req/s, refresh ≥12h); the sync downscales photos via `sharp` and enforces NWMLS display-suppression. See `content/legal/nwmls-idx-vendor-requirements.md`.
 
@@ -577,4 +578,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-06-04*
+*Last updated: 2026-06-15*

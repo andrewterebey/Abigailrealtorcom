@@ -9,6 +9,16 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- IDX demo data ingest (NWMLS compliance, 2026-06-15 review item #1): the sync
+  now ingests the **entire** NWMLS demo feed's listing data (~12.9k listings,
+  paging every `@odata.nextLink` page) instead of a 75-listing sample, so every
+  listing's MLS fields are accessible for review. Photo downloads are bounded
+  (`MLSGRID_MEDIA_MAX_LISTINGS`, default 150) because MLS Grid throttles media to
+  ≤2 req/s and downloading all ~13k would exceed the build window; listings
+  without downloaded photos keep their data and show a placeholder, and
+  photo-bearing listings sort first so default views stay populated. Also
+  de-dups records that map to the same MLS number (was causing a duplicate React
+  key).
 - IDX search results (NWMLS compliance, 2026-06-15 review): the "Some IDX
   listings have been excluded from this website" notice now carries a
   plain-language explanation of which listings are shown and why some are

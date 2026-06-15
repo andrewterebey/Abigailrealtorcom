@@ -99,6 +99,30 @@ async function fetchJson(url: string, token: string): Promise<ODataPage> {
   throw new Error(`MLS Grid request failed after retries: ${url}`)
 }
 
+/** Follow @odata.nextLink, accumulating Property records across all pages.
+ *  stopAfter > 0 stops paging once that many raw records are collected (used
+ *  only for the local-iteration cap); 0 fetches every page — the demo default,
+ *  required so NWMLS can review the entire feed. */
+async function fetchAllPages(
+  firstUrl: string,
+  token: string,
+  stopAfter = 0,
+): Promise<ResoRecord[]> {
+  const out: ResoRecord[] = []
+  let url: string | undefined = firstUrl
+  let page = 0
+  while (url) {
+    const data = await fetchJson(url, token)
+    const batch = data.value ?? []
+    out.push(...batch)
+    page++
+    console.log(`  page ${page}: +${batch.length} (total ${out.length})`)
+    if (stopAfter && out.length >= stopAfter) break
+    url = data['@odata.nextLink']
+  }
+  return out
+}
+
 /** Download one listing's photos into public/idx/<id>/ and return local paths.
  *  Media is immutable, so skip files that already exist ([Best Practices]). */
 async function downloadMedia(
@@ -183,51 +207,41 @@ async function main() {
   const apiBase = process.env.MLSGRID_API_BASE ?? 'https://api.mlsgrid.com/v2'
   const originatingSystem = process.env.MLSGRID_ORIGINATING_SYSTEM ?? 'nwmls'
 
-  // Demo caps — the NWMLS demo feed has ~10k listings (and the feed clusters by
-  // status), so we query each status separately and take a slice of each. This
-  // guarantees the demo shows every status type and keeps media volume small.
-  // Set a cap to 0 for unlimited. The PRODUCTION feed would drop these caps and
-  // use a DB-backed sync (see CLAUDE.md §7.7).
-  const MAX_LISTINGS = intEnv('MLSGRID_MAX_LISTINGS', 75)
+  // ALL listing DATA is ingested by default (MAX_LISTINGS=0 → every demo listing
+  // is accessible for NWMLS's field-level review, idx@nwmls.com 2026-06-15),
+  // paging @odata.nextLink to the end per the documented initial-import
+  // procedure (content/legal/nwmls-idx-vendor-requirements.md).
+  //
+  // MEDIA is the bottleneck: MLS Grid throttles to ≤2 req/s, so fetching photos
+  // for all ~13k listings would blow the Netlify build window. We download photos
+  // for only MLSGRID_MEDIA_MAX_LISTINGS listings (status-diverse; 0 = all) at up
+  // to MAX_PHOTOS each; the rest keep their full data and show the NO_PHOTO
+  // placeholder. Raising MEDIA_MAX_LISTINGS adds ~0.7s × listings × photos to the
+  // build (for broad thumbnail coverage, set MAX_PHOTOS=1 + a higher
+  // MEDIA_MAX_LISTINGS). PRODUCTION needs persistent media hosting + a scheduled
+  // sync (see CLAUDE.md §7.7).
+  const MAX_LISTINGS = intEnv('MLSGRID_MAX_LISTINGS', 0)
   const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', 6)
+  const MEDIA_MAX_LISTINGS = intEnv('MLSGRID_MEDIA_MAX_LISTINGS', 150)
 
-  // StandardStatus values to pull, one slice each, for status variety.
-  const STATUS_QUERIES = [
-    "StandardStatus eq 'Active'",
-    "StandardStatus eq 'Active Under Contract'",
-    "StandardStatus eq 'Pending'",
-    "StandardStatus eq 'Closed'",
-  ]
-  // MLS Grid caps $expand requests at 1000 records/request — a larger $top
-  // errors out. We also read only the first page per status here (no
-  // @odata.nextLink follow), which is fine for a capped demo; the production
-  // path is a DB-backed sync that pages via nextLink (see CLAUDE.md §7.7).
+  // MLS Grid caps $expand requests at 1000 records/page (a larger $top errors),
+  // so we request 1000/page and follow @odata.nextLink until it is absent —
+  // ingesting every displayable listing across all statuses in one pass.
   const EXPAND_TOP_CAP = 1000
-  const requestedPerStatus = MAX_LISTINGS
-    ? Math.ceil(MAX_LISTINGS / STATUS_QUERIES.length)
-    : EXPAND_TOP_CAP
-  const perStatus = Math.min(requestedPerStatus, EXPAND_TOP_CAP)
-  if (requestedPerStatus > EXPAND_TOP_CAP) {
-    console.warn(
-      `  ⚠ requested ~${requestedPerStatus}/status exceeds the ${EXPAND_TOP_CAP}-record ` +
-        `$expand cap; capping at ${EXPAND_TOP_CAP}. For larger pulls add @odata.nextLink paging.`,
-    )
-  }
 
   console.log(
     `Syncing MLS Grid feed (OriginatingSystemName='${originatingSystem}', ` +
-      `~${perStatus}/status, max ${MAX_LISTINGS || '∞'} listings × ${MAX_PHOTOS || '∞'} photos)…`,
+      `data: ${MAX_LISTINGS || 'all'} listings; ` +
+      `media: ${MEDIA_MAX_LISTINGS || 'all'} listings × ${MAX_PHOTOS || '∞'} photos)…`,
   )
 
-  const rawRecords: ResoRecord[] = []
-  for (const statusClause of STATUS_QUERIES) {
-    const filter = `OriginatingSystemName eq '${originatingSystem}' and MlgCanView eq true and ${statusClause}`
-    const url = `${apiBase}/Property?$filter=${encodeURIComponent(filter)}&$expand=Media&$top=${perStatus}`
-    const data = await fetchJson(url, token)
-    const batch = data.value ?? []
-    rawRecords.push(...batch)
-    console.log(`  ${statusClause}: ${batch.length} records`)
-  }
+  // Single initial-import query: all displayable listings (every status),
+  // paginated to the end via @odata.nextLink. The mapper drops any records that
+  // are not publicly displayable; selectDiverse() trims later only if a cap is set.
+  const importFilter = `OriginatingSystemName eq '${originatingSystem}' and MlgCanView eq true`
+  const importUrl = `${apiBase}/Property?$filter=${encodeURIComponent(importFilter)}&$expand=Media&$top=${EXPAND_TOP_CAP}`
+  const rawRecords = await fetchAllPages(importUrl, token, MAX_LISTINGS)
+  console.log(`  fetched ${rawRecords.length} raw records across all statuses`)
 
   // Drop duplicate listings, keeping the primary ([GUID #4]).
   const listings: ListingDetail[] = []
@@ -250,29 +264,52 @@ async function main() {
     listings.push(mapped)
   }
 
-  // Keep a status-diverse subset so the demo shows every status type ([no
-  // silent caps] — we log exactly what was dropped).
-  const selected = MAX_LISTINGS ? selectDiverse(listings, MAX_LISTINGS) : listings
-  const cappedListings = listings.length - selected.length
+  // Defensive de-dup by stable id: the feed can yield two records that map to
+  // the same ListingId (re-lists, or a record modified mid-pagination), which
+  // breaks React list keys and detail-page routing. Keep the first occurrence.
+  const byId = new Map<string, ListingDetail>()
+  for (const l of listings) if (!byId.has(l.id)) byId.set(l.id, l)
+  const deduped = [...byId.values()]
+  const idDupes = listings.length - deduped.length
 
-  // Localize media (capped) + stamp the "data obtained as of" timestamp.
-  // MLSGRID_SKIP_MEDIA=true writes the snapshot without downloading photos
-  // (useful while the media host is in a rate-limit cooldown, or for fast
-  // data-only iteration). Photos fall back to the NO_PHOTO placeholder.
+  // Keep ALL listing data by default; a status-diverse subset only if a hard
+  // MAX_LISTINGS cap is set ([no silent caps] — we log exactly what was dropped).
+  const selected = MAX_LISTINGS ? selectDiverse(deduped, MAX_LISTINGS) : deduped
+  const cappedListings = deduped.length - selected.length
+
+  // Media subset: download photos for at most MEDIA_MAX_LISTINGS listings
+  // (status-diverse). Listings outside it keep all their data but show NO_PHOTO.
   const skipMedia = process.env.MLSGRID_SKIP_MEDIA === 'true'
+  const mediaSubset = MEDIA_MAX_LISTINGS
+    ? selectDiverse(selected, MEDIA_MAX_LISTINGS)
+    : selected
+  const mediaIds = new Set(mediaSubset.map((l) => l.id))
+
+  // Localize media for the subset + stamp the "data obtained as of" timestamp on
+  // EVERY record. MLSGRID_SKIP_MEDIA=true skips all downloads (fast data-only
+  // iteration / media-host cooldown).
   const dataAsOf = new Date().toISOString()
+  let withPhotos = 0
   for (const listing of selected) {
-    if (skipMedia) {
+    if (skipMedia || !mediaIds.has(listing.id)) {
       listing.images = [NO_PHOTO]
     } else {
       const urls = MAX_PHOTOS ? listing.images.slice(0, MAX_PHOTOS) : listing.images
       const localImages = await downloadMedia(listing.id, urls, token)
       listing.images = localImages.length ? localImages : [NO_PHOTO]
+      if (localImages.length) withPhotos++
     }
     listing.primaryImage = listing.images[0]
     listing.dataAsOf = dataAsOf
   }
   if (skipMedia) console.log('  (MLSGRID_SKIP_MEDIA=true — photos not downloaded)')
+
+  // Surface photo-bearing listings first so default views (home spotlight,
+  // unfiltered search) look populated while every listing stays searchable.
+  selected.sort(
+    (a, b) =>
+      Number(b.primaryImage !== NO_PHOTO) - Number(a.primaryImage !== NO_PHOTO),
+  )
 
   await fs.mkdir(path.dirname(SNAPSHOT_PATH), { recursive: true })
   await fs.writeFile(SNAPSHOT_PATH, JSON.stringify(selected, null, 2) + '\n', 'utf8')
@@ -283,10 +320,17 @@ async function main() {
   }, {})
   console.log(
     `\nDone. ${selected.length} listings written to data/mlsgrid-demo.json ` +
-      `(${suppressed} suppressed, ${duplicates} duplicates dropped, ` +
-      `${cappedListings} over the ${MAX_LISTINGS}-listing demo cap).`,
+      `(${suppressed} suppressed, ${duplicates + idDupes} duplicates dropped` +
+      (cappedListings > 0
+        ? `, ${cappedListings} over the ${MAX_LISTINGS}-listing demo cap`
+        : '') +
+      `).`,
   )
   console.log(`  by status: ${JSON.stringify(byStatus)}`)
+  console.log(
+    `  ${withPhotos}/${selected.length} listings have photos ` +
+      `(rest show NO_PHOTO; raise MLSGRID_MEDIA_MAX_LISTINGS for more).`,
+  )
   if (cappedListings > 0) {
     console.log(
       `  NOTE: demo is a capped sample of the ~feed; raise MLSGRID_MAX_LISTINGS to include more.`,
