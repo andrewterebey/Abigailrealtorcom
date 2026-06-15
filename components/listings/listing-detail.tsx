@@ -130,7 +130,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
                 to the main photo above. Gated on dataAsOf so placeholder data
                 stays unbranded. */}
             {dataAsOf && (
-              <p className="mt-3 font-body text-[14px] leading-[1.6] text-site-text">
+              <p className="mt-3 font-body text-[15px] leading-[1.6] text-site-text md:text-[16px]">
                 Listings courtesy of the Northwest Multiple Listing Service, as
                 distributed by MLS GRID
               </p>

@@ -9,6 +9,11 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- Listing detail (NWMLS compliance, 2026-06-15 audit): the NWMLS source-
+  attribution line ("Listings courtesy of the Northwest Multiple Listing
+  Service, as distributed by MLS GRID") now renders at the property-description
+  size (15/16px) instead of 14px, per NWMLS Data Use Policy §E.3 (attribution
+  type size must be at least as large as the type used to describe the property).
 - IDX demo data ingest (NWMLS compliance, 2026-06-15 review item #1): the sync
   now ingests the **entire** NWMLS demo feed's listing data (~12.9k listings,
   paging every `@odata.nextLink` page) instead of a 75-listing sample, so every
