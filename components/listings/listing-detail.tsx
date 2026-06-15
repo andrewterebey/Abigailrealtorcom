@@ -100,7 +100,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
             Gated on dataAsOf so placeholder mode stays unbranded. The NWMLS
             *source* line stays next to the property info below. */}
         {dataAsOf && brokerageName && (
-          <p className="bg-white px-6 py-3 font-body text-[12px] leading-[1.5] text-site-text">
+          <p className="bg-white px-6 py-3 font-body text-[15px] leading-[1.6] text-site-text md:text-[16px]">
             Listing courtesy of {brokerageName}
             {status === 'sold' && coBrokerageName
               ? ` · Buyer brokerage: ${coBrokerageName}`

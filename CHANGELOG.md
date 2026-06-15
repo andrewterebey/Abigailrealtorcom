@@ -9,6 +9,18 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- IDX search results (NWMLS compliance, 2026-06-15 review): the "Some IDX
+  listings have been excluded from this website" notice now carries a
+  plain-language explanation of which listings are shown and why some are
+  excluded (seller opt-out, NWMLS-ineligible status, or not authorized for IDX
+  distribution). NWMLS flagged the bare sentence as insufficient disclosure
+  (MLS Grid IDX Rule 9).
+- Listing brokerage attribution font size (NWMLS compliance, 2026-06-15 review):
+  the "Listing courtesy of …" line on the listing-detail page — and, for sold
+  listings, the "· Buyer brokerage: …" cooperating-firm name shown adjacent to
+  the photos — now renders at the property-description size (15/16px) instead of
+  12px, and the listing-card attribution at 13px, to meet NWMLS's "typeface not
+  smaller than the median used in the display of listing data" rule (Rule 22).
 - Listing detail (NWMLS IDX compliance, per idx@nwmls.com review): the
   full-bleed photo hero is kept (matches abigailrealtor.com), but the crop is
   now anchored to the **bottom-right** so the NWMLS watermark baked into each

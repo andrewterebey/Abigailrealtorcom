@@ -96,7 +96,7 @@ export function ListingCard({ listing, priority = false, className }: ListingCar
             (brokerageName present); fabricated placeholder data stays unbranded
             (content/legal/nwmls-idx-vendor-requirements.md §1, §7). */}
         {brokerageName && (
-          <p className="mt-3 font-body text-[12px] leading-[1.5] text-site-text">
+          <p className="mt-3 font-body text-[13px] leading-[1.5] text-site-text">
             Listing courtesy of {brokerageName}
             {status === 'sold' && coBrokerageName ? ` · Buyer: ${coBrokerageName}` : ''}
             <span>

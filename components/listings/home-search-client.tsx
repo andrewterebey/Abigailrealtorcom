@@ -131,11 +131,23 @@ function HomeSearchInner() {
                 distributed by MLS GRID.
               </p>
             )}
-            {/* NWMLS exclusion disclosure ([GRID §9]) — required because this
-                view shows a curated subset of the feed. */}
+            {/* NWMLS exclusion disclosure ([GRID §9]) — the exact mandated
+                sentence PLUS an explanation of what is and isn't displayed, per
+                the NWMLS reviewer (idx@nwmls.com, 2026-06-15): the bare sentence
+                alone was flagged as insufficient. Wording reflects the actual
+                suppression rules enforced in lib/idx/mlsgrid-map.ts. */}
             {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' && (
-              <p className="mb-5 font-body text-[12px] leading-[1.5] text-site-text-muted">
-                Some IDX listings have been excluded from this website.
+              <p className="mb-5 font-body text-[12px] leading-[1.6] text-site-text-muted">
+                Some IDX listings have been excluded from this website. This
+                website displays residential listings made available for Internet
+                Data Exchange (IDX) display through the Northwest Multiple Listing
+                Service (NWMLS). A listing may not appear here if the seller has
+                directed that the property not be displayed publicly online, if
+                the listing&rsquo;s status is not eligible for public display
+                under NWMLS rules (for example, expired, canceled, or
+                temporarily off-market listings), or if the listing has not been
+                authorized for IDX distribution. As a result, this site may not
+                include every listing in the NWMLS.
               </p>
             )}
             {error ? (
