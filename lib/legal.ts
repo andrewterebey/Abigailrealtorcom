@@ -13,6 +13,13 @@
 const RELIABILITY_STATEMENT =
   'All information is deemed reliable but not guaranteed and should be independently reviewed and verified.'
 
+// MLS Grid IDX Rule 29 requires prominently posting a notice that any use or
+// search of the data other than by a consumer looking to purchase real estate
+// is prohibited. This is OUR compliance notice — not verbatim live-site text —
+// so it may be authored/edited (unlike the disclaimers below).
+const PROHIBITED_USE_STATEMENT =
+  'Any use or search of the listing data on this website other than by a consumer looking to purchase real estate is prohibited.'
+
 const IDX_PARAGRAPH =
   'The IDX display contains information sourced from the Northwest Multiple Listing Service. This data is intended solely for personal, non-commercial use and is not to be utilized for any other purposes except to identify potential properties for purchase. Although the MLS data displayed is typically considered reliable, it is not guaranteed to be accurate by the MLS. Buyers are responsible for verifying the accuracy of all information and are advised to conduct their own investigations or seek professional assistance. Other sources besides the Listing Agent may have contributed to the MLS data presented. Unless expressly specified in writing, the Broker/Agent has not confirmed any information obtained from external sources. The Broker/Agent may or may not have acted as the Listing and/or Selling Agent and cannot guarantee the accuracy of property locations displayed on any map. Any compensation offers are solely made to participants of the MLS where the listing is registered.'
 
@@ -39,6 +46,7 @@ export type DisclaimerParagraphs = {
   mlsGrid: string
   copyright: string
   brokerage: string
+  prohibitedUse: string
 }
 
 export function buildDisclaimerParagraphs(now: Date = new Date()): DisclaimerParagraphs {
@@ -52,5 +60,6 @@ export function buildDisclaimerParagraphs(now: Date = new Date()): DisclaimerPar
       .replaceAll('{{TIME_UTC}}', time),
     copyright: `©${now.getUTCFullYear()} Northwest Multiple Listing Service all rights reserved.`,
     brokerage: 'John L. Scott Real Estate',
+    prohibitedUse: PROHIBITED_USE_STATEMENT,
   }
 }

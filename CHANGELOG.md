@@ -9,6 +9,15 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- IDX compliance hardening (NWMLS audit, 2026-06-15):
+  - Listing-detail photos now display the **entire** image white-padded
+    (`object-contain` on white) instead of cropped, so the full NWMLS watermark
+    is always visible (NWMLS IDX Guidance §1).
+  - Search results now page in via a "Load more" control up to 2,500 listings,
+    instead of being capped at the first 50 (MLS Grid IDX Rule 26).
+  - Added the required non-consumer-use notice ("Any use or search of the
+    listing data on this website other than by a consumer looking to purchase
+    real estate is prohibited.") to the IDX footer (MLS Grid IDX Rule 29).
 - Listing detail (NWMLS compliance, 2026-06-15 audit): the NWMLS source-
   attribution line ("Listings courtesy of the Northwest Multiple Listing
   Service, as distributed by MLS GRID") now renders at the property-description

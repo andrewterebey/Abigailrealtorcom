@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { IdxSearchToolbar } from './idx-search-toolbar'
 import { ListingGrid } from './listing-grid'
@@ -30,29 +30,41 @@ type View = 'split' | 'list' | 'map'
 // still shows something recognisable. Markers will recenter via fitBounds.
 const DEFAULT_CENTER = { lat: 47.6101, lng: -122.2015 } as const
 
+const PAGE_SIZE = 50
+// NWMLS / MLS Grid IDX Rule 26: a query must not be limited to fewer than 500
+// (or 50%) results, and no more than 2,500. We page in via "Load more" up to
+// this ceiling so consumers can reach the full result set — never capped at one
+// page of 50.
+const MAX_RESULTS = 2500
+
 function HomeSearchInner() {
   const searchParams = useSearchParams()
   const [items, setItems] = useState<ListingSummary[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<View>('split')
 
-  const apiQuery = useMemo(() => {
+  // Filter query WITHOUT pagination params — a change resets the result list.
+  const baseQuery = useMemo(() => {
     const p = new URLSearchParams()
     for (const key of ALLOWED_KEYS) {
       const v = searchParams.get(key)
       if (v) p.set(key, v)
     }
-    p.set('limit', '50')
     return p.toString()
   }, [searchParams])
 
+  // Load the first page whenever the filters change.
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
-    fetch(`/api/listings?${apiQuery}`)
+    const p = new URLSearchParams(baseQuery)
+    p.set('limit', String(PAGE_SIZE))
+    p.set('offset', '0')
+    fetch(`/api/listings?${p.toString()}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`Search failed (${res.status})`)
         const data: ApiResponse = await res.json()
@@ -63,6 +75,8 @@ function HomeSearchInner() {
       .catch((err: unknown) => {
         if (cancelled) return
         setError(err instanceof Error ? err.message : 'Search failed')
+        setItems([])
+        setTotal(0)
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -70,7 +84,30 @@ function HomeSearchInner() {
     return () => {
       cancelled = true
     }
-  }, [apiQuery])
+  }, [baseQuery])
+
+  // Append the next page so consumers can reach the full result set (Rule 26),
+  // up to the 2,500 ceiling.
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true)
+    try {
+      const p = new URLSearchParams(baseQuery)
+      p.set('limit', String(PAGE_SIZE))
+      p.set('offset', String(items.length))
+      const res = await fetch(`/api/listings?${p.toString()}`)
+      if (!res.ok) throw new Error(`Search failed (${res.status})`)
+      const data: ApiResponse = await res.json()
+      setItems((prev) => [...prev, ...data.items])
+      setTotal(data.total)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Search failed')
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [baseQuery, items.length])
+
+  const canLoadMore =
+    !loading && !error && items.length < Math.min(total, MAX_RESULTS)
 
   const markers: MapMarker[] = useMemo(
     () =>
@@ -164,6 +201,25 @@ function HomeSearchInner() {
                     : 'No listings match these filters. Try widening your search.'
                 }
               />
+            )}
+            {/* NWMLS IDX Rule 26: let consumers page through to the full result
+                set (up to 2,500) instead of being capped at the first 50. */}
+            {canLoadMore && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="inline-flex items-center justify-center border border-black/15 bg-white px-[40px] py-[16px] font-body text-[13px] font-bold uppercase tracking-[0.14em] text-site-text transition-colors hover:border-site-gold hover:text-site-gold disabled:opacity-50"
+                >
+                  {loadingMore
+                    ? 'Loading…'
+                    : `Load more (${items.length.toLocaleString()} of ${Math.min(
+                        total,
+                        MAX_RESULTS,
+                      ).toLocaleString()})`}
+                </button>
+              </div>
             )}
           </div>
         ) : null}

@@ -56,21 +56,21 @@ export function ListingDetail({ listing }: ListingDetailProps) {
 
   return (
     <article>
-      {/* Full-bleed hero covering the top of the screen, matching
-          abigailrealtor.com. The NWMLS watermark is baked into the bottom-right
-          of every feed photo and "may not be modified, removed, or hidden ...
-          required visible on all property displays" [IDX Guidance §1]. The wide
-          cover-crop would clip it (which the NWMLS reviewer flagged, 2026-06),
-          so we anchor the crop to the bottom-right (object-right-bottom): the
-          banner stays full-bleed while the watermark is never cropped out. */}
-      <section aria-label="Listing gallery" className="relative bg-black">
-        <div className="relative aspect-[16/9] w-full md:aspect-[21/9]">
+      {/* NWMLS IDX Guidance §1: feed photos must show the ENTIRE image with the
+          baked-in NWMLS watermark visible — "resize the photo maintaining aspect
+          ratio and white pad as necessary, so it fits the entire image with the
+          NWMLS watermark." So we display object-contain on white (no crop): the
+          full image and its bottom-right watermark always show. (Summary-results
+          thumbnails are the only crop exemption, and those are the listing
+          cards, not this detail page.) */}
+      <section aria-label="Listing gallery" className="relative bg-white">
+        <div className="relative aspect-[16/9] w-full bg-white">
           <Image
             src={gallery[0]}
             alt={`${address}, ${city}, ${state} ${zip}`}
             fill
             sizes="100vw"
-            className="object-cover object-right-bottom"
+            className="object-contain"
             priority
           />
           <span className="absolute left-6 top-6 bg-site-gold px-4 py-1.5 font-body text-[12px] font-bold uppercase tracking-[0.14em] text-white">
@@ -82,14 +82,14 @@ export function ListingDetail({ listing }: ListingDetailProps) {
             {thumbs.map((src, i) => (
               <div
                 key={src}
-                className="relative aspect-[4/3] w-full bg-neutral-200"
+                className="relative aspect-[4/3] w-full bg-white"
               >
                 <Image
                   src={src}
                   alt={`${address} — photo ${i + 2}`}
                   fill
                   sizes="(min-width: 768px) 25vw, 50vw"
-                  className="object-cover object-right-bottom"
+                  className="object-contain"
                 />
               </div>
             ))}

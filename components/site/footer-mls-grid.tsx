@@ -23,6 +23,8 @@ export function FooterMlsGridDisclaimer({
   return (
     <Container className="pb-10 pt-4 text-center text-[13px] leading-[1.7] text-site-text-muted">
       <p className="mx-auto max-w-4xl">{disclaimer.mlsGrid}</p>
+      {/* MLS Grid IDX Rule 29 — prominently-posted non-consumer-use prohibition. */}
+      <p className="mx-auto mt-3 max-w-4xl">{disclaimer.prohibitedUse}</p>
       <p className="mt-6 font-semibold text-site-text">{disclaimer.brokerage}</p>
       <p className="mt-1 text-site-text">{disclaimer.copyright}</p>
     </Container>
