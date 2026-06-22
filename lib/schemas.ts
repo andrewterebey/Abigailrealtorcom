@@ -26,7 +26,7 @@ export const listingFilterSchema = z.object({
 })
 
 export const paginationSchema = z.object({
-  limit: z.number().int().min(1).max(50),
+  limit: z.number().int().min(1).max(75),
   offset: z.number().int().nonnegative(),
 })
 
@@ -71,7 +71,7 @@ export const listingDetailSchema = listingSummarySchema.extend({
 export const listingListResponseSchema = z.object({
   items: z.array(listingSummarySchema),
   total: z.number().int().nonnegative(),
-  limit: z.number().int().min(1).max(50),
+  limit: z.number().int().min(1).max(75),
   offset: z.number().int().nonnegative(),
 })
 
@@ -94,7 +94,7 @@ export const listQuerySchema = z.object({
   property_type: propertyTypeSchema.optional(),
   status: listingStatusSchema.optional(),
   limit: positiveInt
-    .pipe(z.number().int().min(1).max(50))
+    .pipe(z.number().int().min(1).max(75))
     .optional(),
   offset: positiveInt.optional(),
 })

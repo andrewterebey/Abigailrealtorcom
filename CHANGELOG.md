@@ -9,6 +9,24 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- IDX compliance hardening (NWMLS review, 2026-06-22) — three reviewer items:
+  - **Show all demo data.** The IDX search now paginates at **75 listings per
+    page** with full prev/next page navigation reaching **every** listing in the
+    demo feed (~12.9k), replacing the "Load more" control that capped the
+    reachable set at 2,500. Each rendered page stays well under MLS Grid IDX
+    Rule 26's 2,500-per-response ceiling, so the full feed is accessible for
+    NWMLS review (reviewer item #1). The results map updates per page (it pins
+    only the current page's mappable listings).
+  - **Exclusion disclosure.** The "Some IDX listings have been excluded from
+    this website" notice on search results now spells out specifically what IS
+    shown (active, contingent, pending, sold residential listings authorized for
+    IDX) and what is excluded (seller internet-display opt-outs, broker/VOW-only
+    records, NWMLS-ineligible statuses, withheld addresses), matching the actual
+    suppression rules in `lib/idx/mlsgrid-map.ts` (reviewer item #2).
+  - **Attribution font size.** Listing- and buyer-firm attribution on listing
+    cards now renders at 15px (was 13px), at or above the property-detail text,
+    per MLS Grid IDX Rule 22 / NWMLS ("at least equal to the font size used to
+    describe the property") (reviewer item #3).
 - IDX compliance hardening (NWMLS audit, 2026-06-15):
   - Listing-detail photos now display the **entire** image white-padded
     (`object-contain` on white) instead of cropped, so the full NWMLS watermark

@@ -91,12 +91,19 @@ export function ListingCard({ listing, priority = false, className }: ListingCar
           MLS# {mlsNumber}
         </p>
 
-        {/* NWMLS-required attribution — listing brokerage adjacent to the
-            property info + NWMLS source. Renders only for genuine feed data
+        {/* NWMLS-required attribution — listing brokerage (and the buyer/
+            cooperating brokerage on sold listings) adjacent to the property
+            info, plus the NWMLS source. Renders only for genuine feed data
             (brokerageName present); fabricated placeholder data stays unbranded
-            (content/legal/nwmls-idx-vendor-requirements.md §1, §7). */}
+            (content/legal/nwmls-idx-vendor-requirements.md §1, §7).
+            Font size: MLS Grid IDX Rule 22 requires the listing- and buyer-firm
+            attribution to be "not smaller than the median used in the display of
+            listing data" — the NWMLS reviewer (idx@nwmls.com, 2026-06-22)
+            restated this as "at least equal to the font size used to describe
+            the property." At 15px this sits at or above every property-detail
+            line on the card (city 13px, beds/baths/sqft 12px, MLS# 11px). */}
         {brokerageName && (
-          <p className="mt-3 font-body text-[13px] leading-[1.5] text-site-text">
+          <p className="mt-3 font-body text-[15px] leading-[1.5] text-site-text">
             Listing courtesy of {brokerageName}
             {status === 'sold' && coBrokerageName ? ` · Buyer: ${coBrokerageName}` : ''}
             <span>

@@ -180,6 +180,15 @@ Sync env (optional; defaults in `scripts/sync-idx.ts`): `MLSGRID_MAX_LISTINGS` (
 
 Always confirm `npm run dev` is running on port 3000 before taking local screenshots.
 
+**Deploy (Netlify):** `netlify.toml` overrides the build command to
+`if [ -n "$MLSGRID_TOKEN" ]; then npm run sync:idx; fi && npm run build` — so a
+no-token deploy still builds (placeholder data, NWMLS branding off), and a
+token deploy replicates the licensed feed first. A `netlify.toml` build command
+**overrides the Netlify dashboard**, so secrets/flags (`MLSGRID_TOKEN`,
+`MLSGRID_API_BASE`, `MLSGRID_ORIGINATING_SYSTEM`, `NEXT_PUBLIC_IDX_NWMLS`,
+`NEXT_PUBLIC_NOINDEX`) go under **Site settings → Environment**, not the toml.
+The Next.js runtime is auto-detected (no plugin/publish dir set).
+
 ---
 
 ## 5. Visual Comparison Workflow — THE CORE LOOP
@@ -327,7 +336,7 @@ export interface ListingFilter {
 }
 
 export interface Pagination {
-  limit: number    // 1–50
+  limit: number    // 1–75
   offset: number   // >= 0
 }
 
@@ -371,7 +380,7 @@ export interface IDXProvider {
 
 **`GET /api/listings`**
 
-Query params (all optional): `city`, `min_price`, `max_price`, `min_beds`, `min_baths`, `property_type`, `status`, `limit` (default 20, max 50), `offset` (default 0).
+Query params (all optional): `city`, `min_price`, `max_price`, `min_beds`, `min_baths`, `property_type`, `status`, `limit` (default 20, max 75), `offset` (default 0).
 
 Response 200:
 ```json

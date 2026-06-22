@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { IdxSearchToolbar } from './idx-search-toolbar'
 import { ListingGrid } from './listing-grid'
@@ -30,23 +30,27 @@ type View = 'split' | 'list' | 'map'
 // still shows something recognisable. Markers will recenter via fitBounds.
 const DEFAULT_CENTER = { lat: 47.6101, lng: -122.2015 } as const
 
-const PAGE_SIZE = 50
-// NWMLS / MLS Grid IDX Rule 26: a query must not be limited to fewer than 500
-// (or 50%) results, and no more than 2,500. We page in via "Load more" up to
-// this ceiling so consumers can reach the full result set — never capped at one
-// page of 50.
-const MAX_RESULTS = 2500
+// NWMLS / MLS Grid IDX Rule 26 caps a single search RESPONSE at 2,500 listings
+// (and forbids limiting it below 500 / 50%). We render one page of 75 listings
+// per response — far under the 2,500 ceiling — and let the consumer page
+// through the ENTIRE result set rather than capping at the first page. This
+// satisfies Rule 26 (no single response exceeds 2,500; nothing is hidden below
+// the minimum) AND the NWMLS reviewer requirement (idx@nwmls.com, 2026-06-22)
+// that every listing in the demo feed be accessible for compliance evaluation.
+// (Map pins are exempt from the 2,500 cap regardless: "This does not apply to
+// displays showing mapping pins and no other listing data.")
+const PAGE_SIZE = 75
 
 function HomeSearchInner() {
   const searchParams = useSearchParams()
   const [items, setItems] = useState<ListingSummary[]>([])
   const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1) // 1-based
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<View>('split')
 
-  // Filter query WITHOUT pagination params — a change resets the result list.
+  // Filter query WITHOUT pagination params — a change resets to page 1.
   const baseQuery = useMemo(() => {
     const p = new URLSearchParams()
     for (const key of ALLOWED_KEYS) {
@@ -56,14 +60,25 @@ function HomeSearchInner() {
     return p.toString()
   }, [searchParams])
 
-  // Load the first page whenever the filters change.
+  // Reset to page 1 whenever the filters change. Adjusting state during render
+  // (the supported React pattern) means the fetch effect below sees page === 1
+  // on the same render, avoiding a wasted fetch of the stale page number
+  // against the new filters.
+  const [trackedQuery, setTrackedQuery] = useState(baseQuery)
+  if (baseQuery !== trackedQuery) {
+    setTrackedQuery(baseQuery)
+    setPage(1)
+  }
+
+  // Fetch the current page whenever the filters or page change. Each response
+  // is a single page of PAGE_SIZE listings — see the Rule 26 note above.
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
     const p = new URLSearchParams(baseQuery)
     p.set('limit', String(PAGE_SIZE))
-    p.set('offset', '0')
+    p.set('offset', String((page - 1) * PAGE_SIZE))
     fetch(`/api/listings?${p.toString()}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`Search failed (${res.status})`)
@@ -84,37 +99,28 @@ function HomeSearchInner() {
     return () => {
       cancelled = true
     }
-  }, [baseQuery])
+  }, [baseQuery, page])
 
-  // Append the next page so consumers can reach the full result set (Rule 26),
-  // up to the 2,500 ceiling.
-  const loadMore = useCallback(async () => {
-    setLoadingMore(true)
-    try {
-      const p = new URLSearchParams(baseQuery)
-      p.set('limit', String(PAGE_SIZE))
-      p.set('offset', String(items.length))
-      const res = await fetch(`/api/listings?${p.toString()}`)
-      if (!res.ok) throw new Error(`Search failed (${res.status})`)
-      const data: ApiResponse = await res.json()
-      setItems((prev) => [...prev, ...data.items])
-      setTotal(data.total)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed')
-    } finally {
-      setLoadingMore(false)
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const rangeEnd = Math.min((page - 1) * PAGE_SIZE + items.length, total)
+
+  const goToPage = (next: number) => {
+    const clamped = Math.min(Math.max(1, next), totalPages)
+    if (clamped === page) return
+    setPage(clamped)
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
-  }, [baseQuery, items.length])
-
-  const canLoadMore =
-    !loading && !error && items.length < Math.min(total, MAX_RESULTS)
+  }
 
   const markers: MapMarker[] = useMemo(
     () =>
       items
         // NWMLS: listings with showOnMap === false (NWM_ShowMapLink) or a
         // withheld address must not be pinned, but still appear in the list
-        // ([GUID #12/#13]). undefined = allowed (placeholder data).
+        // ([GUID #12/#13]). undefined = allowed (placeholder data). So the map
+        // shows only the current page's mappable listings — not all listings.
         .filter((l) => l.showOnMap !== false)
         .map((l) => ({
           id: l.id,
@@ -155,7 +161,11 @@ function HomeSearchInner() {
                 Real Estate &amp; Homes for Sale
               </h2>
               <p className="font-body text-[12px] uppercase tracking-[0.14em] text-site-text-muted">
-                {loading ? 'Loading…' : `${total.toLocaleString()} results`}
+                {loading
+                  ? 'Loading…'
+                  : total === 0
+                  ? '0 results'
+                  : `${rangeStart.toLocaleString()}–${rangeEnd.toLocaleString()} of ${total.toLocaleString()}`}
               </p>
             </div>
             {/* NWMLS/MLS Grid source identification ([GRID §23]) — must appear
@@ -168,24 +178,47 @@ function HomeSearchInner() {
                 distributed by MLS GRID.
               </p>
             )}
-            {/* NWMLS exclusion disclosure ([GRID §9]) — the exact mandated
-                sentence PLUS an explanation of what is and isn't displayed, per
-                the NWMLS reviewer (idx@nwmls.com, 2026-06-15): the bare sentence
-                alone was flagged as insufficient. Wording reflects the actual
-                suppression rules enforced in lib/idx/mlsgrid-map.ts. */}
+            {/* NWMLS exclusion disclosure ([GRID §9]). The bare mandated
+                sentence was flagged twice by the NWMLS reviewer (idx@nwmls.com,
+                2026-06-15 and again 2026-06-22) as insufficient: it must also
+                explain WHICH listings are and are not displayed. The wording
+                below enumerates the actual inclusion/suppression rules enforced
+                in lib/idx/mlsgrid-map.ts (status eligibility, MlgCanView /
+                MlgCanUse, seller internet-display opt-outs, withheld address)
+                so the disclosure matches what the site truly shows. */}
             {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' && (
-              <p className="mb-5 font-body text-[12px] leading-[1.6] text-site-text-muted">
-                Some IDX listings have been excluded from this website. This
-                website displays residential listings made available for Internet
-                Data Exchange (IDX) display through the Northwest Multiple Listing
-                Service (NWMLS). A listing may not appear here if the seller has
-                directed that the property not be displayed publicly online, if
-                the listing&rsquo;s status is not eligible for public display
-                under NWMLS rules (for example, expired, canceled, or
-                temporarily off-market listings), or if the listing has not been
-                authorized for IDX distribution. As a result, this site may not
-                include every listing in the NWMLS.
-              </p>
+              <div className="mb-5 space-y-2 font-body text-[12px] leading-[1.6] text-site-text-muted">
+                <p>
+                  <strong className="font-semibold">
+                    Some IDX listings have been excluded from this website.
+                  </strong>{' '}
+                  This site displays residential listings made available for
+                  Internet Data Exchange (IDX) through the Northwest Multiple
+                  Listing Service (NWMLS), as distributed by MLS GRID.
+                </p>
+                <p>
+                  <span className="font-semibold text-site-text">
+                    What is shown:
+                  </span>{' '}
+                  active, contingent (active-under-contract), pending, and sold
+                  residential listings that the listing broker has authorized for
+                  IDX display.
+                </p>
+                <p>
+                  <span className="font-semibold text-site-text">
+                    What is excluded:
+                  </span>{' '}
+                  listings a seller has directed not be displayed publicly online;
+                  listings not authorized for IDX distribution (for example,
+                  records designated for broker- or VOW-only display); and
+                  listings whose NWMLS status is not eligible for public IDX
+                  display — including expired, canceled, withdrawn, hold,
+                  temporarily-off-market, coming-soon, and sale-fail listings.
+                  Where a seller has withheld the street address, the listing is
+                  shown without its address and is not pinned on the map. As a
+                  result, this site may not include every listing in the NWMLS.
+                </p>
+              </div>
             )}
             {error ? (
               <p className="py-16 text-center font-body text-[14px] uppercase tracking-[0.14em] text-red-600">
@@ -202,24 +235,14 @@ function HomeSearchInner() {
                 }
               />
             )}
-            {/* NWMLS IDX Rule 26: let consumers page through to the full result
-                set (up to 2,500) instead of being capped at the first 50. */}
-            {canLoadMore && (
-              <div className="mt-8 flex justify-center">
-                <button
-                  type="button"
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="inline-flex items-center justify-center border border-black/15 bg-white px-[40px] py-[16px] font-body text-[13px] font-bold uppercase tracking-[0.14em] text-site-text transition-colors hover:border-site-gold hover:text-site-gold disabled:opacity-50"
-                >
-                  {loadingMore
-                    ? 'Loading…'
-                    : `Load more (${items.length.toLocaleString()} of ${Math.min(
-                        total,
-                        MAX_RESULTS,
-                      ).toLocaleString()})`}
-                </button>
-              </div>
+            {/* NWMLS IDX Rule 26: page through the FULL result set (75 per page,
+                every page reachable) instead of capping the displayable set. */}
+            {!error && !loading && totalPages > 1 && (
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onChange={goToPage}
+              />
             )}
           </div>
         ) : null}
@@ -262,6 +285,103 @@ export function HomeSearchClient() {
       <HomeSearchInner />
     </Suspense>
   )
+}
+
+/** Windowed page-number pagination: first, last, and a small range around the
+ *  current page, with ellipses for the gaps. Keeps the control compact even at
+ *  170+ pages (12,877 listings ÷ 75). */
+function Pagination({
+  page,
+  totalPages,
+  onChange,
+}: {
+  page: number
+  totalPages: number
+  onChange: (next: number) => void
+}) {
+  const tokens = pageWindow(page, totalPages)
+  const btn =
+    'inline-flex h-10 min-w-10 items-center justify-center border px-3 font-body text-[13px] font-bold uppercase tracking-[0.12em] transition-colors disabled:cursor-not-allowed disabled:opacity-40'
+
+  return (
+    <nav
+      aria-label="Search results pages"
+      className="mt-10 flex flex-col items-center gap-3"
+    >
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onChange(page - 1)}
+          disabled={page <= 1}
+          aria-label="Previous page"
+          className={`${btn} border-black/15 bg-white text-site-text hover:border-site-gold hover:text-site-gold`}
+        >
+          Prev
+        </button>
+        {tokens.map((t, i) =>
+          t === '…' ? (
+            <span
+              key={`gap-${i}`}
+              aria-hidden
+              className="px-1 font-body text-[13px] text-site-text-muted"
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={t}
+              type="button"
+              onClick={() => onChange(t)}
+              aria-label={`Page ${t}`}
+              aria-current={t === page ? 'page' : undefined}
+              className={`${btn} ${
+                t === page
+                  ? 'border-site-gold bg-site-gold text-white'
+                  : 'border-black/15 bg-white text-site-text hover:border-site-gold hover:text-site-gold'
+              }`}
+            >
+              {t}
+            </button>
+          ),
+        )}
+        <button
+          type="button"
+          onClick={() => onChange(page + 1)}
+          disabled={page >= totalPages}
+          aria-label="Next page"
+          className={`${btn} border-black/15 bg-white text-site-text hover:border-site-gold hover:text-site-gold`}
+        >
+          Next
+        </button>
+      </div>
+      <p className="font-body text-[11px] uppercase tracking-[0.14em] text-site-text-muted">
+        Page {page.toLocaleString()} of {totalPages.toLocaleString()}
+      </p>
+    </nav>
+  )
+}
+
+/** Build the page-number tokens: always 1 and totalPages, plus current ±2,
+ *  with '…' marking skipped ranges. */
+function pageWindow(current: number, total: number): Array<number | '…'> {
+  const span = 2
+  const wanted = new Set<number>([1, total, current])
+  for (let i = 1; i <= span; i++) {
+    wanted.add(current - i)
+    wanted.add(current + i)
+  }
+  const pages = [...wanted]
+    .filter((p) => p >= 1 && p <= total)
+    .sort((a, b) => a - b)
+
+  const out: Array<number | '…'> = []
+  let prev = 0
+  for (const p of pages) {
+    if (prev && p - prev > 1) out.push('…')
+    out.push(p)
+    prev = p
+  }
+  return out
 }
 
 function formatPriceShort(price: number): string {
