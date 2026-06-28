@@ -44,7 +44,7 @@ Before starting any task:
 | Icons            | **lucide-react**                            |                                                                     |
 | Forms            | Netlify Forms (dev) / Resend (prod email)   | Zero-backend for MVP; Resend for transactional                      |
 | Maps             | **Leaflet** + OpenStreetMap tiles           | Free; sufficient for neighborhood pages                             |
-| Animations       | Framer Motion (sparingly)                   | Only if needed to match live site transitions                       |
+| Animations       | `tw-animate-css` (installed); Framer Motion (not yet installed) | `tw-animate-css` is the present animation utility; add Framer Motion only if needed to match live site transitions (ask first) |
 | Hosting          | **Netlify**                                 | Same pipeline as other Terebey projects                             |
 | Analytics        | Plausible (placeholder; swap later)         |                                                                     |
 
@@ -587,4 +587,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-06-15*
+*Last updated: 2026-06-27 (NWMLS IDX display-compliance work through 2026-06-22; see §7.11 and CHANGELOG).*
