@@ -178,20 +178,34 @@ async function downscale(buf: Buffer): Promise<Buffer> {
 async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | null> {
   for (let attempt = 1; attempt <= 6; attempt++) {
     await gate()
-    const res = await fetch(url, { headers: { 'User-Agent': token } })
-    if (res.status === 429 || res.status >= 500) {
+    // A dropped connection surfaces as fetch rejecting with "terminated" (and
+    // arrayBuffer() can reject mid-stream too). Treat it like a 5xx: back off
+    // and retry rather than letting it propagate — an unhandled throw here
+    // would abort the whole sync and fail the Netlify build before the data
+    // snapshot is written.
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': token } })
+      if (res.status === 429 || res.status >= 500) {
+        const w = attempt * 4000
+        console.warn(`  ↻ media ${res.status}; backoff ${w}ms (attempt ${attempt})`)
+        await sleep(w)
+        continue
+      }
+      if (!res.ok) {
+        console.warn(`  ⚠ media → ${res.status}; skipping`)
+        return null
+      }
+      return Buffer.from(await res.arrayBuffer())
+    } catch (err) {
       const w = attempt * 4000
-      console.warn(`  ↻ media ${res.status}; backoff ${w}ms (attempt ${attempt})`)
+      console.warn(
+        `  ↻ media network error (${(err as Error).message}); backoff ${w}ms (attempt ${attempt})`,
+      )
       await sleep(w)
       continue
     }
-    if (!res.ok) {
-      console.warn(`  ⚠ media → ${res.status}; skipping`)
-      return null
-    }
-    return Buffer.from(await res.arrayBuffer())
   }
-  console.warn(`  ⚠ media still rate-limited after retries; skipping`)
+  console.warn(`  ⚠ media unavailable after retries; skipping`)
   return null
 }
 
@@ -295,7 +309,18 @@ async function main() {
       listing.images = [NO_PHOTO]
     } else {
       const urls = MAX_PHOTOS ? listing.images.slice(0, MAX_PHOTOS) : listing.images
-      const localImages = await downloadMedia(listing.id, urls, token)
+      // Media is best-effort: the DATA snapshot is the load-bearing output, so
+      // one listing's photo failure must never abort the run (and fail the
+      // Netlify build) before the snapshot is written. On failure the listing
+      // keeps all its data and shows NO_PHOTO.
+      let localImages: string[] = []
+      try {
+        localImages = await downloadMedia(listing.id, urls, token)
+      } catch (err) {
+        console.warn(
+          `  ⚠ media for ${listing.id} failed (${(err as Error).message}); NO_PHOTO`,
+        )
+      }
       listing.images = localImages.length ? localImages : [NO_PHOTO]
       if (localImages.length) withPhotos++
     }
