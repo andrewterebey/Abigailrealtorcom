@@ -34,6 +34,8 @@ export const ACTIVE_STATUSES: readonly ListingStatus[] = ['for-sale', 'contingen
 
 export interface ListingFilter {
   city?: string
+  /** 5-digit ZIP; matches on the first 5 digits of the listing's zip. */
+  zip?: string
   minPrice?: number
   maxPrice?: number
   minBeds?: number

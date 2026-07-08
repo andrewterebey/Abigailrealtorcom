@@ -17,6 +17,7 @@ export const propertyTypeSchema = z.enum([
 
 export const listingFilterSchema = z.object({
   city: z.string().min(1).optional(),
+  zip: z.string().regex(/^\d{5}$/, 'must be a 5-digit ZIP').optional(),
   minPrice: z.number().int().nonnegative().optional(),
   maxPrice: z.number().int().nonnegative().optional(),
   minBeds: z.number().int().nonnegative().optional(),
@@ -87,6 +88,7 @@ const positiveNumber = z
 
 export const listQuerySchema = z.object({
   city: z.string().min(1).optional(),
+  zip: z.string().regex(/^\d{5}$/, 'must be a 5-digit ZIP').optional(),
   min_price: positiveInt.optional(),
   max_price: positiveInt.optional(),
   min_beds: positiveInt.optional(),

@@ -26,6 +26,7 @@ export async function GET(request: Request) {
   const { items, total } = await provider.list(
     {
       city: q.city,
+      zip: q.zip,
       minPrice: q.min_price,
       maxPrice: q.max_price,
       minBeds: q.min_beds,

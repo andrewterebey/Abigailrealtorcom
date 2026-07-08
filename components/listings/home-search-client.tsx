@@ -9,6 +9,7 @@ import { ACTIVE_STATUSES, type ListingSummary } from '@/types/listing'
 
 const ALLOWED_KEYS = [
   'city',
+  'zip',
   'min_price',
   'max_price',
   'min_beds',
@@ -172,53 +173,19 @@ function HomeSearchInner() {
                 on the first page where listings are displayed. NOTE: §23 also
                 requires the MLS GRID approved logo/icon here; that asset is
                 still pending (see TODO.md) — text alone is not sufficient. */}
+            {/* NWMLS exclusion disclosure ([GRID §9]) REMOVED per NWMLS
+                reviewer direction (idx@nwmls.com via MLS Grid, 2026-07-06):
+                since this site does not limit listings based on objective
+                search criteria — it displays the entire IDX feed — the
+                "Some IDX listings have been excluded from this website"
+                disclaimer does not apply and must not be displayed. If the
+                site ever starts limiting the feed (e.g. King County only or
+                a price floor), the §9 disclosure must come back. */}
             {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' && (
-              <p className="mb-2 font-body text-[12px] leading-[1.5] text-site-text-muted">
+              <p className="mb-5 font-body text-[12px] leading-[1.5] text-site-text-muted">
                 Listings courtesy of the Northwest Multiple Listing Service, as
                 distributed by MLS GRID.
               </p>
-            )}
-            {/* NWMLS exclusion disclosure ([GRID §9]). The bare mandated
-                sentence was flagged twice by the NWMLS reviewer (idx@nwmls.com,
-                2026-06-15 and again 2026-06-22) as insufficient: it must also
-                explain WHICH listings are and are not displayed. The wording
-                below enumerates the actual inclusion/suppression rules enforced
-                in lib/idx/mlsgrid-map.ts (status eligibility, MlgCanView /
-                MlgCanUse, seller internet-display opt-outs, withheld address)
-                so the disclosure matches what the site truly shows. */}
-            {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' && (
-              <div className="mb-5 space-y-2 font-body text-[12px] leading-[1.6] text-site-text-muted">
-                <p>
-                  <strong className="font-semibold">
-                    Some IDX listings have been excluded from this website.
-                  </strong>{' '}
-                  This site displays residential listings made available for
-                  Internet Data Exchange (IDX) through the Northwest Multiple
-                  Listing Service (NWMLS), as distributed by MLS GRID.
-                </p>
-                <p>
-                  <span className="font-semibold text-site-text">
-                    What is shown:
-                  </span>{' '}
-                  active, contingent (active-under-contract), pending, and sold
-                  residential listings that the listing broker has authorized for
-                  IDX display.
-                </p>
-                <p>
-                  <span className="font-semibold text-site-text">
-                    What is excluded:
-                  </span>{' '}
-                  listings a seller has directed not be displayed publicly online;
-                  listings not authorized for IDX distribution (for example,
-                  records designated for broker- or VOW-only display); and
-                  listings whose NWMLS status is not eligible for public IDX
-                  display — including expired, canceled, withdrawn, hold,
-                  temporarily-off-market, coming-soon, and sale-fail listings.
-                  Where a seller has withheld the street address, the listing is
-                  shown without its address and is not pinned on the map. As a
-                  result, this site may not include every listing in the NWMLS.
-                </p>
-              </div>
             )}
             {error ? (
               <p className="py-16 text-center font-body text-[14px] uppercase tracking-[0.14em] text-red-600">
