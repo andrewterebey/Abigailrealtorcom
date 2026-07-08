@@ -21,6 +21,7 @@ async function loadAll(): Promise<ListingDetail[]> {
 
 function matches(listing: ListingDetail, f: ListingFilter): boolean {
   if (f.city && listing.city.toLowerCase() !== f.city.toLowerCase()) return false
+  if (f.zip && listing.zip.slice(0, 5) !== f.zip) return false
   if (f.minPrice !== undefined && listing.price < f.minPrice) return false
   if (f.maxPrice !== undefined && listing.price > f.maxPrice) return false
   if (f.minBeds !== undefined && listing.beds < f.minBeds) return false

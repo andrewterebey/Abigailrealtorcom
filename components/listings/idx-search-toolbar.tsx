@@ -5,15 +5,6 @@ import { useCallback, useMemo, useState, useTransition } from 'react'
 import { Popover } from '@base-ui/react/popover'
 import { ChevronDown, Search } from 'lucide-react'
 
-const CITIES = [
-  'Bellevue',
-  'Seattle',
-  'Kirkland',
-  'Newcastle',
-  'Shoreline',
-  'Renton',
-] as const
-
 const PROPERTY_TYPES = [
   { value: '', label: 'All Property Types' },
   { value: 'single-family', label: 'Single Family' },
@@ -53,12 +44,15 @@ export function IdxSearchToolbar({
   const router = useRouter()
   const params = useSearchParams()
   const [isPending, startTransition] = useTransition()
-  const [searchInput, setSearchInput] = useState(() => params.get('city') ?? '')
+  const [searchInput, setSearchInput] = useState(
+    () => params.get('city') ?? params.get('zip') ?? '',
+  )
   const [savedFlash, setSavedFlash] = useState(false)
 
   const current = useMemo(
     () => ({
       city: params.get('city') ?? '',
+      zip: params.get('zip') ?? '',
       min_price: params.get('min_price') ?? '',
       max_price: params.get('max_price') ?? '',
       min_beds: params.get('min_beds') ?? '',
@@ -94,11 +88,16 @@ export function IdxSearchToolbar({
   const onSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const v = searchInput.trim()
-    // Heuristic: if the user typed one of our known cities verbatim, treat
-    // it as a city filter; otherwise leave the filters alone (free-text
-    // search over address/zip is a real-IDX feature we don't model yet).
-    const hit = CITIES.find((c) => c.toLowerCase() === v.toLowerCase())
-    pushParams({ ...current, city: hit ?? '' })
+    // A 5-digit entry (optionally ZIP+4) filters by ZIP; anything else is
+    // treated as a city name and passed through verbatim — the API matches
+    // city case-insensitively, and a non-matching entry correctly returns
+    // 0 results rather than the whole feed (NWMLS review, 2026-07-06).
+    const zipMatch = /^(\d{5})(?:-\d{4})?$/.exec(v)
+    if (zipMatch) {
+      pushParams({ ...current, city: '', zip: zipMatch[1] })
+    } else {
+      pushParams({ ...current, city: v, zip: '' })
+    }
   }
 
   const onSaveSearch = () => {
@@ -133,11 +132,11 @@ export function IdxSearchToolbar({
           <Search aria-hidden className="size-4 shrink-0 text-site-text-muted" />
           <input
             type="search"
-            placeholder="City, neighborhood, ZIP code…"
+            placeholder="City or ZIP code…"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="w-full bg-transparent font-body text-[13px] text-site-text placeholder:text-site-text-muted focus:outline-none"
-            aria-label="Search by city, neighborhood, or ZIP"
+            aria-label="Search by city or ZIP code"
           />
         </form>
 

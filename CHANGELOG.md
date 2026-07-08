@@ -9,6 +9,24 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- IDX search now genuinely filters by City and ZIP (NWMLS review, 2026-07-06,
+  reviewer item #1). The search box previously only recognized six hardcoded
+  city names left over from placeholder data — typing any other city (347 of
+  the demo feed's 353) or any ZIP code silently cleared the filter and kept
+  showing all ~12.9k listings. The free-text search now passes any city name
+  through to the API (case-insensitive match; an unmatched name correctly
+  returns 0 results), and a 5-digit entry (with optional ZIP+4) filters by
+  ZIP — a new `zip` filter added across the IDX contract (`ListingFilter`,
+  query schema, both providers). Chip filters (status, price, beds, baths,
+  type) compose with the city/ZIP filter, and `scripts/verify-idx-filters.ts`
+  now asserts the filtering behavior for both providers.
+- Removed the "Some IDX listings have been excluded from this website"
+  disclosure from search results (NWMLS review, 2026-07-06, reviewer item #2):
+  NWMLS clarified that because the site does not limit listings based on
+  objective search criteria — it displays the entire IDX feed — the exclusion
+  disclaimer does not apply and should not be displayed. The "Listings courtesy
+  of the Northwest Multiple Listing Service, as distributed by MLS GRID"
+  attribution stays.
 - IDX compliance hardening (NWMLS review, 2026-06-22) — three reviewer items:
   - **Show all demo data.** The IDX search now paginates at **75 listings per
     page** with full prev/next page navigation reaching **every** listing in the
