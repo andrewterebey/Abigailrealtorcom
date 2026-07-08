@@ -15,7 +15,17 @@ export function Hero() {
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const params = new URLSearchParams()
-    if (q) params.set('q', q)
+    // Map the free-text query onto the search page's real filter params —
+    // a 5-digit entry filters by ZIP, anything else by city — matching the
+    // IDX toolbar's parsing. (A bare `q` param was ignored by the search
+    // page, so hero searches didn't limit results; NWMLS review 2026-07-06.)
+    const v = q.trim()
+    const zipMatch = /^(\d{5})(?:-\d{4})?$/.exec(v)
+    if (zipMatch) {
+      params.set('zip', zipMatch[1])
+    } else if (v) {
+      params.set('city', v)
+    }
     if (mode === 'rent') params.set('mode', 'rent')
     router.push(`/home-search/listings${params.toString() ? `?${params}` : ''}`)
   }

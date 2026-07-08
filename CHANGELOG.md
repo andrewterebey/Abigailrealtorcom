@@ -19,7 +19,10 @@ unless they change behavior on the site.
   ZIP — a new `zip` filter added across the IDX contract (`ListingFilter`,
   query schema, both providers). Chip filters (status, price, beds, baths,
   type) compose with the city/ZIP filter, and `scripts/verify-idx-filters.ts`
-  now asserts the filtering behavior for both providers.
+  now asserts the filtering behavior for both providers. The home-page hero
+  search box had the same defect — it forwarded a `q` parameter the search
+  page never read, so hero searches showed all listings; it now maps the
+  typed text onto the same city/ZIP filters.
 - Removed the "Some IDX listings have been excluded from this website"
   disclosure from search results (NWMLS review, 2026-07-06, reviewer item #2):
   NWMLS clarified that because the site does not limit listings based on
