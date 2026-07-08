@@ -104,11 +104,15 @@ deep relative paths.
 ├─ types/
 │  └─ listing.ts                ← shared TS types
 ├─ content/                     ← verbatim copy pulled from the live site
-│  ├─ home.md
-│  ├─ about.md
+│  ├─ home.md, about.md, buyers.md, sellers.md, options.md, contact.md,
+│  │  home-valuation.md, neighborhoods.md
 │  ├─ testimonials.json
+│  ├─ blog/*.md                 ← blog post copy (rendered via lib/blog.ts)
 │  ├─ legal/
-│  │  └─ idx-disclaimer.md      ← VERBATIM, legally required
+│  │  ├─ idx-disclaimer.md      ← VERBATIM, legally required
+│  │  ├─ dmca-notice.md, terms-and-conditions.md ← verbatim legal copy (rendered via lib/legal-content.ts)
+│  │  ├─ nwmls-idx-vendor-requirements.md ← distilled NWMLS / MLS Grid rules (the in-repo reference)
+│  │  └─ nwmls/                 ← source PDFs — GITIGNORED (sensitive vendor docs, kept locally; may be absent on a fresh clone)
 │  └─ neighborhoods/*.md
 ├─ data/
 │  ├─ listings.json             ← placeholder IDX data (never imported from UI)
@@ -145,6 +149,7 @@ npm run build        # production build (turbopack)
 npm run start        # serve production build locally
 npm run lint         # eslint && tsc --noEmit  (lint + strict typecheck)
 npm run capture-live # refresh /screenshots/live from the real site
+npm run sync:idx     # replicate MLS Grid feed → data/mlsgrid-demo.json + public/idx/
 ```
 
 Both `dev` and `build` use **Turbopack** (`next dev --turbopack` /
@@ -177,6 +182,11 @@ Env vars:
 Sync env (optional; defaults in `scripts/sync-idx.ts`): `MLSGRID_MAX_LISTINGS` (0 = all listing data), `MLSGRID_MAX_PHOTOS` (1/listing — demo favors breadth; raise for galleries), `MLSGRID_MEDIA_MAX_LISTINGS` (700 — how many listings get photos; 0 = all), `MLSGRID_SKIP_MEDIA`/`MLSGRID_NO_FETCH` (data-only / reuse-only runs). Defaults ingest the **entire** demo feed's *data* (paging every `@odata.nextLink`) so NWMLS can review every listing's fields, but **bound photo downloads** — MLS Grid throttles media to ≤2 req/s, so fetching all ~13k listings' photos would exceed the Netlify build window. Listings without downloaded photos keep their data and show a `NO_PHOTO` placeholder. Production needs persistent media hosting + a scheduled sync (§7.7). Copy `.env.example` → `.env.local` (gitignored) for local secrets.
 
 **IDX data layer:** `npm run sync:idx` pulls the MLS Grid feed → `data/mlsgrid-demo.json` + `public/idx/` (both gitignored, regenerated at build). MLS Grid is a *replication* API, not query-through (≤2 req/s, refresh ≥12h); the sync downscales photos via `sharp` and enforces NWMLS display-suppression. See `content/legal/nwmls-idx-vendor-requirements.md`.
+
+> ⚠️ `sharp` is NOT a declared dependency — `scripts/sync-idx.ts` imports it via
+> Next.js's transitive install (`next` → `sharp ^0.34.3`). It works today, but if
+> a Next upgrade drops or hoists `sharp` differently, the sync (and the Netlify
+> token-deploy build) breaks. Fix at that point: add `sharp` to `devDependencies`.
 
 Always confirm `npm run dev` is running on port 3000 before taking local screenshots.
 
@@ -439,7 +449,10 @@ The real provider — NWMLS via **MLS Grid** — **is implemented**, not future
 work. Binding requirements (compliance, API v2 rules, rate limits,
 prefixed-keyfield handling) and the source PDFs live in
 **`content/legal/nwmls-idx-vendor-requirements.md`** and
-**`content/legal/nwmls/`**. Read that before changing anything in the IDX layer.
+**`content/legal/nwmls/`** (the latter is gitignored — sensitive vendor docs
+kept locally only, so it may not exist on a fresh clone; the distilled
+requirements doc is the canonical in-repo reference). Read that before
+changing anything in the IDX layer.
 
 **What exists today:**
 
@@ -587,4 +600,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-06-27 (NWMLS IDX display-compliance work through 2026-06-22; see §7.11 and CHANGELOG).*
+*Last updated: 2026-07-08 (repo-audit pass: documented `npm run sync:idx` in the command list, the undeclared-`sharp` dependency risk, actual `/content` + `/content/legal` contents, and the gitignored `content/legal/nwmls/` source-PDF dir).*
