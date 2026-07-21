@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+import { matchesFilter } from './filter'
 import type {
   IDXProvider,
   ListingDetail,
@@ -17,18 +18,6 @@ async function loadAll(): Promise<ListingDetail[]> {
   const raw = await fs.readFile(DATA_PATH, 'utf8')
   cache = JSON.parse(raw) as ListingDetail[]
   return cache
-}
-
-function matches(listing: ListingDetail, f: ListingFilter): boolean {
-  if (f.city && listing.city.toLowerCase() !== f.city.toLowerCase()) return false
-  if (f.zip && listing.zip.slice(0, 5) !== f.zip) return false
-  if (f.minPrice !== undefined && listing.price < f.minPrice) return false
-  if (f.maxPrice !== undefined && listing.price > f.maxPrice) return false
-  if (f.minBeds !== undefined && listing.beds < f.minBeds) return false
-  if (f.minBaths !== undefined && listing.baths < f.minBaths) return false
-  if (f.propertyType && listing.propertyType !== f.propertyType) return false
-  if (f.status && listing.status !== f.status) return false
-  return true
 }
 
 function toSummary(d: ListingDetail): ListingSummary {
@@ -69,7 +58,7 @@ function toSummary(d: ListingDetail): ListingSummary {
 export class PlaceholderProvider implements IDXProvider {
   async list(filter: ListingFilter, page: Pagination) {
     const all = await loadAll()
-    const filtered = all.filter((l) => matches(l, filter))
+    const filtered = all.filter((l) => matchesFilter(l, filter))
     const items = filtered
       .slice(page.offset, page.offset + page.limit)
       .map(toSummary)

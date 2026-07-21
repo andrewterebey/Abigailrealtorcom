@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { Container } from '@/components/site/container'
 import { SpotlightCarousel } from './spotlight-carousel'
-import type { ListingSummary } from '@/types/listing'
+import { OWN_BROKERAGE_NAME, type ListingSummary } from '@/types/listing'
 
 type ApiResponse = {
   items: ListingSummary[]
@@ -14,8 +14,14 @@ async function getSpotlightListings(): Promise<ListingSummary[]> {
   const hdrs = await headers()
   const host = hdrs.get('host') ?? 'localhost:3000'
   const protocol = host.startsWith('localhost') ? 'http' : 'https'
+  const params = new URLSearchParams({ status: 'for-sale', limit: '6' })
+  // NWMLS: a member site may only FEATURE its own brokerage's listings
+  // (idx@nwmls.com review, 2026-07-13), so the spotlight is restricted to the
+  // licensed firm whenever the licensed feed is active. Placeholder mode has
+  // no brokerage names to filter on (and no NWMLS obligations).
+  if (process.env.MLSGRID_TOKEN) params.set('brokerage', OWN_BROKERAGE_NAME)
   const res = await fetch(
-    `${protocol}://${host}/api/listings?status=for-sale&limit=6`,
+    `${protocol}://${host}/api/listings?${params.toString()}`,
     { next: { revalidate: 300 } },
   )
   if (!res.ok) return []

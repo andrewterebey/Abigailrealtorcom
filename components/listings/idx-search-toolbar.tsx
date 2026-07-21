@@ -14,9 +14,12 @@ const PROPERTY_TYPES = [
   { value: 'land', label: 'Land' },
 ] as const
 
+// "Active" is the NWMLS term for for-sale listings; the `for-sale` filter
+// value also returns Contingent listings, which NWMLS considers still for
+// sale and requires in an Active search (idx@nwmls.com review, 2026-07-13).
 const STATUSES = [
   { value: '', label: 'Any Status' },
-  { value: 'for-sale', label: 'For Sale' },
+  { value: 'for-sale', label: 'Active' },
   { value: 'pending', label: 'Pending' },
   { value: 'sold', label: 'Sold' },
 ] as const

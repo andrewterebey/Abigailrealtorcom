@@ -9,6 +9,27 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- NWMLS review 2026-07-13, reviewer items #1 and #4:
+  - **Active search & Contingent listings** (item #1). The search status filter
+    chip is now labeled **"Active"** (NWMLS terminology, was "For Sale") and an
+    Active search verifiably includes Contingent listings — NWMLS considers
+    them still for sale. The API already returned them (2,266 for-sale + 32
+    contingent in the demo feed); the placeholder provider missed that rule, so
+    both providers now share one filter predicate (`lib/idx/filter.ts`) and
+    `scripts/verify-idx-filters.ts` asserts contingent inclusion for both. One
+    placeholder listing was made Contingent so the un-licensed preview
+    exercises the same path.
+  - **Spotlight restricted to own brokerage** (item #4). The homepage
+    "Featured Listings / Spotlight Listings" section now shows only
+    **John L. Scott, Inc.** listings (the licensed member firm) instead of any
+    firm's — NWMLS allows a member to feature only their own brokerage's
+    listings. Implemented as a new `brokerage` filter across the IDX contract
+    (exact member-firm match, punctuation-insensitive, so franchise offices
+    like "John L. Scott Everett" — separate member firms — stay excluded);
+    the spotlight applies it whenever the licensed feed is active. Reviewer
+    items #2 and #3 (single photo per listing; sold listings without photos)
+    are staging-demo media limits, answered by email — production syncs full
+    galleries for all listings.
 - IDX search now genuinely filters by City and ZIP (NWMLS review, 2026-07-06,
   reviewer item #1). The search box previously only recognized six hardcoded
   city names left over from placeholder data — typing any other city (347 of

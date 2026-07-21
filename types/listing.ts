@@ -32,6 +32,25 @@ export const STATUS_LABELS: Record<ListingStatus, string> = {
  *  to be returned by Active (`for-sale`) searches since they are still for sale. */
 export const ACTIVE_STATUSES: readonly ListingStatus[] = ['for-sale', 'contingent']
 
+/** The member firm this site is licensed to (data license request: Brokerage
+ *  "John L. Scott, Inc.", DB J. Lennox Scott). NWMLS allows a member site to
+ *  *feature* (spotlight) only its own brokerage's listings (idx@nwmls.com
+ *  review, 2026-07-13) — the homepage spotlight filters on this name. */
+export const OWN_BROKERAGE_NAME = 'John L. Scott, Inc.'
+
+/** Loose-normalizes a brokerage name for comparison ("John L. Scott, Inc." ≡
+ *  "John L. Scott, Inc" — the feed's punctuation varies per office record).
+ *  Deliberately an EXACT normalized match, not a prefix match: franchise
+ *  offices like "John L. Scott Everett" are separate member firms and must
+ *  not match the licensed firm. */
+export function normalizeBrokerageName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export interface ListingFilter {
   city?: string
   /** 5-digit ZIP; matches on the first 5 digits of the listing's zip. */
@@ -41,7 +60,12 @@ export interface ListingFilter {
   minBeds?: number
   minBaths?: number
   propertyType?: PropertyType
+  /** `for-sale` means "Active" and also matches `contingent` (NWMLS rule);
+   *  every other value matches exactly. */
   status?: ListingStatus
+  /** Restrict to one member firm (punctuation/case-insensitive exact match on
+   *  `brokerageName`). Listings without a brokerageName never match. */
+  brokerage?: string
 }
 
 export interface Pagination {
