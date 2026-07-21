@@ -133,7 +133,8 @@ deep relative paths.
 │  ├─ download-assets.ts        ← pull images/video from live site into /public
 │  ├─ extract-content.ts        ← scrape verbatim copy from live into /content
 │  ├─ generate-listing-placeholders.ts ← regenerate /public/listings SVG stand-ins
-│  └─ sync-idx.ts               ← replicate MLS Grid feed → data/mlsgrid-demo.json + public/idx (npm run sync:idx)
+│  ├─ sync-idx.ts               ← replicate MLS Grid feed → data/mlsgrid-demo.json + public/idx (npm run sync:idx)
+│  └─ verify-idx-filters.ts     ← asserts both providers filter by city/ZIP (npx tsx scripts/verify-idx-filters.ts)
 └─ .claude/
    └─ settings.local.json       ← local Claude Code settings. The Playwright MCP is
                                    registered separately via `claude mcp add` (project scope; see §5.1)
@@ -330,6 +331,8 @@ attribution in the UI is gated *separately* by `NEXT_PUBLIC_IDX_NWMLS` (see §4)
 ### 7.2 The `IDXProvider` interface (`/lib/idx/provider.ts`)
 
 This is the contract. Every provider implementation must satisfy it exactly.
+(The types below are defined in `types/listing.ts` and re-exported by
+`lib/idx/provider.ts`, which adds the `IDXProvider` interface itself.)
 
 ```ts
 export type ListingStatus = 'for-sale' | 'pending' | 'sold'
@@ -337,12 +340,14 @@ export type PropertyType  = 'single-family' | 'condo' | 'townhouse' | 'multi-fam
 
 export interface ListingFilter {
   city?: string
+  zip?: string           // 5-digit ZIP; matches on the first 5 digits of the listing's zip
   minPrice?: number
   maxPrice?: number
   minBeds?: number
   minBaths?: number
   propertyType?: PropertyType
-  status?: ListingStatus
+  status?: ListingStatus // 'for-sale' means "Active" and ALSO matches 'contingent' (NWMLS rule)
+  brokerage?: string     // one member firm, punctuation/case-insensitive exact match (spotlight)
 }
 
 export interface Pagination {
@@ -390,7 +395,12 @@ export interface IDXProvider {
 
 **`GET /api/listings`**
 
-Query params (all optional): `city`, `min_price`, `max_price`, `min_beds`, `min_baths`, `property_type`, `status`, `limit` (default 20, max 75), `offset` (default 0).
+Query params (all optional): `city`, `zip`, `min_price`, `max_price`, `min_beds`, `min_baths`, `property_type`, `status`, `brokerage`, `limit` (default 20, max 75), `offset` (default 0).
+
+`status=for-sale` is the "Active" search and also returns `contingent` listings
+(NWMLS requires it — contingent listings are still for sale). Both providers
+share the filter predicate in `lib/idx/filter.ts`; don't reimplement matching
+per-provider.
 
 Response 200:
 ```json
@@ -514,6 +524,8 @@ recent `fix(legal): …` commits. All of them are gated behind
 - **Non-Active listings visually distinguished on the map** (Data Use Policy §E.5) — see `listings-map.tsx`.
 - **Site-wide IDX disclaimer + exclusion disclosure** — `footer-mls-grid.tsx`, `site-footer.tsx`.
 - **`MlgCanUse` / `MlgCanView` gating** at the data layer — `lib/idx/mlsgrid-map.ts` enforces whole-listing opt-out and display suppression before anything reaches the UI.
+- **Homepage spotlight features ONLY the member's own brokerage** (idx@nwmls.com, 2026-07-13) — `spotlight-listings.tsx` filters to `OWN_BROKERAGE_NAME` ("John L. Scott, Inc.") via the `brokerage` filter whenever the licensed feed is active. Don't widen it to other firms' listings.
+- **Active searches include Contingent listings** (idx@nwmls.com, 2026-07-13) — `status=for-sale` matches `ACTIVE_STATUSES` in `lib/idx/filter.ts`, and the search toolbar labels the option "Active". Don't make for-sale exact-match again.
 
 **The §5 visual-parity loop is the main way these get broken.** The live
 Luxury Presence site does NOT render some of these the same way, so "make local
@@ -600,4 +612,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-07-08 (repo-audit pass: documented `npm run sync:idx` in the command list, the undeclared-`sharp` dependency risk, actual `/content` + `/content/legal` contents, and the gitignored `content/legal/nwmls/` source-PDF dir).*
+*Last updated: 2026-07-20 (drift fixes: `zip` filter added to the `ListingFilter` contract and `/api/listings` params — landed with the NWMLS 2026-07-06 review round — plus `scripts/verify-idx-filters.ts` in the layout, and a note that contract types live in `types/listing.ts`).*
