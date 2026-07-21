@@ -294,7 +294,7 @@
     "beds": 3,
     "baths": 2.5,
     "sqft": 1820,
-    "status": "for-sale",
+    "status": "contingent",
     "primaryImage": "/listings/placeholder-09.svg",
     "description": "This is a placeholder listing — real property details will appear here once the IDX integration is live.",
     "images": [

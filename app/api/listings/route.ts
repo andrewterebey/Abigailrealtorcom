@@ -33,6 +33,7 @@ export async function GET(request: Request) {
       minBaths: q.min_baths,
       propertyType: q.property_type,
       status: q.status,
+      brokerage: q.brokerage,
     },
     { limit, offset },
   )

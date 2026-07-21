@@ -24,6 +24,7 @@ export const listingFilterSchema = z.object({
   minBaths: z.number().nonnegative().optional(),
   propertyType: propertyTypeSchema.optional(),
   status: listingStatusSchema.optional(),
+  brokerage: z.string().min(1).optional(),
 })
 
 export const paginationSchema = z.object({
@@ -95,6 +96,7 @@ export const listQuerySchema = z.object({
   min_baths: positiveNumber.optional(),
   property_type: propertyTypeSchema.optional(),
   status: listingStatusSchema.optional(),
+  brokerage: z.string().min(1).optional(),
   limit: positiveInt
     .pipe(z.number().int().min(1).max(75))
     .optional(),

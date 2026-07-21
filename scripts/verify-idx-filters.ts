@@ -6,6 +6,11 @@
  * a City or ZIP did not limit search results. Asserts that both providers
  * genuinely filter by city (case-insensitive) and by 5-digit ZIP.
  *
+ * Extended for the 2026-07-13 review round: an Active (`for-sale`) search must
+ * include Contingent listings, and the `brokerage` filter (which restricts the
+ * homepage spotlight to the member's own firm) must match exactly one member
+ * firm — punctuation-insensitively, without catching franchise offices.
+ *
  * Run: npx tsx scripts/verify-idx-filters.ts
  * Exits non-zero on any failure.
  */
@@ -14,7 +19,12 @@ import path from 'node:path'
 import { MLSGridProvider } from '../lib/idx/mlsgrid-provider'
 import { PlaceholderProvider } from '../lib/idx/placeholder-provider'
 import type { IDXProvider, ListingFilter } from '../lib/idx/provider'
-import type { ListingDetail } from '../types/listing'
+import {
+  ACTIVE_STATUSES,
+  OWN_BROKERAGE_NAME,
+  normalizeBrokerageName,
+  type ListingDetail,
+} from '../types/listing'
 
 const PAGE = { limit: 75, offset: 0 }
 
@@ -107,6 +117,98 @@ async function verifyProvider(
     const { total } = await provider.list({ city: 'Nowheresville' }, PAGE)
     check(
       'unknown city returns 0 results',
+      total === 0,
+      `expected 0, got ${total}`,
+    )
+  }
+
+  // An Active (for-sale) search must include Contingent listings — NWMLS
+  // considers them still for sale (idx@nwmls.com review, 2026-07-13).
+  {
+    const activeCount = all.filter((l) =>
+      ACTIVE_STATUSES.includes(l.status),
+    ).length
+    const contingentCount = all.filter((l) => l.status === 'contingent').length
+    const { items, total } = await provider.list({ status: 'for-sale' }, PAGE)
+    check(
+      `status="for-sale" (Active) includes contingent (${total} = ${
+        activeCount - contingentCount
+      } for-sale + ${contingentCount} contingent)`,
+      total === activeCount &&
+        contingentCount > 0 &&
+        items.every((i) => ACTIVE_STATUSES.includes(i.status)),
+      contingentCount === 0
+        ? 'source data has no contingent listings — check is vacuous'
+        : `expected total ${activeCount}, got ${total}`,
+    )
+  }
+
+  // Brokerage filter — powers the homepage spotlight, which NWMLS restricts
+  // to the member's own brokerage (idx@nwmls.com review, 2026-07-13).
+  const brokerageCounts = new Map<string, { raw: string; count: number }>()
+  for (const l of all) {
+    if (!l.brokerageName) continue
+    const key = normalizeBrokerageName(l.brokerageName)
+    const entry = brokerageCounts.get(key)
+    if (entry) entry.count++
+    else brokerageCounts.set(key, { raw: l.brokerageName, count: 1 })
+  }
+  if (brokerageCounts.size > 0) {
+    const ownKey = normalizeBrokerageName(OWN_BROKERAGE_NAME)
+    const own = brokerageCounts.get(ownKey)
+    if (own) {
+      const { items, total } = await provider.list(
+        { brokerage: OWN_BROKERAGE_NAME },
+        PAGE,
+      )
+      check(
+        `brokerage="${OWN_BROKERAGE_NAME}" limits results (${total}/${all.length})`,
+        total === own.count &&
+          total < all.length &&
+          items.every(
+            (i) =>
+              i.brokerageName &&
+              normalizeBrokerageName(i.brokerageName) === ownKey,
+          ),
+        `expected total ${own.count}, got ${total}`,
+      )
+    } else {
+      check(
+        `own brokerage "${OWN_BROKERAGE_NAME}" present in source data`,
+        false,
+        'no listings match the licensed firm — spotlight would be empty',
+      )
+    }
+
+    // The spotlight query itself: own-brokerage Active listings only.
+    {
+      const expected = all.filter(
+        (l) =>
+          ACTIVE_STATUSES.includes(l.status) &&
+          l.brokerageName &&
+          normalizeBrokerageName(l.brokerageName) ===
+            normalizeBrokerageName(OWN_BROKERAGE_NAME),
+      ).length
+      const { items, total } = await provider.list(
+        { status: 'for-sale', brokerage: OWN_BROKERAGE_NAME },
+        PAGE,
+      )
+      check(
+        `spotlight query (Active + own brokerage) returns ${total}`,
+        total === expected &&
+          items.every((i) => ACTIVE_STATUSES.includes(i.status)),
+        `expected total ${expected}, got ${total}`,
+      )
+    }
+  } else {
+    // Unbranded (placeholder) data: a brokerage-filtered search must return
+    // nothing rather than everything.
+    const { total } = await provider.list(
+      { brokerage: OWN_BROKERAGE_NAME },
+      PAGE,
+    )
+    check(
+      'brokerage filter on unbranded data returns 0 results',
       total === 0,
       `expected 0, got ${total}`,
     )
