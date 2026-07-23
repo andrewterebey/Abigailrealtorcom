@@ -16,6 +16,20 @@
  *   MLSGRID_TOKEN              (required) OAuth2 token — demo token for staging
  *   MLSGRID_API_BASE           default https://api.mlsgrid.com/v2
  *   MLSGRID_ORIGINATING_SYSTEM default nwmls
+ *   MLSGRID_MEDIA_REQUEST_BUDGET default 30000 — per-run media request cap
+ *                              (MLS Grid enforces 40,000 requests per 24h)
+ *
+ * Remote-media mode (Supabase Storage) — active when BOTH are set:
+ *   SUPABASE_URL               https://<project>.supabase.co
+ *   SUPABASE_SERVICE_ROLE_KEY  service-role key (server-only secret)
+ *   SUPABASE_MEDIA_BUCKET      default idx-media (created public if missing)
+ * Photos then upload to the bucket instead of shipping inside the deploy
+ * (full galleries ≈ 29GB — far beyond any deploy budget), snapshot image
+ * paths become absolute bucket URLs, and media defaults flip to "everything"
+ * (all photos, all listings) per NWMLS's staging-must-match-production
+ * requirement (idx@nwmls.com, 2026-07-21). A manifest of uploaded object
+ * keys lives in the bucket (state/uploaded.json), so a fresh CI runner skips
+ * already-replicated photos without needing yesterday's disk.
  */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -28,32 +42,27 @@ import {
   type ResoRecord,
 } from '../lib/idx/mlsgrid-map'
 import type { ListingDetail } from '../types/listing'
-
-// ── minimal .env.local loader (no dependency) ─────────────────────────────────
-async function loadDotEnvLocal(): Promise<void> {
-  try {
-    const raw = await fs.readFile(path.join(process.cwd(), '.env.local'), 'utf8')
-    for (const line of raw.split('\n')) {
-      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i)
-      if (!m) continue
-      const key = m[1]
-      let val = m[2].trim()
-      if (
-        (val.startsWith('"') && val.endsWith('"')) ||
-        (val.startsWith("'") && val.endsWith("'"))
-      ) {
-        val = val.slice(1, -1)
-      }
-      if (process.env[key] === undefined) process.env[key] = val
-    }
-  } catch {
-    // no .env.local — rely on the ambient environment (e.g. Netlify)
-  }
-}
+import { loadDotEnvLocal } from './load-env'
+import { upsertListingsToDb } from './db'
 
 const ROOT = process.cwd()
 const SNAPSHOT_PATH = path.join(ROOT, 'data', 'mlsgrid-demo.json')
-const MEDIA_DIR = path.join(ROOT, 'public', 'idx')
+const LOCAL_MEDIA_DIR = path.join(ROOT, 'public', 'idx')
+// Remote mode keeps a gitignored local mirror (resumable backfills on a dev
+// machine); CI runners work straight from the uploaded-keys manifest instead.
+const MIRROR_DIR = path.join(ROOT, '.media-mirror')
+const UPLOADED_MANIFEST_KEY = 'state/uploaded.json'
+const SNAPSHOT_KEY = 'data/mlsgrid-demo.json'
+
+type RemoteMedia = {
+  projectUrl: string
+  serviceKey: string
+  bucket: string
+  publicBase: string // …/storage/v1/object/public/<bucket>
+  uploaded: Set<string> // object keys confirmed present in the bucket
+  dirtySinceFlush: number
+}
+let remote: RemoteMedia | null = null
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -71,6 +80,30 @@ function intEnv(name: string, fallback: number): number {
   if (v === undefined || v.trim() === '') return fallback
   const n = Number.parseInt(v, 10)
   return Number.isFinite(n) && n >= 0 ? n : fallback
+}
+
+// Per-run media request budget — MLS Grid also enforces ≤40,000 requests per
+// 24 HOURS (not just ≤2/s), so an unbounded full-gallery backfill (~147k
+// photos) would trip the daily cap ~10h in and then crawl through 429 backoffs
+// for days without ever publishing its snapshot. When the budget runs out — or
+// the media host keeps throttling despite backoff — the run stops REQUESTING
+// new media but still finishes cleanly: remaining listings keep their data
+// with NO_PHOTO, the snapshot publishes, and the next run resumes from the
+// uploaded-keys manifest. 0 = unlimited. Assigned in main() after .env.local
+// loads; the 30k default leaves 24h headroom for data pages, retries, and a
+// second scheduled run.
+let mediaRequestBudget = 30_000
+let mediaRequests = 0
+let consecutiveMediaExhaustions = 0
+let mediaStopReason: string | null = null
+
+function stopMediaFetch(reason: string): void {
+  if (mediaStopReason) return
+  mediaStopReason = reason
+  console.warn(
+    `  ⚠ media fetch stopped: ${reason}. Remaining listings keep NO_PHOTO; ` +
+      `the next sync run resumes from the uploaded-keys manifest.`,
+  )
 }
 
 type ODataPage = { value?: ResoRecord[]; '@odata.nextLink'?: string }
@@ -123,38 +156,168 @@ async function fetchAllPages(
   return out
 }
 
-/** Download one listing's photos into public/idx/<id>/ and return local paths.
- *  Media is immutable, so skip files that already exist ([Best Practices]). */
+// ── Supabase Storage (remote-media mode) ──────────────────────────────────────
+/** Supabase Storage request. Storage has no MLS-style rate cap, so no gate(). */
+async function storageFetch(
+  r: RemoteMedia,
+  method: string,
+  pathname: string,
+  body?: BodyInit,
+  headers?: Record<string, string>,
+): Promise<Response> {
+  // Both header forms so legacy JWT service_role keys AND the newer
+  // sb_secret_… API keys work (the latter are matched via `apikey`).
+  return fetch(`${r.projectUrl}${pathname}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${r.serviceKey}`,
+      apikey: r.serviceKey,
+      ...headers,
+    },
+    body,
+  })
+}
+
+/** Upload one object (upsert), retrying transient failures. */
+async function uploadObject(
+  r: RemoteMedia,
+  key: string,
+  buf: Buffer,
+  contentType: string,
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await storageFetch(
+        r,
+        'POST',
+        `/storage/v1/object/${r.bucket}/${key}`,
+        new Uint8Array(buf),
+        { 'Content-Type': contentType, 'x-upsert': 'true' },
+      )
+      if (res.ok) return true
+      console.warn(`  ↻ upload ${key} → ${res.status} (attempt ${attempt})`)
+    } catch (err) {
+      console.warn(
+        `  ↻ upload ${key} network error (${(err as Error).message}) (attempt ${attempt})`,
+      )
+    }
+    await sleep(attempt * 1500)
+  }
+  console.warn(`  ⚠ upload failed for ${key}; will retry on a future run`)
+  return false
+}
+
+/** Activate remote mode: ensure the public bucket exists and pull the
+ *  uploaded-keys manifest so already-replicated photos are skipped even on a
+ *  fresh CI runner (media is immutable, [Best Practices]). */
+async function initRemoteMedia(): Promise<void> {
+  const projectUrl = process.env.SUPABASE_URL?.replace(/\/$/, '')
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!projectUrl || !serviceKey) return
+  const bucket = process.env.SUPABASE_MEDIA_BUCKET ?? 'idx-media'
+  const r: RemoteMedia = {
+    projectUrl,
+    serviceKey,
+    bucket,
+    publicBase: `${projectUrl}/storage/v1/object/public/${bucket}`,
+    uploaded: new Set(),
+    dirtySinceFlush: 0,
+  }
+  const create = await storageFetch(
+    r,
+    'POST',
+    '/storage/v1/bucket',
+    JSON.stringify({ id: bucket, name: bucket, public: true }),
+    { 'Content-Type': 'application/json' },
+  )
+  // 400/409 = already exists; anything else is a config problem — stop early.
+  if (!create.ok && create.status !== 400 && create.status !== 409) {
+    throw new Error(
+      `Supabase bucket check failed ${create.status}: ${await create.text()}`,
+    )
+  }
+  const manifest = await storageFetch(
+    r,
+    'GET',
+    `/storage/v1/object/${bucket}/${UPLOADED_MANIFEST_KEY}`,
+  )
+  if (manifest.ok) {
+    const keys = (await manifest.json()) as string[]
+    for (const k of keys) r.uploaded.add(k)
+  }
+  remote = r
+  console.log(
+    `Remote media: Supabase bucket '${bucket}' ` +
+      `(${r.uploaded.size} objects already replicated)`,
+  )
+}
+
+async function flushUploadedManifest(r: RemoteMedia, force = false): Promise<void> {
+  if (!force && r.dirtySinceFlush < 500) return
+  const ok = await uploadObject(
+    r,
+    UPLOADED_MANIFEST_KEY,
+    Buffer.from(JSON.stringify([...r.uploaded])),
+    'application/json',
+  )
+  if (ok) r.dirtySinceFlush = 0
+}
+
+/** Replicate one listing's photos and return the paths/URLs to serve.
+ *  Media is immutable, so anything already in the local dir (local mode) or
+ *  the bucket manifest (remote mode) is skipped ([Best Practices]). */
 async function downloadMedia(
   id: string,
   urls: string[],
   token: string,
 ): Promise<string[]> {
   if (urls.length === 0) return []
-  const dir = path.join(MEDIA_DIR, id)
-  await fs.mkdir(dir, { recursive: true })
-  const local: string[] = []
+  const dir = path.join(remote ? MIRROR_DIR : LOCAL_MEDIA_DIR, id)
+  const served: string[] = []
   for (let i = 0; i < urls.length; i++) {
     // Re-encoded to jpeg on download, so the extension is always .jpg.
     const file = `${String(i).padStart(2, '0')}.jpg`
     const abs = path.join(dir, file)
-    const publicPath = `/idx/${id}/${file}`
-    try {
-      await fs.access(abs)
-      local.push(publicPath) // already downloaded
+    const key = `idx/${id}/${file}`
+    const servedPath = remote ? `${remote.publicBase}/${key}` : `/${key}`
+
+    if (remote?.uploaded.has(key)) {
+      served.push(servedPath) // already in the bucket
       continue
-    } catch {
-      /* not present — download below */
     }
-    // Reuse-only mode: don't fetch missing media (e.g. during a media-host
-    // rate-limit cooldown). Listings without cached photos fall back to NO_PHOTO.
-    if (process.env.MLSGRID_NO_FETCH === 'true') continue
-    const buf = await fetchMediaBuffer(urls[i], token)
-    if (!buf) continue // already warned
-    await fs.writeFile(abs, await downscale(buf))
-    local.push(publicPath)
+
+    // A local copy (mirror or public/idx) means the download already happened;
+    // in remote mode it still needs uploading (e.g. resumed backfill).
+    let buf: Buffer | null = null
+    try {
+      buf = await fs.readFile(abs)
+    } catch {
+      /* not on disk — download below */
+    }
+    if (!buf) {
+      // Reuse-only mode: don't fetch missing media (e.g. during a media-host
+      // rate-limit cooldown). Listings without photos fall back to NO_PHOTO.
+      if (process.env.MLSGRID_NO_FETCH === 'true') continue
+      if (mediaRequestBudget && mediaRequests >= mediaRequestBudget) {
+        stopMediaFetch(`request budget (${mediaRequestBudget}) reached`)
+      }
+      if (mediaStopReason) continue
+      const fetched = await fetchMediaBuffer(urls[i], token)
+      if (!fetched) continue // already warned
+      buf = await downscale(fetched)
+      await fs.mkdir(dir, { recursive: true })
+      await fs.writeFile(abs, buf)
+    }
+
+    if (remote) {
+      if (!(await uploadObject(remote, key, buf, 'image/jpeg'))) continue
+      remote.uploaded.add(key)
+      remote.dirtySinceFlush++
+      await flushUploadedManifest(remote)
+    }
+    served.push(servedPath)
   }
-  return local
+  return served
 }
 
 // Downscale to keep the deploy small. Proportional resize preserves the NWMLS
@@ -178,6 +341,7 @@ async function downscale(buf: Buffer): Promise<Buffer> {
 async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | null> {
   for (let attempt = 1; attempt <= 6; attempt++) {
     await gate()
+    mediaRequests++
     // A dropped connection surfaces as fetch rejecting with "terminated" (and
     // arrayBuffer() can reject mid-stream too). Treat it like a 5xx: back off
     // and retry rather than letting it propagate — an unhandled throw here
@@ -195,6 +359,7 @@ async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | nu
         console.warn(`  ⚠ media → ${res.status}; skipping`)
         return null
       }
+      consecutiveMediaExhaustions = 0
       return Buffer.from(await res.arrayBuffer())
     } catch (err) {
       const w = attempt * 4000
@@ -204,6 +369,12 @@ async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | nu
       await sleep(w)
       continue
     }
+  }
+  // Every attempt 429/5xx/network-failed. A few in a row means the host is
+  // refusing us outright (e.g. the 24h cap despite our budget — other runs
+  // share it) — stop asking rather than burn days of backoff.
+  if (++consecutiveMediaExhaustions >= 3) {
+    stopMediaFetch('media host kept throttling despite backoff (429/5xx streak)')
   }
   console.warn(`  ⚠ media unavailable after retries; skipping`)
   return null
@@ -221,22 +392,29 @@ async function main() {
   const apiBase = process.env.MLSGRID_API_BASE ?? 'https://api.mlsgrid.com/v2'
   const originatingSystem = process.env.MLSGRID_ORIGINATING_SYSTEM ?? 'nwmls'
 
+  await initRemoteMedia()
+
   // ALL listing DATA is ingested by default (MAX_LISTINGS=0 → every demo listing
   // is accessible for NWMLS's field-level review, idx@nwmls.com 2026-06-15),
   // paging @odata.nextLink to the end per the documented initial-import
   // procedure (content/legal/nwmls-idx-vendor-requirements.md).
   //
-  // MEDIA is the bottleneck: MLS Grid throttles to ≤2 req/s, so fetching photos
-  // for all ~13k listings would blow the Netlify build window. Defaults favor
-  // BREADTH for the demo — one (primary) photo each for MEDIA_MAX_LISTINGS=700
-  // status-diverse listings — so the search grid looks populated; the rest keep
-  // full data and show the NO_PHOTO placeholder. Cost ≈ 0.7s × listings × photos
-  // (~8 min here). Raise MAX_PHOTOS for richer detail galleries, or
-  // MEDIA_MAX_LISTINGS for wider coverage (watch the build timeout). PRODUCTION
-  // needs persistent media hosting + a scheduled sync (see CLAUDE.md §7.7).
+  // MEDIA is the bottleneck: MLS Grid throttles to ≤2 req/s, so a full photo
+  // replication (~147k photos) takes ~20h — it can only ever happen as a
+  // resumable out-of-band backfill, never inside a deploy build.
+  //
+  //   Remote mode (Supabase set): defaults flip to EVERYTHING — all photos for
+  //   all listings, per NWMLS's staging-must-match-production requirement
+  //   (idx@nwmls.com, 2026-07-21). Already-replicated photos are skipped via
+  //   the bucket manifest, so scheduled runs only fetch what's new.
+  //
+  //   Local mode (no Supabase): the legacy bounded demo defaults — one primary
+  //   photo for 700 status-diverse listings so a token-only build stays inside
+  //   the Netlify window; the rest show the NO_PHOTO placeholder.
   const MAX_LISTINGS = intEnv('MLSGRID_MAX_LISTINGS', 0)
-  const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', 1)
-  const MEDIA_MAX_LISTINGS = intEnv('MLSGRID_MEDIA_MAX_LISTINGS', 700)
+  const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', remote ? 0 : 1)
+  const MEDIA_MAX_LISTINGS = intEnv('MLSGRID_MEDIA_MAX_LISTINGS', remote ? 0 : 700)
+  mediaRequestBudget = intEnv('MLSGRID_MEDIA_REQUEST_BUDGET', 30_000)
 
   // MLS Grid caps $expand requests at 1000 records/page (a larger $top errors),
   // so we request 1000/page and follow @odata.nextLink until it is absent —
@@ -246,7 +424,8 @@ async function main() {
   console.log(
     `Syncing MLS Grid feed (OriginatingSystemName='${originatingSystem}', ` +
       `data: ${MAX_LISTINGS || 'all'} listings; ` +
-      `media: ${MEDIA_MAX_LISTINGS || 'all'} listings × ${MAX_PHOTOS || '∞'} photos)…`,
+      `media: ${MEDIA_MAX_LISTINGS || 'all'} listings × ${MAX_PHOTOS || '∞'} photos; ` +
+      `media request budget: ${mediaRequestBudget || 'unlimited'})…`,
   )
 
   // Single initial-import query: all displayable listings (every status),
@@ -337,7 +516,34 @@ async function main() {
   )
 
   await fs.mkdir(path.dirname(SNAPSHOT_PATH), { recursive: true })
-  await fs.writeFile(SNAPSHOT_PATH, JSON.stringify(selected, null, 2) + '\n', 'utf8')
+  const snapshotJson = JSON.stringify(selected, null, 2) + '\n'
+  await fs.writeFile(SNAPSHOT_PATH, snapshotJson, 'utf8')
+
+  // Remote mode: publish the snapshot + manifest so Netlify builds (via
+  // scripts/fetch-snapshot.ts) and future CI runs pick up exactly this state.
+  if (remote) {
+    await flushUploadedManifest(remote, true)
+    const ok = await uploadObject(
+      remote,
+      SNAPSHOT_KEY,
+      Buffer.from(snapshotJson),
+      'application/json',
+    )
+    if (!ok) throw new Error('snapshot upload to Supabase failed')
+    console.log(`  snapshot published to ${remote.publicBase}/${SNAPSHOT_KEY}`)
+
+    // Mirror the snapshot into the Postgres `listings` table (Phase B store).
+    // Non-fatal while the site still serves from the snapshot file: a DB
+    // hiccup must not fail the sync. Reconciliation (deleting rows that left
+    // the feed) only runs for uncapped, complete syncs.
+    try {
+      await upsertListingsToDb(selected, { reconcile: MAX_LISTINGS === 0 })
+    } catch (err) {
+      console.warn(
+        `  ⚠ DB upsert failed (non-fatal, snapshot remains authoritative): ${(err as Error).message}`,
+      )
+    }
+  }
 
   const byStatus = selected.reduce<Record<string, number>>((acc, l) => {
     acc[l.status] = (acc[l.status] ?? 0) + 1
@@ -355,6 +561,10 @@ async function main() {
   console.log(
     `  ${withPhotos}/${selected.length} listings have photos ` +
       `(rest show NO_PHOTO; raise MLSGRID_MEDIA_MAX_LISTINGS for more).`,
+  )
+  console.log(
+    `  media requests this run: ${mediaRequests}` +
+      (mediaStopReason ? ` — stopped early: ${mediaStopReason}` : ''),
   )
   if (cappedListings > 0) {
     console.log(

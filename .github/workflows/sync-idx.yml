@@ -1,0 +1,55 @@
+# Scheduled MLS Grid replication (CLAUDE.md §7.7, Phase A).
+#
+# Every 12 hours (the NWMLS/MLS Grid minimum refresh), replicate the feed in
+# remote-media mode: listing data + any NEW photos go to Supabase Storage, the
+# fresh snapshot is published to the bucket, then a Netlify build hook rebuilds
+# the site from it. Already-replicated photos are skipped via the bucket
+# manifest, so routine runs take minutes; the ~20h initial photo backfill is a
+# one-time local run (see CLAUDE.md), not a CI job.
+#
+# Repo secrets required (Settings → Secrets and variables → Actions):
+#   MLSGRID_TOKEN              demo token for staging; prod token at cutover
+#   MLSGRID_API_BASE           https://api-demo.mlsgrid.com/v2 for staging
+#   SUPABASE_URL               https://<project>.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY  Supabase service-role key
+#   NETLIFY_BUILD_HOOK_URL     Netlify → Site settings → Build hooks
+name: sync-idx
+
+on:
+  schedule:
+    - cron: '17 3,15 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-idx
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Replicate MLS Grid feed → Supabase
+        env:
+          MLSGRID_TOKEN: ${{ secrets.MLSGRID_TOKEN }}
+          MLSGRID_API_BASE: ${{ secrets.MLSGRID_API_BASE }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Two scheduled runs/day at 15k each stay inside MLS Grid's 40k/24h
+          # request cap with headroom for local backfill runs and retries.
+          MLSGRID_MEDIA_REQUEST_BUDGET: '15000'
+        run: npm run sync:idx
+
+      - name: Trigger Netlify rebuild
+        env:
+          HOOK: ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
+        run: curl -sf -X POST "$HOOK" -d '{}'

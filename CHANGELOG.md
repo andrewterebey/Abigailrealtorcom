@@ -9,6 +9,29 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- NWMLS review 2026-07-21, all four reviewer items:
+  - **Full photo galleries for every listing** (items #2–#3: single photo per
+    listing; sold listings without photos). The staging site now runs the
+    production media process instead of a bounded demo sample: a scheduled
+    sync (GitHub Actions, every 12h) replicates **all photos for all ~12.9k
+    listings** from the MLS Grid feed into our own storage (Supabase Storage
+    bucket — MLS Grid media is never hot-linked), publishes the listing
+    snapshot alongside, and triggers a site rebuild. Uploads are incremental
+    (a manifest of already-replicated photos is kept in the bucket), so each
+    scheduled run only fetches what's new, staying inside MLS Grid's 2 req/s
+    media throttle. A one-time backfill of the full demo feed's photo set is
+    in progress; property pages show complete galleries — including sold
+    listings — as it lands.
+  - **Days-on-market labeled as CDOM** (reviewer item). Listing cards and the
+    detail page now label the days-on-market figure "CDOM" — the displayed
+    value is the feed's CumulativeDaysOnMarket, and NWMLS requires CDOM
+    labeling when days-on-market is shown.
+  - **/properties Featured + Sold sections restricted to own brokerage**
+    (reviewer item). The homepage spotlight's "View All" leads to
+    `/properties`, whose Featured Listings and Recently Sold sections now
+    show only John L. Scott, Inc. listings, matching the spotlight rule —
+    other member firms' listings may not be featured there. General IDX
+    search is unaffected.
 - NWMLS review 2026-07-13, reviewer items #1 and #4:
   - **Active search & Contingent listings** (item #1). The search status filter
     chip is now labeled **"Active"** (NWMLS terminology, was "For Sale") and an

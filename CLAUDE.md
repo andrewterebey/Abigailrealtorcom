@@ -93,7 +93,8 @@ deep relative paths.
 │  └─ ui/                       ← shadcn primitives (button)
 ├─ lib/
 │  ├─ idx/                      ← provider.ts (contract), index.ts (env-selected active provider),
-│  │                              placeholder-provider.ts, mlsgrid-provider.ts, mlsgrid-map.ts
+│  │                              filter.ts (shared filter predicate), placeholder-provider.ts,
+│  │                              mlsgrid-provider.ts, mlsgrid-map.ts
 │  ├─ schemas.ts                ← Zod schemas for API boundary validation
 │  ├─ structured-data.ts        ← JSON-LD builders (RealEstateAgent, LocalBusiness, Residence)
 │  ├─ rate-limit.ts             ← in-memory token-bucket for /api/contact
@@ -180,7 +181,7 @@ Env vars:
 | `NEXT_PUBLIC_IDX_NWMLS`      | `true` to show NWMLS attribution/disclaimers in the UI. Set on the IDX (demo/prod) site. |
 | `NEXT_PUBLIC_NOINDEX`        | `true` on staging/review deploys → `robots.txt` blocks indexing. |
 
-Sync env (optional; defaults in `scripts/sync-idx.ts`): `MLSGRID_MAX_LISTINGS` (0 = all listing data), `MLSGRID_MAX_PHOTOS` (1/listing — demo favors breadth; raise for galleries), `MLSGRID_MEDIA_MAX_LISTINGS` (700 — how many listings get photos; 0 = all), `MLSGRID_SKIP_MEDIA`/`MLSGRID_NO_FETCH` (data-only / reuse-only runs). Defaults ingest the **entire** demo feed's *data* (paging every `@odata.nextLink`) so NWMLS can review every listing's fields, but **bound photo downloads** — MLS Grid throttles media to ≤2 req/s, so fetching all ~13k listings' photos would exceed the Netlify build window. Listings without downloaded photos keep their data and show a `NO_PHOTO` placeholder. Production needs persistent media hosting + a scheduled sync (§7.7). Copy `.env.example` → `.env.local` (gitignored) for local secrets.
+Sync env (optional; defaults in `scripts/sync-idx.ts`): `MLSGRID_MAX_LISTINGS` (0 = all listing data), `MLSGRID_MAX_PHOTOS` (1/listing — demo favors breadth; raise for galleries), `MLSGRID_MEDIA_MAX_LISTINGS` (700 — how many listings get photos; 0 = all), `MLSGRID_MEDIA_REQUEST_BUDGET` (30000 — max media requests per run so MLS Grid's 40k/24h cap is never tripped; on exhaustion the run stops fetching, still publishes its snapshot, and the next run resumes from the bucket manifest), `MLSGRID_SKIP_MEDIA`/`MLSGRID_NO_FETCH` (data-only / reuse-only runs). Defaults ingest the **entire** demo feed's *data* (paging every `@odata.nextLink`) so NWMLS can review every listing's fields, but **bound photo downloads** — MLS Grid throttles media to ≤2 req/s, so fetching all ~13k listings' photos would exceed the Netlify build window. Listings without downloaded photos keep their data and show a `NO_PHOTO` placeholder. Production needs persistent media hosting + a scheduled sync (§7.7). Copy `.env.example` → `.env.local` (gitignored) for local secrets.
 
 **IDX data layer:** `npm run sync:idx` pulls the MLS Grid feed → `data/mlsgrid-demo.json` + `public/idx/` (both gitignored, regenerated at build). MLS Grid is a *replication* API, not query-through (≤2 req/s, refresh ≥12h); the sync downscales photos via `sharp` and enforces NWMLS display-suppression. See `content/legal/nwmls-idx-vendor-requirements.md`.
 
