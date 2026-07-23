@@ -44,6 +44,9 @@ jobs:
           MLSGRID_API_BASE: ${{ secrets.MLSGRID_API_BASE }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Two scheduled runs/day at 15k each stay inside MLS Grid's 40k/24h
+          # request cap with headroom for local backfill runs and retries.
+          MLSGRID_MEDIA_REQUEST_BUDGET: '15000'
         run: npm run sync:idx
 
       - name: Trigger Netlify rebuild

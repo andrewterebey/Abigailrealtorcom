@@ -16,6 +16,8 @@
  *   MLSGRID_TOKEN              (required) OAuth2 token — demo token for staging
  *   MLSGRID_API_BASE           default https://api.mlsgrid.com/v2
  *   MLSGRID_ORIGINATING_SYSTEM default nwmls
+ *   MLSGRID_MEDIA_REQUEST_BUDGET default 30000 — per-run media request cap
+ *                              (MLS Grid enforces 40,000 requests per 24h)
  *
  * Remote-media mode (Supabase Storage) — active when BOTH are set:
  *   SUPABASE_URL               https://<project>.supabase.co
@@ -78,6 +80,30 @@ function intEnv(name: string, fallback: number): number {
   if (v === undefined || v.trim() === '') return fallback
   const n = Number.parseInt(v, 10)
   return Number.isFinite(n) && n >= 0 ? n : fallback
+}
+
+// Per-run media request budget — MLS Grid also enforces ≤40,000 requests per
+// 24 HOURS (not just ≤2/s), so an unbounded full-gallery backfill (~147k
+// photos) would trip the daily cap ~10h in and then crawl through 429 backoffs
+// for days without ever publishing its snapshot. When the budget runs out — or
+// the media host keeps throttling despite backoff — the run stops REQUESTING
+// new media but still finishes cleanly: remaining listings keep their data
+// with NO_PHOTO, the snapshot publishes, and the next run resumes from the
+// uploaded-keys manifest. 0 = unlimited. Assigned in main() after .env.local
+// loads; the 30k default leaves 24h headroom for data pages, retries, and a
+// second scheduled run.
+let mediaRequestBudget = 30_000
+let mediaRequests = 0
+let consecutiveMediaExhaustions = 0
+let mediaStopReason: string | null = null
+
+function stopMediaFetch(reason: string): void {
+  if (mediaStopReason) return
+  mediaStopReason = reason
+  console.warn(
+    `  ⚠ media fetch stopped: ${reason}. Remaining listings keep NO_PHOTO; ` +
+      `the next sync run resumes from the uploaded-keys manifest.`,
+  )
 }
 
 type ODataPage = { value?: ResoRecord[]; '@odata.nextLink'?: string }
@@ -272,6 +298,10 @@ async function downloadMedia(
       // Reuse-only mode: don't fetch missing media (e.g. during a media-host
       // rate-limit cooldown). Listings without photos fall back to NO_PHOTO.
       if (process.env.MLSGRID_NO_FETCH === 'true') continue
+      if (mediaRequestBudget && mediaRequests >= mediaRequestBudget) {
+        stopMediaFetch(`request budget (${mediaRequestBudget}) reached`)
+      }
+      if (mediaStopReason) continue
       const fetched = await fetchMediaBuffer(urls[i], token)
       if (!fetched) continue // already warned
       buf = await downscale(fetched)
@@ -311,6 +341,7 @@ async function downscale(buf: Buffer): Promise<Buffer> {
 async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | null> {
   for (let attempt = 1; attempt <= 6; attempt++) {
     await gate()
+    mediaRequests++
     // A dropped connection surfaces as fetch rejecting with "terminated" (and
     // arrayBuffer() can reject mid-stream too). Treat it like a 5xx: back off
     // and retry rather than letting it propagate — an unhandled throw here
@@ -328,6 +359,7 @@ async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | nu
         console.warn(`  ⚠ media → ${res.status}; skipping`)
         return null
       }
+      consecutiveMediaExhaustions = 0
       return Buffer.from(await res.arrayBuffer())
     } catch (err) {
       const w = attempt * 4000
@@ -337,6 +369,12 @@ async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | nu
       await sleep(w)
       continue
     }
+  }
+  // Every attempt 429/5xx/network-failed. A few in a row means the host is
+  // refusing us outright (e.g. the 24h cap despite our budget — other runs
+  // share it) — stop asking rather than burn days of backoff.
+  if (++consecutiveMediaExhaustions >= 3) {
+    stopMediaFetch('media host kept throttling despite backoff (429/5xx streak)')
   }
   console.warn(`  ⚠ media unavailable after retries; skipping`)
   return null
@@ -376,6 +414,7 @@ async function main() {
   const MAX_LISTINGS = intEnv('MLSGRID_MAX_LISTINGS', 0)
   const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', remote ? 0 : 1)
   const MEDIA_MAX_LISTINGS = intEnv('MLSGRID_MEDIA_MAX_LISTINGS', remote ? 0 : 700)
+  mediaRequestBudget = intEnv('MLSGRID_MEDIA_REQUEST_BUDGET', 30_000)
 
   // MLS Grid caps $expand requests at 1000 records/page (a larger $top errors),
   // so we request 1000/page and follow @odata.nextLink until it is absent —
@@ -385,7 +424,8 @@ async function main() {
   console.log(
     `Syncing MLS Grid feed (OriginatingSystemName='${originatingSystem}', ` +
       `data: ${MAX_LISTINGS || 'all'} listings; ` +
-      `media: ${MEDIA_MAX_LISTINGS || 'all'} listings × ${MAX_PHOTOS || '∞'} photos)…`,
+      `media: ${MEDIA_MAX_LISTINGS || 'all'} listings × ${MAX_PHOTOS || '∞'} photos; ` +
+      `media request budget: ${mediaRequestBudget || 'unlimited'})…`,
   )
 
   // Single initial-import query: all displayable listings (every status),
@@ -521,6 +561,10 @@ async function main() {
   console.log(
     `  ${withPhotos}/${selected.length} listings have photos ` +
       `(rest show NO_PHOTO; raise MLSGRID_MEDIA_MAX_LISTINGS for more).`,
+  )
+  console.log(
+    `  media requests this run: ${mediaRequests}` +
+      (mediaStopReason ? ` — stopped early: ${mediaStopReason}` : ''),
   )
   if (cappedListings > 0) {
     console.log(
