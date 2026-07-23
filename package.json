@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint && tsc --noEmit",
     "capture-live": "tsx scripts/capture-live.ts",
-    "sync:idx": "tsx scripts/sync-idx.ts"
+    "sync:idx": "tsx scripts/sync-idx.ts",
+    "fetch:snapshot": "tsx scripts/fetch-snapshot.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
     // because the SVGs are first-party static assets, not user uploads.
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Listing photos are replicated into Supabase Storage (remote-media mode of
+    // scripts/sync-idx.ts) and served from the project's public bucket.
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
   // The MLS Grid snapshot (data/mlsgrid-demo.json) is read at request time via
   // process.cwd(), which Next can't statically analyze — so on a serverless

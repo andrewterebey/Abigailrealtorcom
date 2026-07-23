@@ -76,3 +76,7 @@ next-env.d.ts
 # locally-cached media should not be committed.
 /data/mlsgrid-demo.json
 /public/idx/
+
+# Local mirror of the full MLS Grid photo replication (remote-media mode of
+# sync-idx.ts) — ~29GB of licensed media; lives in Supabase Storage, never git.
+/.media-mirror/

@@ -16,6 +16,18 @@
  *   MLSGRID_TOKEN              (required) OAuth2 token — demo token for staging
  *   MLSGRID_API_BASE           default https://api.mlsgrid.com/v2
  *   MLSGRID_ORIGINATING_SYSTEM default nwmls
+ *
+ * Remote-media mode (Supabase Storage) — active when BOTH are set:
+ *   SUPABASE_URL               https://<project>.supabase.co
+ *   SUPABASE_SERVICE_ROLE_KEY  service-role key (server-only secret)
+ *   SUPABASE_MEDIA_BUCKET      default idx-media (created public if missing)
+ * Photos then upload to the bucket instead of shipping inside the deploy
+ * (full galleries ≈ 29GB — far beyond any deploy budget), snapshot image
+ * paths become absolute bucket URLs, and media defaults flip to "everything"
+ * (all photos, all listings) per NWMLS's staging-must-match-production
+ * requirement (idx@nwmls.com, 2026-07-21). A manifest of uploaded object
+ * keys lives in the bucket (state/uploaded.json), so a fresh CI runner skips
+ * already-replicated photos without needing yesterday's disk.
  */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -53,7 +65,22 @@ async function loadDotEnvLocal(): Promise<void> {
 
 const ROOT = process.cwd()
 const SNAPSHOT_PATH = path.join(ROOT, 'data', 'mlsgrid-demo.json')
-const MEDIA_DIR = path.join(ROOT, 'public', 'idx')
+const LOCAL_MEDIA_DIR = path.join(ROOT, 'public', 'idx')
+// Remote mode keeps a gitignored local mirror (resumable backfills on a dev
+// machine); CI runners work straight from the uploaded-keys manifest instead.
+const MIRROR_DIR = path.join(ROOT, '.media-mirror')
+const UPLOADED_MANIFEST_KEY = 'state/uploaded.json'
+const SNAPSHOT_KEY = 'data/mlsgrid-demo.json'
+
+type RemoteMedia = {
+  projectUrl: string
+  serviceKey: string
+  bucket: string
+  publicBase: string // …/storage/v1/object/public/<bucket>
+  uploaded: Set<string> // object keys confirmed present in the bucket
+  dirtySinceFlush: number
+}
+let remote: RemoteMedia | null = null
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -123,38 +150,158 @@ async function fetchAllPages(
   return out
 }
 
-/** Download one listing's photos into public/idx/<id>/ and return local paths.
- *  Media is immutable, so skip files that already exist ([Best Practices]). */
+// ── Supabase Storage (remote-media mode) ──────────────────────────────────────
+/** Supabase Storage request. Storage has no MLS-style rate cap, so no gate(). */
+async function storageFetch(
+  r: RemoteMedia,
+  method: string,
+  pathname: string,
+  body?: BodyInit,
+  headers?: Record<string, string>,
+): Promise<Response> {
+  return fetch(`${r.projectUrl}${pathname}`, {
+    method,
+    headers: { Authorization: `Bearer ${r.serviceKey}`, ...headers },
+    body,
+  })
+}
+
+/** Upload one object (upsert), retrying transient failures. */
+async function uploadObject(
+  r: RemoteMedia,
+  key: string,
+  buf: Buffer,
+  contentType: string,
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await storageFetch(
+        r,
+        'POST',
+        `/storage/v1/object/${r.bucket}/${key}`,
+        new Uint8Array(buf),
+        { 'Content-Type': contentType, 'x-upsert': 'true' },
+      )
+      if (res.ok) return true
+      console.warn(`  ↻ upload ${key} → ${res.status} (attempt ${attempt})`)
+    } catch (err) {
+      console.warn(
+        `  ↻ upload ${key} network error (${(err as Error).message}) (attempt ${attempt})`,
+      )
+    }
+    await sleep(attempt * 1500)
+  }
+  console.warn(`  ⚠ upload failed for ${key}; will retry on a future run`)
+  return false
+}
+
+/** Activate remote mode: ensure the public bucket exists and pull the
+ *  uploaded-keys manifest so already-replicated photos are skipped even on a
+ *  fresh CI runner (media is immutable, [Best Practices]). */
+async function initRemoteMedia(): Promise<void> {
+  const projectUrl = process.env.SUPABASE_URL?.replace(/\/$/, '')
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!projectUrl || !serviceKey) return
+  const bucket = process.env.SUPABASE_MEDIA_BUCKET ?? 'idx-media'
+  const r: RemoteMedia = {
+    projectUrl,
+    serviceKey,
+    bucket,
+    publicBase: `${projectUrl}/storage/v1/object/public/${bucket}`,
+    uploaded: new Set(),
+    dirtySinceFlush: 0,
+  }
+  const create = await storageFetch(
+    r,
+    'POST',
+    '/storage/v1/bucket',
+    JSON.stringify({ id: bucket, name: bucket, public: true }),
+    { 'Content-Type': 'application/json' },
+  )
+  // 400/409 = already exists; anything else is a config problem — stop early.
+  if (!create.ok && create.status !== 400 && create.status !== 409) {
+    throw new Error(
+      `Supabase bucket check failed ${create.status}: ${await create.text()}`,
+    )
+  }
+  const manifest = await storageFetch(
+    r,
+    'GET',
+    `/storage/v1/object/${bucket}/${UPLOADED_MANIFEST_KEY}`,
+  )
+  if (manifest.ok) {
+    const keys = (await manifest.json()) as string[]
+    for (const k of keys) r.uploaded.add(k)
+  }
+  remote = r
+  console.log(
+    `Remote media: Supabase bucket '${bucket}' ` +
+      `(${r.uploaded.size} objects already replicated)`,
+  )
+}
+
+async function flushUploadedManifest(r: RemoteMedia, force = false): Promise<void> {
+  if (!force && r.dirtySinceFlush < 500) return
+  const ok = await uploadObject(
+    r,
+    UPLOADED_MANIFEST_KEY,
+    Buffer.from(JSON.stringify([...r.uploaded])),
+    'application/json',
+  )
+  if (ok) r.dirtySinceFlush = 0
+}
+
+/** Replicate one listing's photos and return the paths/URLs to serve.
+ *  Media is immutable, so anything already in the local dir (local mode) or
+ *  the bucket manifest (remote mode) is skipped ([Best Practices]). */
 async function downloadMedia(
   id: string,
   urls: string[],
   token: string,
 ): Promise<string[]> {
   if (urls.length === 0) return []
-  const dir = path.join(MEDIA_DIR, id)
-  await fs.mkdir(dir, { recursive: true })
-  const local: string[] = []
+  const dir = path.join(remote ? MIRROR_DIR : LOCAL_MEDIA_DIR, id)
+  const served: string[] = []
   for (let i = 0; i < urls.length; i++) {
     // Re-encoded to jpeg on download, so the extension is always .jpg.
     const file = `${String(i).padStart(2, '0')}.jpg`
     const abs = path.join(dir, file)
-    const publicPath = `/idx/${id}/${file}`
-    try {
-      await fs.access(abs)
-      local.push(publicPath) // already downloaded
+    const key = `idx/${id}/${file}`
+    const servedPath = remote ? `${remote.publicBase}/${key}` : `/${key}`
+
+    if (remote?.uploaded.has(key)) {
+      served.push(servedPath) // already in the bucket
       continue
-    } catch {
-      /* not present — download below */
     }
-    // Reuse-only mode: don't fetch missing media (e.g. during a media-host
-    // rate-limit cooldown). Listings without cached photos fall back to NO_PHOTO.
-    if (process.env.MLSGRID_NO_FETCH === 'true') continue
-    const buf = await fetchMediaBuffer(urls[i], token)
-    if (!buf) continue // already warned
-    await fs.writeFile(abs, await downscale(buf))
-    local.push(publicPath)
+
+    // A local copy (mirror or public/idx) means the download already happened;
+    // in remote mode it still needs uploading (e.g. resumed backfill).
+    let buf: Buffer | null = null
+    try {
+      buf = await fs.readFile(abs)
+    } catch {
+      /* not on disk — download below */
+    }
+    if (!buf) {
+      // Reuse-only mode: don't fetch missing media (e.g. during a media-host
+      // rate-limit cooldown). Listings without photos fall back to NO_PHOTO.
+      if (process.env.MLSGRID_NO_FETCH === 'true') continue
+      const fetched = await fetchMediaBuffer(urls[i], token)
+      if (!fetched) continue // already warned
+      buf = await downscale(fetched)
+      await fs.mkdir(dir, { recursive: true })
+      await fs.writeFile(abs, buf)
+    }
+
+    if (remote) {
+      if (!(await uploadObject(remote, key, buf, 'image/jpeg'))) continue
+      remote.uploaded.add(key)
+      remote.dirtySinceFlush++
+      await flushUploadedManifest(remote)
+    }
+    served.push(servedPath)
   }
-  return local
+  return served
 }
 
 // Downscale to keep the deploy small. Proportional resize preserves the NWMLS
@@ -221,22 +368,28 @@ async function main() {
   const apiBase = process.env.MLSGRID_API_BASE ?? 'https://api.mlsgrid.com/v2'
   const originatingSystem = process.env.MLSGRID_ORIGINATING_SYSTEM ?? 'nwmls'
 
+  await initRemoteMedia()
+
   // ALL listing DATA is ingested by default (MAX_LISTINGS=0 → every demo listing
   // is accessible for NWMLS's field-level review, idx@nwmls.com 2026-06-15),
   // paging @odata.nextLink to the end per the documented initial-import
   // procedure (content/legal/nwmls-idx-vendor-requirements.md).
   //
-  // MEDIA is the bottleneck: MLS Grid throttles to ≤2 req/s, so fetching photos
-  // for all ~13k listings would blow the Netlify build window. Defaults favor
-  // BREADTH for the demo — one (primary) photo each for MEDIA_MAX_LISTINGS=700
-  // status-diverse listings — so the search grid looks populated; the rest keep
-  // full data and show the NO_PHOTO placeholder. Cost ≈ 0.7s × listings × photos
-  // (~8 min here). Raise MAX_PHOTOS for richer detail galleries, or
-  // MEDIA_MAX_LISTINGS for wider coverage (watch the build timeout). PRODUCTION
-  // needs persistent media hosting + a scheduled sync (see CLAUDE.md §7.7).
+  // MEDIA is the bottleneck: MLS Grid throttles to ≤2 req/s, so a full photo
+  // replication (~147k photos) takes ~20h — it can only ever happen as a
+  // resumable out-of-band backfill, never inside a deploy build.
+  //
+  //   Remote mode (Supabase set): defaults flip to EVERYTHING — all photos for
+  //   all listings, per NWMLS's staging-must-match-production requirement
+  //   (idx@nwmls.com, 2026-07-21). Already-replicated photos are skipped via
+  //   the bucket manifest, so scheduled runs only fetch what's new.
+  //
+  //   Local mode (no Supabase): the legacy bounded demo defaults — one primary
+  //   photo for 700 status-diverse listings so a token-only build stays inside
+  //   the Netlify window; the rest show the NO_PHOTO placeholder.
   const MAX_LISTINGS = intEnv('MLSGRID_MAX_LISTINGS', 0)
-  const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', 1)
-  const MEDIA_MAX_LISTINGS = intEnv('MLSGRID_MEDIA_MAX_LISTINGS', 700)
+  const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', remote ? 0 : 1)
+  const MEDIA_MAX_LISTINGS = intEnv('MLSGRID_MEDIA_MAX_LISTINGS', remote ? 0 : 700)
 
   // MLS Grid caps $expand requests at 1000 records/page (a larger $top errors),
   // so we request 1000/page and follow @odata.nextLink until it is absent —
@@ -337,7 +490,22 @@ async function main() {
   )
 
   await fs.mkdir(path.dirname(SNAPSHOT_PATH), { recursive: true })
-  await fs.writeFile(SNAPSHOT_PATH, JSON.stringify(selected, null, 2) + '\n', 'utf8')
+  const snapshotJson = JSON.stringify(selected, null, 2) + '\n'
+  await fs.writeFile(SNAPSHOT_PATH, snapshotJson, 'utf8')
+
+  // Remote mode: publish the snapshot + manifest so Netlify builds (via
+  // scripts/fetch-snapshot.ts) and future CI runs pick up exactly this state.
+  if (remote) {
+    await flushUploadedManifest(remote, true)
+    const ok = await uploadObject(
+      remote,
+      SNAPSHOT_KEY,
+      Buffer.from(snapshotJson),
+      'application/json',
+    )
+    if (!ok) throw new Error('snapshot upload to Supabase failed')
+    console.log(`  snapshot published to ${remote.publicBase}/${SNAPSHOT_KEY}`)
+  }
 
   const byStatus = selected.reduce<Record<string, number>>((acc, l) => {
     acc[l.status] = (acc[l.status] ?? 0) + 1
