@@ -9,7 +9,8 @@
     "lint": "eslint && tsc --noEmit",
     "capture-live": "tsx scripts/capture-live.ts",
     "sync:idx": "tsx scripts/sync-idx.ts",
-    "fetch:snapshot": "tsx scripts/fetch-snapshot.ts"
+    "fetch:snapshot": "tsx scripts/fetch-snapshot.ts",
+    "db:load": "tsx scripts/load-db.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

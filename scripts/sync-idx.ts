@@ -41,6 +41,7 @@ import {
 } from '../lib/idx/mlsgrid-map'
 import type { ListingDetail } from '../types/listing'
 import { loadDotEnvLocal } from './load-env'
+import { upsertListingsToDb } from './db'
 
 const ROOT = process.cwd()
 const SNAPSHOT_PATH = path.join(ROOT, 'data', 'mlsgrid-demo.json')
@@ -490,6 +491,18 @@ async function main() {
     )
     if (!ok) throw new Error('snapshot upload to Supabase failed')
     console.log(`  snapshot published to ${remote.publicBase}/${SNAPSHOT_KEY}`)
+
+    // Mirror the snapshot into the Postgres `listings` table (Phase B store).
+    // Non-fatal while the site still serves from the snapshot file: a DB
+    // hiccup must not fail the sync. Reconciliation (deleting rows that left
+    // the feed) only runs for uncapped, complete syncs.
+    try {
+      await upsertListingsToDb(selected, { reconcile: MAX_LISTINGS === 0 })
+    } catch (err) {
+      console.warn(
+        `  ⚠ DB upsert failed (non-fatal, snapshot remains authoritative): ${(err as Error).message}`,
+      )
+    }
   }
 
   const byStatus = selected.reduce<Record<string, number>>((acc, l) => {
