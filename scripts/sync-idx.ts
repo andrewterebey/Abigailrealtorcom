@@ -159,9 +159,15 @@ async function storageFetch(
   body?: BodyInit,
   headers?: Record<string, string>,
 ): Promise<Response> {
+  // Both header forms so legacy JWT service_role keys AND the newer
+  // sb_secret_… API keys work (the latter are matched via `apikey`).
   return fetch(`${r.projectUrl}${pathname}`, {
     method,
-    headers: { Authorization: `Bearer ${r.serviceKey}`, ...headers },
+    headers: {
+      Authorization: `Bearer ${r.serviceKey}`,
+      apikey: r.serviceKey,
+      ...headers,
+    },
     body,
   })
 }
