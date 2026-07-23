@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Container } from '@/components/site/container'
 import { ListingGrid } from '@/components/listings/listing-grid'
-import type { ListingSummary } from '@/types/listing'
+import { OWN_BROKERAGE_NAME, type ListingSummary } from '@/types/listing'
 
 export const metadata: Metadata = {
   title: 'Properties',
@@ -45,8 +45,17 @@ async function fetchListings(params: URLSearchParams): Promise<ApiResponse> {
 export default async function PropertiesPage() {
   // Live splits into two sections: FEATURED PROPERTIES (single highlighted
   // for-sale listing) and SOLD PROPERTIES (full grid). Fetch both in parallel.
+  // NWMLS: this page is reached via the homepage spotlight's "View All" and
+  // presents listings as featured, so — like the spotlight itself — it may only
+  // show the member's own brokerage when the licensed feed is active
+  // (idx@nwmls.com review, 2026-07-21). Other firms' listings remain available
+  // through the general IDX search at /home-search/listings.
   const forSaleParams = new URLSearchParams({ status: 'for-sale', limit: '1' })
   const soldParams = new URLSearchParams({ status: 'sold', limit: '20' })
+  if (process.env.MLSGRID_TOKEN) {
+    forSaleParams.set('brokerage', OWN_BROKERAGE_NAME)
+    soldParams.set('brokerage', OWN_BROKERAGE_NAME)
+  }
   const [forSale, sold] = await Promise.all([
     fetchListings(forSaleParams),
     fetchListings(soldParams),
