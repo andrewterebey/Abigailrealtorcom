@@ -40,28 +40,7 @@ import {
   type ResoRecord,
 } from '../lib/idx/mlsgrid-map'
 import type { ListingDetail } from '../types/listing'
-
-// ── minimal .env.local loader (no dependency) ─────────────────────────────────
-async function loadDotEnvLocal(): Promise<void> {
-  try {
-    const raw = await fs.readFile(path.join(process.cwd(), '.env.local'), 'utf8')
-    for (const line of raw.split('\n')) {
-      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i)
-      if (!m) continue
-      const key = m[1]
-      let val = m[2].trim()
-      if (
-        (val.startsWith('"') && val.endsWith('"')) ||
-        (val.startsWith("'") && val.endsWith("'"))
-      ) {
-        val = val.slice(1, -1)
-      }
-      if (process.env[key] === undefined) process.env[key] = val
-    }
-  } catch {
-    // no .env.local — rely on the ambient environment (e.g. Netlify)
-  }
-}
+import { loadDotEnvLocal } from './load-env'
 
 const ROOT = process.cwd()
 const SNAPSHOT_PATH = path.join(ROOT, 'data', 'mlsgrid-demo.json')

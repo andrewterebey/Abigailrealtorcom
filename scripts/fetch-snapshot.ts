@@ -17,8 +17,10 @@
  */
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+import { loadDotEnvLocal } from './load-env'
 
 async function main() {
+  await loadDotEnvLocal()
   const projectUrl = process.env.SUPABASE_URL?.replace(/\/$/, '')
   if (!projectUrl) {
     throw new Error('SUPABASE_URL is not set — cannot fetch a published snapshot')
