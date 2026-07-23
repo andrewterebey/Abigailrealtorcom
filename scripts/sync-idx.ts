@@ -95,6 +95,13 @@ function intEnv(name: string, fallback: number): number {
 let mediaRequestBudget = 30_000
 let mediaRequests = 0
 let consecutiveMediaExhaustions = 0
+// Failure streak across PHOTOS (any cause — 4xx, expired signed URLs, dropped
+// connections). The demo media host was observed returning plain 400
+// "Request limit reached" when over its (undocumented, sub-40k) limits, which
+// the 429-only exhaustion breaker never sees — a whole-night crawl of 400s
+// proved that gap. Fifty photos failing in a row with zero successes means
+// the host is refusing us, whatever the status code says.
+let consecutivePhotoFailures = 0
 let mediaStopReason: string | null = null
 
 function stopMediaFetch(reason: string): void {
@@ -303,7 +310,13 @@ async function downloadMedia(
       }
       if (mediaStopReason) continue
       const fetched = await fetchMediaBuffer(urls[i], token)
-      if (!fetched) continue // already warned
+      if (!fetched) {
+        if (++consecutivePhotoFailures >= 50) {
+          stopMediaFetch('50 consecutive media failures — host is refusing requests')
+        }
+        continue // already warned
+      }
+      consecutivePhotoFailures = 0
       buf = await downscale(fetched)
       await fs.mkdir(dir, { recursive: true })
       await fs.writeFile(abs, buf)
