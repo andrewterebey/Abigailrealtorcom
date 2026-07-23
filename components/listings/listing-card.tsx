@@ -82,7 +82,9 @@ export function ListingCard({ listing, priority = false, className }: ListingCar
         </p>
         <p className="mt-2 font-body text-[12px] uppercase tracking-[0.12em] text-site-text-muted">
           {beds} BD | {baths} BA | {sqft.toLocaleString()} sqft
-          {typeof cdom === 'number' ? ` | ${cdom} days` : ''}
+          {/* The feed value is CumulativeDaysOnMarket — NWMLS requires CDOM
+              labeling whenever days-on-market figures are shown. */}
+          {typeof cdom === 'number' ? ` | ${cdom} CDOM` : ''}
         </p>
         <p className="mt-3 font-display text-[22px] font-semibold leading-none text-site-text">
           {formatPrice(price)}

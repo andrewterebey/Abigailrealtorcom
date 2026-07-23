@@ -215,7 +215,7 @@ export function ListingDetail({ listing }: ListingDetailProps) {
                 {typeof cdom === 'number' && (
                   <div className="flex items-center justify-between">
                     <dt className="uppercase tracking-[0.1em] text-site-text-muted">
-                      Days on Market
+                      Cumulative Days on Market
                     </dt>
                     <dd>{cdom}</dd>
                   </div>
