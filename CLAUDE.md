@@ -93,7 +93,8 @@ deep relative paths.
 │  └─ ui/                       ← shadcn primitives (button)
 ├─ lib/
 │  ├─ idx/                      ← provider.ts (contract), index.ts (env-selected active provider),
-│  │                              placeholder-provider.ts, mlsgrid-provider.ts, mlsgrid-map.ts
+│  │                              filter.ts (shared filter predicate), placeholder-provider.ts,
+│  │                              mlsgrid-provider.ts, mlsgrid-map.ts
 │  ├─ schemas.ts                ← Zod schemas for API boundary validation
 │  ├─ structured-data.ts        ← JSON-LD builders (RealEstateAgent, LocalBusiness, Residence)
 │  ├─ rate-limit.ts             ← in-memory token-bucket for /api/contact
