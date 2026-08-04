@@ -36,6 +36,7 @@ import path from 'node:path'
 import sharp from 'sharp'
 import {
   mapResoToListing,
+  mapMediaUrls,
   duplicatePrimaryId,
   deprefix,
   NO_PHOTO,
@@ -82,27 +83,32 @@ function intEnv(name: string, fallback: number): number {
   return Number.isFinite(n) && n >= 0 ? n : fallback
 }
 
-// Per-run media request budget — MLS Grid also enforces ≤40,000 requests per
-// 24 HOURS (not just ≤2/s), so an unbounded full-gallery backfill (~147k
-// photos) would trip the daily cap ~10h in and then crawl through 429 backoffs
-// for days without ever publishing its snapshot. When the budget runs out — or
-// the media host keeps throttling despite backoff — the run stops REQUESTING
+// Per-run media request budget — an optional safety valve, default UNLIMITED.
+// MLS Grid support (2026-07-30) confirmed images have NO rate limit; the
+// "Request limit reached" 4xx streaks that earlier runs hit were EXPIRED
+// signed MediaURLs (~1h lifetime), not a quota — fixed by the staleness
+// refresh below. When a budget is set and runs out, the run stops REQUESTING
 // new media but still finishes cleanly: remaining listings keep their data
 // with NO_PHOTO, the snapshot publishes, and the next run resumes from the
-// uploaded-keys manifest. 0 = unlimited. Assigned in main() after .env.local
-// loads; the 30k default leaves 24h headroom for data pages, retries, and a
-// second scheduled run.
-let mediaRequestBudget = 30_000
+// uploaded-keys manifest. Assigned in main() after .env.local loads.
+let mediaRequestBudget = 0
 let mediaRequests = 0
 let consecutiveMediaExhaustions = 0
-// Failure streak across PHOTOS (any cause — 4xx, expired signed URLs, dropped
-// connections). The demo media host was observed returning plain 400
-// "Request limit reached" when over its (undocumented, sub-40k) limits, which
-// the 429-only exhaustion breaker never sees — a whole-night crawl of 400s
-// proved that gap. Fifty photos failing in a row with zero successes means
-// the host is refusing us, whatever the status code says.
+// Failure streak across PHOTOS (any cause — 4xx, dropped connections). With
+// URL staleness handled, fifty photos failing in a row with zero successes
+// means the host is genuinely refusing us, whatever the status code says.
 let consecutivePhotoFailures = 0
 let mediaStopReason: string | null = null
+
+// Signed MediaURLs expire ~1 HOUR after harvest (support@mlsgrid.com,
+// 2026-07-30: download images at the same time as the property records, not
+// afterwards). We harvest every listing's URLs up front, so before the first
+// real download for a listing whose URLs have aged past REFRESH_AGE_MS,
+// re-fetch that listing's Media from the API (one gated request) and use the
+// fresh URLs. Set in main(); null in reuse-only/data-only modes.
+const URL_REFRESH_AGE_MS = 45 * 60 * 1000
+let urlsHarvestedAt = 0
+let refreshMediaUrls: ((id: string) => Promise<string[] | null>) | null = null
 
 function stopMediaFetch(reason: string): void {
   if (mediaStopReason) return
@@ -281,6 +287,7 @@ async function downloadMedia(
   if (urls.length === 0) return []
   const dir = path.join(remote ? MIRROR_DIR : LOCAL_MEDIA_DIR, id)
   const served: string[] = []
+  let refreshed = false
   for (let i = 0; i < urls.length; i++) {
     // Re-encoded to jpeg on download, so the extension is always .jpg.
     const file = `${String(i).padStart(2, '0')}.jpg`
@@ -309,6 +316,18 @@ async function downloadMedia(
         stopMediaFetch(`request budget (${mediaRequestBudget}) reached`)
       }
       if (mediaStopReason) continue
+      // First real download for this listing with stale harvested URLs →
+      // swap in fresh signed URLs (photo order is stable, so indexes align).
+      if (
+        !refreshed &&
+        refreshMediaUrls &&
+        Date.now() - urlsHarvestedAt > URL_REFRESH_AGE_MS
+      ) {
+        refreshed = true
+        const fresh = await refreshMediaUrls(id)
+        if (fresh && fresh.length) urls = fresh.slice(0, urls.length)
+        if (i >= urls.length) break
+      }
       const fetched = await fetchMediaBuffer(urls[i], token)
       if (!fetched) {
         if (++consecutivePhotoFailures >= 50) {
@@ -405,6 +424,29 @@ async function main() {
   const apiBase = process.env.MLSGRID_API_BASE ?? 'https://api.mlsgrid.com/v2'
   const originatingSystem = process.env.MLSGRID_ORIGINATING_SYSTEM ?? 'nwmls'
 
+  // Single-instance lock. Two concurrent runs on the same token double the
+  // aggregate request rate past MLS Grid's 2/s cap — their 2026-07-30 email
+  // traced our token suspension to exactly that (a 4/s burst from overlapping
+  // runs). A dead run's lock is ignored via pid liveness.
+  const lockPath = path.join(MIRROR_DIR, 'sync.lock')
+  await fs.mkdir(MIRROR_DIR, { recursive: true })
+  const priorPid = Number(await fs.readFile(lockPath, 'utf8').catch(() => '0'))
+  if (priorPid > 0) {
+    let alive = false
+    try {
+      process.kill(priorPid, 0)
+      alive = true
+    } catch {
+      /* ESRCH — stale lock from a dead run */
+    }
+    if (alive) {
+      throw new Error(
+        `another sync-idx run (pid ${priorPid}) is already active — a second run would exceed MLS Grid's 2 req/s cap. Exiting.`,
+      )
+    }
+  }
+  await fs.writeFile(lockPath, String(process.pid))
+
   await initRemoteMedia()
 
   // ALL listing DATA is ingested by default (MAX_LISTINGS=0 → every demo listing
@@ -412,8 +454,9 @@ async function main() {
   // paging @odata.nextLink to the end per the documented initial-import
   // procedure (content/legal/nwmls-idx-vendor-requirements.md).
   //
-  // MEDIA is the bottleneck: MLS Grid throttles to ≤2 req/s, so a full photo
-  // replication (~147k photos) takes ~20h — it can only ever happen as a
+  // MEDIA is the bottleneck: requests are paced ≤2 req/s (images themselves
+  // have no volume limit — support@mlsgrid.com 2026-07-30), so a full photo
+  // replication (~147k photos) takes ~30h — it can only ever happen as a
   // resumable out-of-band backfill, never inside a deploy build.
   //
   //   Remote mode (Supabase set): defaults flip to EVERYTHING — all photos for
@@ -427,7 +470,7 @@ async function main() {
   const MAX_LISTINGS = intEnv('MLSGRID_MAX_LISTINGS', 0)
   const MAX_PHOTOS = intEnv('MLSGRID_MAX_PHOTOS', remote ? 0 : 1)
   const MEDIA_MAX_LISTINGS = intEnv('MLSGRID_MEDIA_MAX_LISTINGS', remote ? 0 : 700)
-  mediaRequestBudget = intEnv('MLSGRID_MEDIA_REQUEST_BUDGET', 30_000)
+  mediaRequestBudget = intEnv('MLSGRID_MEDIA_REQUEST_BUDGET', 0)
 
   // MLS Grid caps $expand requests at 1000 records/page (a larger $top errors),
   // so we request 1000/page and follow @odata.nextLink until it is absent —
@@ -451,12 +494,18 @@ async function main() {
 
   // Drop duplicate listings, keeping the primary ([GUID #4]).
   const listings: ListingDetail[] = []
+  // Prefixed ListingIds, kept for API re-queries (the mapper strips prefixes
+  // for display; the API requires them back — [GUID #5]).
+  const prefixedIdByOwnId = new Map<string, string>()
   let suppressed = 0
   let duplicates = 0
   for (const raw of rawRecords) {
     const ownId = deprefix(
       typeof raw.ListingId === 'string' ? raw.ListingId : undefined,
     )
+    if (ownId && typeof raw.ListingId === 'string') {
+      prefixedIdByOwnId.set(ownId, raw.ListingId)
+    }
     const primaryId = duplicatePrimaryId(raw)
     if (primaryId && primaryId !== ownId) {
       duplicates++
@@ -468,6 +517,28 @@ async function main() {
       continue
     }
     listings.push(mapped)
+  }
+
+  // Stale-URL refresher for downloadMedia (signed MediaURLs live ~1h; the
+  // media pass runs for many hours). One gated API request re-harvests a
+  // single listing's fresh URLs right before its photos download.
+  urlsHarvestedAt = Date.now()
+  refreshMediaUrls = async (id: string) => {
+    const prefixed = prefixedIdByOwnId.get(id)
+    if (!prefixed) return null
+    try {
+      const data = await fetchJson(
+        `${apiBase}/Property?$filter=${encodeURIComponent(`ListingId eq '${prefixed}'`)}&$expand=Media&$top=1`,
+        token,
+      )
+      const rec = data.value?.[0]
+      return rec ? mapMediaUrls(rec) : null
+    } catch (err) {
+      console.warn(
+        `  ⚠ media-url refresh for ${id} failed (${(err as Error).message}); using stale URLs`,
+      )
+      return null
+    }
   }
 
   // Defensive de-dup by stable id: the feed can yield two records that map to
@@ -607,7 +678,11 @@ function selectDiverse(listings: ListingDetail[], max: number): ListingDetail[] 
   return out
 }
 
-main().catch((err) => {
-  console.error('\nsync-idx failed:', err instanceof Error ? err.message : err)
-  process.exit(1)
-})
+main()
+  .then(async () => {
+    await fs.unlink(path.join(MIRROR_DIR, 'sync.lock')).catch(() => {})
+  })
+  .catch((err) => {
+    console.error('\nsync-idx failed:', err instanceof Error ? err.message : err)
+    process.exit(1)
+  })
