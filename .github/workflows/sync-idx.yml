@@ -44,13 +44,6 @@ jobs:
           MLSGRID_API_BASE: ${{ secrets.MLSGRID_API_BASE }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          # Data + snapshot only while the one-time local media backfill runs:
-          # a CI fetcher overlapping the local one doubles the request rate
-          # past MLS Grid's 2 req/s cap (their 2026-07-30 email traced our
-          # token suspension to exactly such a 4/s burst). Media already in
-          # the bucket manifest still serves. REMOVE this line once the
-          # initial import completes so scheduled runs fetch new photos.
-          MLSGRID_NO_FETCH: 'true'
         run: npm run sync:idx
 
       - name: Trigger Netlify rebuild
