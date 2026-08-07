@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { Container } from '@/components/site/container'
 import { ListingGrid } from '@/components/listings/listing-grid'
-import type { ListingSummary } from '@/types/listing'
+import { OWN_BROKERAGE_NAME, type ListingSummary } from '@/types/listing'
 
 export const metadata: Metadata = {
   title: 'Past Transactions',
@@ -43,7 +43,12 @@ async function fetchListings(params: URLSearchParams): Promise<ApiResponse> {
 }
 
 export default async function PastTransactionsPage() {
+  // NWMLS: like /properties, this page presents sold listings as the member's
+  // own transactions, so it may only show the member's brokerage when the
+  // licensed feed is active (idx@nwmls.com review, 2026-07-21). Other firms'
+  // listings remain available through the general IDX search.
   const soldParams = new URLSearchParams({ status: 'sold', limit: '50' })
+  if (process.env.MLSGRID_TOKEN) soldParams.set('brokerage', OWN_BROKERAGE_NAME)
   const sold = await fetchListings(soldParams)
 
   return (
