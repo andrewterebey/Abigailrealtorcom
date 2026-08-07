@@ -9,6 +9,15 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- Vacant-land listing pages no longer error. Eight demo-feed listings carry
+  `YearBuilt: 0` (no structure), which failed the API's response validation
+  and returned an error page for those listings' details. Invalid years are
+  now omitted and the page shows "—" for Year Built.
+- **Initial photo replication complete (2026-08-07):** 12,863 of the demo
+  feed's 12,877 listings display complete galleries from our own storage;
+  the only exceptions are 9 listings whose photos NWMLS flags require
+  suppressing and 5 listings with no photos in the feed. Scheduled syncs
+  keep galleries current going forward.
 - NWMLS review 2026-07-21, all four reviewer items:
   - **Full photo galleries for every listing** (items #2–#3: single photo per
     listing; sold listings without photos). The staging site now runs the
