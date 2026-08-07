@@ -328,7 +328,12 @@ export function mapResoToListing(raw: ResoRecord): ListingDetail | null {
         : undefined,
     cdom: num(raw.CumulativeDaysOnMarket),
     description: str(raw.PublicRemarks) ?? 'Contact agent for details.',
-    yearBuilt: num(raw.YearBuilt),
+    // Vacant land often carries YearBuilt 0 in the feed; the API schema
+    // requires 1800–2100 when present, so out-of-range values are omitted.
+    yearBuilt: (() => {
+      const y = num(raw.YearBuilt)
+      return y !== undefined && y >= 1800 && y <= 2100 ? y : undefined
+    })(),
     propertyType: mapPropertyType(raw),
     features: collectFeatures(raw),
     schoolDistrict: str(raw.HighSchoolDistrict) ?? str(raw.ElementarySchoolDistrict),
