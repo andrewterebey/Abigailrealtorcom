@@ -104,8 +104,14 @@ export interface ListingSummary {
   /** Cooperating (buyer) brokerage — required adjacent to listing brokerage on
    *  Sold listings. */
   coBrokerageName?: string
-  /** Cumulative Days on Market (NWMLS CDOM). */
+  /** Cumulative Days on Market as stored in the feed. NOT display-ready on
+   *  its own — the feed value stops accruing between originating-system
+   *  updates. Render via displayCdom() (lib/cdom.ts), which applies the
+   *  NWMLS-prescribed formula (idx@nwmls.com, 2026-08-11). */
   cdom?: number
+  /** OriginatingSystemModificationTimestamp — when the feed's cdom value was
+   *  last current. Input to displayCdom(). */
+  cdomAsOf?: string
   /** Whether the listing may be pinned on a map. From `NWM_ShowMapLink`; when
    *  false the listing still appears in result lists but not on the map.
    *  Treated as true when undefined. */

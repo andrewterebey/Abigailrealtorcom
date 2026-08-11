@@ -9,6 +9,14 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Fixed
+- CDOM now displays NWMLS's prescribed calculation (idx@nwmls.com,
+  2026-08-11) instead of the raw feed field: for on-market (Active /
+  Contingent) listings the days elapsed since the listing's last
+  originating-system update are added to the feed's CumulativeDaysOnMarket
+  (`Today − OriginatingSystemModificationTimestamp + CumulativeDaysOnMarket`).
+  Pending listings show the stored value unchanged (NWMLS: CDOM is not
+  calculated while pending) and sold listings show the stored value as
+  final.
 - Vacant-land listing pages no longer error. Eight demo-feed listings carry
   `YearBuilt: 0` (no structure), which failed the API's response validation
   and returned an error page for those listings' details. Invalid years are

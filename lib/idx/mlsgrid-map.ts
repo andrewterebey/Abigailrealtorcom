@@ -327,6 +327,9 @@ export function mapResoToListing(raw: ResoRecord): ListingDetail | null {
         ? (str(raw.BuyerOfficeName) ?? str(raw.CoListOfficeName))
         : undefined,
     cdom: num(raw.CumulativeDaysOnMarket),
+    // When the feed last recomputed cdom — display recomputes from this via
+    // the NWMLS formula (lib/cdom.ts). Mapper stays clock-free.
+    cdomAsOf: str(raw.OriginatingSystemModificationTimestamp),
     description: str(raw.PublicRemarks) ?? 'Contact agent for details.',
     // Vacant land often carries YearBuilt 0 in the feed; the API schema
     // requires 1800–2100 when present, so out-of-range values are omitted.
