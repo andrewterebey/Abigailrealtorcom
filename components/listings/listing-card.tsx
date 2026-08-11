@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Heart } from 'lucide-react'
 import { STATUS_LABELS, type ListingSummary } from '@/types/listing'
+import { displayCdom } from '@/lib/cdom'
 import { cn } from '@/lib/utils'
 
 type ListingCardProps = {
@@ -34,8 +35,8 @@ export function ListingCard({ listing, priority = false, className }: ListingCar
     primaryImage,
     brokerageName,
     coBrokerageName,
-    cdom,
   } = listing
+  const cdom = displayCdom(listing)
 
   return (
     <article className={cn('group flex flex-col text-left', className)}>
@@ -82,8 +83,8 @@ export function ListingCard({ listing, priority = false, className }: ListingCar
         </p>
         <p className="mt-2 font-body text-[12px] uppercase tracking-[0.12em] text-site-text-muted">
           {beds} BD | {baths} BA | {sqft.toLocaleString()} sqft
-          {/* The feed value is CumulativeDaysOnMarket — NWMLS requires CDOM
-              labeling whenever days-on-market figures are shown. */}
+          {/* NWMLS-prescribed CDOM (lib/cdom.ts) — labeling required whenever
+              days-on-market figures are shown. */}
           {typeof cdom === 'number' ? ` | ${cdom} CDOM` : ''}
         </p>
         <p className="mt-3 font-display text-[22px] font-semibold leading-none text-site-text">

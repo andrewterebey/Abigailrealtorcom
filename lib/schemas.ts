@@ -56,6 +56,7 @@ export const listingSummarySchema = z.object({
   brokerageName: z.string().min(1).optional(),
   coBrokerageName: z.string().min(1).optional(),
   cdom: z.number().int().nonnegative().optional(),
+  cdomAsOf: z.string().min(1).optional(),
   showOnMap: z.boolean().optional(),
   dataAsOf: z.string().min(1).optional(),
 })

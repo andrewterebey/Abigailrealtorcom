@@ -4,6 +4,7 @@ import {
   STATUS_LABELS,
   type ListingDetail as ListingDetailType,
 } from '@/types/listing'
+import { displayCdom } from '@/lib/cdom'
 import { Container } from '@/components/site/container'
 
 type ListingDetailProps = {
@@ -47,9 +48,9 @@ export function ListingDetail({ listing }: ListingDetailProps) {
     mlsNumber,
     brokerageName,
     coBrokerageName,
-    cdom,
     dataAsOf,
   } = listing
+  const cdom = displayCdom(listing)
 
   const gallery = images?.length ? images : [primaryImage]
   const thumbs = gallery.slice(1, 5)
