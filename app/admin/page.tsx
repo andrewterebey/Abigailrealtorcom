@@ -18,7 +18,7 @@ export default async function AdminDashboardPage() {
     { label: 'Sold listings', value: sold.total.toLocaleString('en-US'), href: '/admin/listings' },
     { label: 'Blog posts', value: String(BLOG_POSTS.length), href: '/admin/content/blog-posts' },
     { label: 'Testimonials', value: String(testimonialsData.testimonials.length), href: '/admin/content/testimonials' },
-    { label: 'New leads', value: '—', href: '/admin/leads' },
+    { label: 'New leads', value: '—', href: '/admin/contacts' },
   ]
 
   const explore = [
@@ -29,9 +29,9 @@ export default async function AdminDashboardPage() {
       cta: 'Open',
     },
     {
-      title: 'Leads',
+      title: 'Contacts',
       body: 'Contact-form submissions land here once storage is wired.',
-      href: '/admin/leads',
+      href: '/admin/contacts',
       cta: 'View',
     },
     {

@@ -1,11 +1,12 @@
 import { ArrowUpDown, Columns, Filter, Search } from 'lucide-react'
 
-export const metadata = { title: 'Leads' }
+export const metadata = { title: 'Contacts' }
 
 /**
- * Leads table — clones LP's Contacts screen. ROUGH DRAFT: the rows below are
- * SAMPLE DATA (clearly fake) so the layout is reviewable; real rows arrive
- * when /api/contact starts writing to the contact_submissions table.
+ * Contacts table — clones LP's Contacts screen (LP terminology kept).
+ * ROUGH DRAFT: the rows below are SAMPLE DATA (clearly fake) so the layout is
+ * reviewable; real rows arrive when /api/contact starts writing to the
+ * contact_submissions table.
  */
 
 const SAMPLE_LEADS = [
@@ -14,13 +15,13 @@ const SAMPLE_LEADS = [
   { name: 'Sample Inquiry', email: 'sample.inquiry@example.com', phone: '(555) 010-0003', type: 'Lead', source: 'Contact form', form: 'Listing inquiry', tag: '' },
 ]
 
-const TABS = ['All', 'Leads', 'Clients', 'Website Leads']
+const TABS = ['All', 'Leads', 'Clients', 'Enriched', 'Website Leads']
 
-export default function AdminLeadsPage() {
+export default function AdminContactsPage() {
   return (
     <div className="px-6 py-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Leads</h1>
+        <h1 className="text-lg font-semibold">Contacts</h1>
         <button
           type="button"
           title="Manual contacts land with the Supabase phase"
