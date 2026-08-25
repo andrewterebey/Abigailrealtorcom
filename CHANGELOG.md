@@ -8,6 +8,17 @@ unless they change behavior on the site.
 
 ## Unreleased
 
+### Added
+- **Admin dashboard (rough draft)** at `/admin` — a Luxury Presence-style
+  control panel so Abigail can eventually manage the site herself: Dashboard
+  (live counts), Content → Blog Posts (table + LP-style Edit Post screen) and
+  Testimonials, Leads (layout preview with sample rows), Listings (read-only
+  feed browser with sync status; MLS data stays uneditable per NWMLS rules),
+  and Analytics (layout; awaits an analytics provider). Draft only: nothing
+  persists yet and there is no login — Supabase Auth + storage are the next
+  phase, and the route must not ship publicly before auth lands. Not indexed
+  (`robots.txt` + noindex). Design: docs/superpowers/specs/2026-08-25-admin-page-design.md.
+
 ### Fixed
 - CDOM now displays NWMLS's prescribed calculation (idx@nwmls.com,
   2026-08-11) instead of the raw feed field: for on-market (Active /

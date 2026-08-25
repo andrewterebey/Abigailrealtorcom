@@ -200,6 +200,23 @@
   h6 { font-size: 16px; line-height: 1.5; }
 }
 
+/* Admin area (/admin) — LP-style dashboard chrome, deliberately NOT the
+   public site's display-serif look. Headings revert to the body sans in
+   mixed case; sizes come from utilities on each element. */
+.admin-root h1,
+.admin-root h2,
+.admin-root h3,
+.admin-root h4,
+.admin-root h5,
+.admin-root h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: inherit;
+  line-height: inherit;
+}
+
 /* Leaflet's internal panes (.leaflet-tile-pane @ z:200, .leaflet-marker-pane
    @ z:600, etc.) participate in the root stacking context unless their
    container creates its own. Without this, the gold pin and tiles render
