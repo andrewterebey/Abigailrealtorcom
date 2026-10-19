@@ -10,6 +10,33 @@
 import type { ListingDetail } from '../types/listing'
 
 const BATCH_SIZE = 500
+const MAX_ATTEMPTS = 6
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/** fetch that retries network errors ("fetch failed") and 5xx/429 responses
+ *  with exponential backoff. A flaky home connection must not abort a whole
+ *  upsert half-way and leave the table partially updated. */
+async function fetchWithRetry(url: string, init: RequestInit, what: string): Promise<Response> {
+  for (let attempt = 1; ; attempt++) {
+    let res: Response | undefined
+    let netErr: unknown
+    try {
+      res = await fetch(url, init)
+    } catch (err) {
+      netErr = err
+    }
+    if (res && res.status < 500 && res.status !== 429) return res
+    if (attempt >= MAX_ATTEMPTS) {
+      if (res) return res
+      throw netErr
+    }
+    const why = res ? `HTTP ${res.status}` : `network error (${(netErr as Error).message})`
+    const wait = Math.min(60_000, 2_000 * 2 ** (attempt - 1))
+    console.warn(`  ↻ ${what}: ${why} (attempt ${attempt}); retrying in ${wait / 1000}s`)
+    await sleep(wait)
+  }
+}
 
 function dbEnv(): { restUrl: string; serviceKey: string } | null {
   const projectUrl = process.env.SUPABASE_URL?.replace(/\/$/, '')
@@ -41,14 +68,18 @@ export async function upsertListingsToDb(
       record,
       synced_at: syncedAt,
     }))
-    const res = await fetch(`${env.restUrl}/listings?on_conflict=id`, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        Prefer: 'resolution=merge-duplicates,return=minimal',
+    const res = await fetchWithRetry(
+      `${env.restUrl}/listings?on_conflict=id`,
+      {
+        method: 'POST',
+        headers: {
+          ...headers,
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify(batch),
       },
-      body: JSON.stringify(batch),
-    })
+      `listings upsert batch ${i / BATCH_SIZE + 1}`,
+    )
     if (!res.ok) {
       throw new Error(
         `listings upsert batch ${i / BATCH_SIZE + 1} failed ${res.status}: ${await res.text()}`,
@@ -58,9 +89,10 @@ export async function upsertListingsToDb(
   console.log(`  DB: upserted ${listings.length} listings`)
 
   if (opts.reconcile) {
-    const res = await fetch(
+    const res = await fetchWithRetry(
       `${env.restUrl}/listings?synced_at=lt.${encodeURIComponent(syncedAt)}`,
       { method: 'DELETE', headers: { ...headers, Prefer: 'return=minimal' } },
+      'listings reconcile delete',
     )
     if (!res.ok) {
       throw new Error(`listings reconcile delete failed ${res.status}: ${await res.text()}`)

@@ -8,6 +8,19 @@ unless they change behavior on the site.
 
 ## Unreleased
 
+### Added
+- **Real NWMLS listings replace the demo feed (2026-10-09).** The site now
+  serves the production MLS Grid feed instead of demo data: every NWMLS
+  listing that came on market in the last 30 days (Active, Contingent,
+  Pending, statewide) with up to eight photos each, plus listings that sold
+  in the last 30 days with their primary photo. The window rolls forward
+  automatically — listings are refreshed twice a day (6 AM and 6 PM Pacific),
+  new ones appear and older ones drop off, and their photos are removed from
+  our storage. Listings are read from our own database rather than a bundled
+  file. Because the feed is limited by date, the search page carries the MLS
+  Grid-required notice "Some IDX listings have been excluded from this
+  website." 
+
 ### Fixed
 - CDOM now displays NWMLS's prescribed calculation (idx@nwmls.com,
   2026-08-11) instead of the raw feed field: for on-market (Active /

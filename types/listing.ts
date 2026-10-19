@@ -122,6 +122,10 @@ export interface ListingSummary {
 }
 
 export interface ListingDetail extends ListingSummary {
+  /** ISO date the listing came on market (feed OnMarketDate / ListingContractDate). */
+  listedAt?: string
+  /** ISO date a sold listing closed (feed CloseDate). */
+  closedAt?: string
   description: string
   images: string[]
   /** Optional — land and some new-construction listings have no year built. */

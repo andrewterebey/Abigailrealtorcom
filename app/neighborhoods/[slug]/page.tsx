@@ -10,6 +10,7 @@ import { ListingsMap } from '@/components/listings/listings-map'
 import { ScoreCard } from '@/components/neighborhood/score-card'
 import { StatBar } from '@/components/neighborhood/stat-bar'
 import type { ListingSummary } from '@/types/listing'
+import { provider } from '@/lib/idx'
 import {
   getAgeGroupRows,
   getAroundIntro,
@@ -70,21 +71,18 @@ export async function generateMetadata({
 }
 
 async function fetchCityListings(city: string): Promise<ListingSummary[]> {
-  // Resolve the base URL for server-side fetches. On the edge / during build
-  // we use the configured site URL; in dev we fall back to localhost.
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.NEXTAUTH_URL ??
-    'http://localhost:3000'
-  const url = `${base.replace(/\/$/, '')}/api/listings?city=${encodeURIComponent(
-    city,
-  )}&status=for-sale&limit=8`
+  // Server component: ask the IDX provider directly rather than fetching our
+  // own /api/listings over HTTP — these pages are statically generated, and at
+  // build time there is no site to answer that request. The provider's own
+  // data fetches carry the same 5-minute revalidation.
   try {
-    const res = await fetch(url, { next: { revalidate: 300 } })
-    if (!res.ok) return []
-    const json = (await res.json()) as { items: ListingSummary[] }
-    return json.items ?? []
-  } catch {
+    const { items } = await provider.list(
+      { city, status: 'for-sale' },
+      { limit: 8, offset: 0 },
+    )
+    return items
+  } catch (err) {
+    console.error(`[neighborhoods/${city}] listings unavailable:`, err)
     return []
   }
 }

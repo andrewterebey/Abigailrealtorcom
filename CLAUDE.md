@@ -95,6 +95,7 @@ deep relative paths.
 │  ├─ idx/                      ← provider.ts (contract), index.ts (env-selected active provider),
 │  │                              filter.ts (shared filter predicate), placeholder-provider.ts,
 │  │                              mlsgrid-provider.ts, mlsgrid-map.ts
+│  ├─ cdom.ts                   ← NWMLS-prescribed display-CDOM calculation (see §7.11)
 │  ├─ schemas.ts                ← Zod schemas for API boundary validation
 │  ├─ structured-data.ts        ← JSON-LD builders (RealEstateAgent, LocalBusiness, Residence)
 │  ├─ rate-limit.ts             ← in-memory token-bucket for /api/contact
@@ -117,7 +118,7 @@ deep relative paths.
 │  └─ neighborhoods/*.md
 ├─ data/
 │  ├─ listings.json             ← placeholder IDX data (never imported from UI)
-│  └─ mlsgrid-demo.json         ← gitignored MLS Grid snapshot built by `npm run sync:idx` (read by MLSGridProvider)
+│  └─ mlsgrid-snapshot.json         ← gitignored MLS Grid snapshot built by `npm run sync:idx` (read by MLSGridProvider)
 │                                  (neighborhood data is NOT here — it lives in content/neighborhoods/*.md via lib/neighborhoods.ts)
 ├─ public/
 │  ├─ images/                   ← assets downloaded from live site
@@ -134,8 +135,18 @@ deep relative paths.
 │  ├─ download-assets.ts        ← pull images/video from live site into /public
 │  ├─ extract-content.ts        ← scrape verbatim copy from live into /content
 │  ├─ generate-listing-placeholders.ts ← regenerate /public/listings SVG stand-ins
-│  ├─ sync-idx.ts               ← replicate MLS Grid feed → data/mlsgrid-demo.json + public/idx (npm run sync:idx)
+│  ├─ sync-idx.ts               ← replicate MLS Grid feed → data/mlsgrid-snapshot.json + public/idx (npm run sync:idx)
+│  │                              (in remote-media mode → Supabase Storage instead; see §7.7)
+│  ├─ fetch-snapshot.ts         ← download the published snapshot from Supabase Storage (npm run fetch:snapshot)
+│  ├─ db.ts                     ← Supabase Postgres upsert helper (PostgREST via fetch, no SDK)
+│  ├─ load-db.ts                ← load snapshot → Supabase `listings` table, with reconcile (npm run db:load)
+│  ├─ load-env.ts               ← shared .env.local loader for the tsx scripts
 │  └─ verify-idx-filters.ts     ← asserts both providers filter by city/ZIP (npx tsx scripts/verify-idx-filters.ts)
+├─ .github/workflows/
+│  └─ sync-idx.yml              ← scheduled replication (every 12h): sync:idx in remote-media mode
+│                                  → Supabase, then a Netlify build-hook rebuild (see §7.7)
+├─ .media-mirror/               ← GITIGNORED local mirror of the Supabase media bucket (~29GB licensed
+│                                  media; layout is <id>/NN.jpg with no idx/ prefix — don't "fix" it)
 └─ .claude/
    └─ settings.local.json       ← local Claude Code settings. The Playwright MCP is
                                    registered separately via `claude mcp add` (project scope; see §5.1)
@@ -151,7 +162,12 @@ npm run build        # production build (turbopack)
 npm run start        # serve production build locally
 npm run lint         # eslint && tsc --noEmit  (lint + strict typecheck)
 npm run capture-live # refresh /screenshots/live from the real site
-npm run sync:idx     # replicate MLS Grid feed → data/mlsgrid-demo.json + public/idx/
+npm run sync:idx     # replicate MLS Grid feed → data/mlsgrid-snapshot.json + public/idx/
+                     # (with SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY set: remote-media
+                     #  mode — media + snapshot go to Supabase Storage, DB is upserted)
+npm run fetch:snapshot # download the published snapshot from the Supabase bucket → data/
+npm run db:load      # load data/mlsgrid-snapshot.json → Supabase `listings` table (reconciles:
+                     # deletes DB rows absent from the snapshot — only run with a FULL snapshot)
 ```
 
 Both `dev` and `build` use **Turbopack** (`next dev --turbopack` /
@@ -180,10 +196,20 @@ Env vars:
 | `MLSGRID_ORIGINATING_SYSTEM` | NWMLS `OriginatingSystemName` filter — `nwmls` (default). |
 | `NEXT_PUBLIC_IDX_NWMLS`      | `true` to show NWMLS attribution/disclaimers in the UI. Set on the IDX (demo/prod) site. |
 | `NEXT_PUBLIC_NOINDEX`        | `true` on staging/review deploys → `robots.txt` blocks indexing. |
+| `SUPABASE_URL`               | Supabase project URL. With `SUPABASE_SERVICE_ROLE_KEY` also set, `sync:idx` runs in **remote-media mode** (§7.7). Netlify only needs `SUPABASE_URL` (public bucket read for `fetch:snapshot`). |
+| `SUPABASE_SERVICE_ROLE_KEY`  | Server-only secret for Storage/DB writes (sync, `db:load`). **Never give this to Netlify** — builds only read. |
+| `SUPABASE_MEDIA_BUCKET`      | Storage bucket name; default `idx-media`. |
+| `SUPABASE_ANON_KEY`          | Publishable/anon key. With `MLSGRID_TOKEN` + `SUPABASE_URL` also set, the site serves listings from the Postgres `listings` table (`SupabaseProvider`) instead of the snapshot file — this is the production mode. Server-only. |
+| `NEXT_PUBLIC_IDX_LIMITED`    | `true` whenever the displayed feed is limited by objective criteria (production: sold listings are a rolling window) → renders the MLS Grid IDX Rule 9 disclosure "Some IDX listings have been excluded from this website." on the search page. Must be off when the entire feed is shown (NWMLS reviewer, 2026-07-06). |
+| `MLSGRID_STATUSES` / `MLSGRID_CLOSED_DAYS` / `MLSGRID_SOLD_MAX_PHOTOS` | Production sync scope — see "Production feed" below. |
 
 Sync env (optional; defaults in `scripts/sync-idx.ts`): `MLSGRID_MAX_LISTINGS` (0 = all listing data), `MLSGRID_MAX_PHOTOS` (1/listing — demo favors breadth; raise for galleries), `MLSGRID_MEDIA_MAX_LISTINGS` (700 — how many listings get photos; 0 = all), `MLSGRID_MEDIA_REQUEST_BUDGET` (0 = unlimited, the default — MLS Grid confirmed 2026-07-30 that images have no volume limit; the real constraints are ≤2 req/s pacing, ~1h signed-URL expiry (sync-idx refreshes stale URLs per listing), and never running two syncs concurrently on one token (sync-idx holds a pid lockfile)), `MLSGRID_SKIP_MEDIA`/`MLSGRID_NO_FETCH` (data-only / reuse-only runs). Defaults ingest the **entire** demo feed's *data* (paging every `@odata.nextLink`) so NWMLS can review every listing's fields, but **bound photo downloads** — MLS Grid throttles media to ≤2 req/s, so fetching all ~13k listings' photos would exceed the Netlify build window. Listings without downloaded photos keep their data and show a `NO_PHOTO` placeholder. Production needs persistent media hosting + a scheduled sync (§7.7). Copy `.env.example` → `.env.local` (gitignored) for local secrets.
 
-**IDX data layer:** `npm run sync:idx` pulls the MLS Grid feed → `data/mlsgrid-demo.json` + `public/idx/` (both gitignored, regenerated at build). MLS Grid is a *replication* API, not query-through (≤2 req/s, refresh ≥12h); the sync downscales photos via `sharp` and enforces NWMLS display-suppression. See `content/legal/nwmls-idx-vendor-requirements.md`.
+**Production scope (decided with Andrew 2026-10-09; rules: MLS Grid IDX Rules 2026-09-17 §9/11/22/26/27 + NWMLS Data Use Policy D.1.j/k/l/m):** a rolling 30-day window — on-market NWMLS listings statewide that came on market within 30 days (`MLSGRID_STATUSES=Active,ActiveUnderContract,Pending` + `MLSGRID_LISTED_DAYS=30`, first 8 photos each via `MLSGRID_MAX_PHOTOS=8`) plus listings that closed within 30 days (`MLSGRID_CLOSED_DAYS=30`, primary photo only via `MLSGRID_SOLD_MAX_PHOTOS=1`). Storage budget ≈ 50 GB. Each run re-pulls the scope, reconciles the DB (aged-out rows deleted) and prunes bucket photos of listings that left the window (`pruneOrphanMedia`, guarded at 50%). Selecting listings by objective criteria is permitted (Rule 9) but requires the exclusion disclosure (`NEXT_PUBLIC_IDX_LIMITED=true`); sold listings must show listing AND buyer brokerage (Rule 22 NWMLS; policy D.1.k) — already in the UI; refresh ≥ every 12 h (Rule 11) — the scheduled job runs at 01:00 and 13:00 UTC (06:00/18:00 PDT). The site reads from Postgres in production (`SupabaseProvider`, `SUPABASE_ANON_KEY`); table DDL in `scripts/sql/listings.sql`.
+
+**Production feed (since 2026-10-02):** `.env.local` now holds the PRODUCTION token (`MLSGRID_API_BASE=https://api.mlsgrid.com/v2`); the demo settings are backed up in `.env.demo.local`. The NWMLS production feed is ~2.4M records (2.3M Closed), so a production sync must be scoped: `MLSGRID_STATUSES` (comma list of `StandardStatus` values, currently `Active,ActiveUnderContract,Pending` ≈ 41k displayable listings, ~1.16M photos) and optionally `MLSGRID_CLOSED_SINCE` (ISO date → adds Closed listings modified after it). An unscoped run against the production host is refused (`MLSGRID_ALLOW_FULL_FEED=true` overrides). Each MLS Grid environment has its own bucket — production is `SUPABASE_MEDIA_BUCKET=idx-media-prod`, with its own mirror `.media-mirror-idx-media-prod/`; the sync stamps a bucket with its source (`state/source.json`) and refuses to mix demo and production data. `MLSGRID_SKIP_DB=true` leaves the `listings` table untouched. The snapshot is `data/mlsgrid-snapshot.json` (published gzipped as `data/mlsgrid-snapshot.json.gz`). `scripts/sync-loop.sh` runs budgeted passes back-to-back for a long photo backfill, then every 12h. Retired demo artifacts live in `../demo-archive/`.
+
+**IDX data layer:** `npm run sync:idx` pulls the MLS Grid feed → `data/mlsgrid-snapshot.json` + `public/idx/` (both gitignored, regenerated at build). MLS Grid is a *replication* API, not query-through (≤2 req/s, refresh ≥12h); the sync downscales photos via `sharp` and enforces NWMLS display-suppression. See `content/legal/nwmls-idx-vendor-requirements.md`.
 
 > ⚠️ `sharp` is NOT a declared dependency — `scripts/sync-idx.ts` imports it via
 > Next.js's transitive install (`next` → `sharp ^0.34.3`). It works today, but if
@@ -193,13 +219,17 @@ Sync env (optional; defaults in `scripts/sync-idx.ts`): `MLSGRID_MAX_LISTINGS` (
 Always confirm `npm run dev` is running on port 3000 before taking local screenshots.
 
 **Deploy (Netlify):** `netlify.toml` overrides the build command to
-`if [ -n "$MLSGRID_TOKEN" ]; then npm run sync:idx; fi && npm run build` — so a
-no-token deploy still builds (placeholder data, NWMLS branding off), and a
-token deploy replicates the licensed feed first. A `netlify.toml` build command
-**overrides the Netlify dashboard**, so secrets/flags (`MLSGRID_TOKEN`,
-`MLSGRID_API_BASE`, `MLSGRID_ORIGINATING_SYSTEM`, `NEXT_PUBLIC_IDX_NWMLS`,
+`if [ -n "$MLSGRID_TOKEN" ]; then npm run fetch:snapshot || npm run sync:idx; fi && npm run build`
+— a token deploy first tries to download the snapshot the scheduled sync
+already published to the Supabase bucket (fast, and consistent with the media
+actually there), falling back to a full `sync:idx` replication; a no-token
+deploy still builds (placeholder data, NWMLS branding off). A `netlify.toml`
+build command **overrides the Netlify dashboard**, so secrets/flags
+(`MLSGRID_TOKEN`, `MLSGRID_API_BASE`, `MLSGRID_ORIGINATING_SYSTEM`,
+`SUPABASE_URL`, `SUPABASE_MEDIA_BUCKET`, `NEXT_PUBLIC_IDX_NWMLS`,
 `NEXT_PUBLIC_NOINDEX`) go under **Site settings → Environment**, not the toml.
-The Next.js runtime is auto-detected (no plugin/publish dir set).
+`SUPABASE_SERVICE_ROLE_KEY` is NOT set on Netlify — builds only read the
+public bucket. The Next.js runtime is auto-detected (no plugin/publish dir set).
 
 ---
 
@@ -320,7 +350,7 @@ UI components
    MLSGRID_TOKEN unset:
 /lib/idx/placeholder-provider.ts     ← fabricated sample data; reads /data/listings.json; NWMLS branding OFF
    MLSGRID_TOKEN set:
-/lib/idx/mlsgrid-provider.ts         ← genuine licensed NWMLS data; reads the data/mlsgrid-demo.json
+/lib/idx/mlsgrid-provider.ts         ← genuine licensed NWMLS data; reads the data/mlsgrid-snapshot.json
                                        snapshot built by `npm run sync:idx` (scripts/sync-idx.ts)
 ```
 
@@ -469,7 +499,7 @@ changing anything in the IDX layer.
 
 - `lib/idx/mlsgrid-provider.ts` implements `IDXProvider`. It does **not**
   fetch-per-request — MLS Grid is a **replication API, not a query-through
-  proxy**. It reads a committed-at-build snapshot (`data/mlsgrid-demo.json`) and
+  proxy**. It reads a committed-at-build snapshot (`data/mlsgrid-snapshot.json`) and
   just filters + paginates, the same role `PlaceholderProvider` plays.
 - `scripts/sync-idx.ts` (`npm run sync:idx`) is the replication step: it pulls
   the feed, honors the `MlgCanView` delete flag, strips prefixed keyfields,
@@ -478,16 +508,31 @@ changing anything in the IDX layer.
   `lib/idx/mlsgrid-map.ts` maps the raw MLS Grid records onto our types.
 - `lib/idx/index.ts` selects the provider by `MLSGRID_TOKEN` (§7.1) — there is
   no manual one-line code edit to make; flipping the env var is the swap.
+- **Scheduled replication is live** (`.github/workflows/sync-idx.yml`): every
+  12h (the NWMLS/MLS Grid minimum refresh) GitHub Actions runs `sync:idx` in
+  **remote-media mode** — all photos for all listings replicate incrementally
+  to the public Supabase Storage bucket (`idx-media`; uploaded-keys manifest at
+  `state/uploaded.json` skips already-replicated media), the snapshot is
+  published to the bucket, the `listings` Postgres table is upserted, and a
+  Netlify build hook rebuilds the site via `fetch:snapshot`. The one-time full
+  photo backfill completed 2026-08-07 (12,863 of 12,877 demo listings have
+  complete galleries; the rest are NWMLS-suppressed or photo-less in the feed).
+  A local mirror of the bucket lives in gitignored `.media-mirror/`.
+- **Supabase Postgres mirror (Phase B store):** `public.listings` holds each
+  mapped `ListingDetail` as jsonb with GENERATED search columns mirroring
+  `lib/idx/filter.ts` semantics (RLS on, public SELECT). The sync upserts it
+  non-fatally; `npm run db:load` does manual full loads (with reconcile —
+  that's how `MlgCanView` revocations propagate).
 
 **What's still future (do NOT promise a timeline without scoping):**
 
-- The sync runs **on demand / at build**, not on a schedule. County-scale IDX
-  search needs a **real datastore + scheduled cron** (replicate every ~15 min)
-  in place of the static snapshot + file read. The `IDXProvider` surface stays
-  identical when that lands — swap the file read in `mlsgrid-provider.ts` for a
-  DB query, nothing in the UI/API changes.
+- `mlsgrid-provider.ts` still reads the **snapshot file**, not the DB. The
+  Phase B swap — file read → Postgres query — is planned after NWMLS staging
+  approval. The `IDXProvider` surface stays identical when that lands; nothing
+  in the UI/API changes.
 - NWMLS requires a **demo-data staging site** for review before production
   approval is granted (use the DEMO token + `api-demo.mlsgrid.com`; see §4).
+  Review rounds are in progress — see `CHANGELOG.md` for the per-round fixes.
 
 ### 7.8 Placeholder data
 
@@ -527,6 +572,8 @@ recent `fix(legal): …` commits. All of them are gated behind
 - **`MlgCanUse` / `MlgCanView` gating** at the data layer — `lib/idx/mlsgrid-map.ts` enforces whole-listing opt-out and display suppression before anything reaches the UI.
 - **Homepage spotlight features ONLY the member's own brokerage** (idx@nwmls.com, 2026-07-13) — `spotlight-listings.tsx` filters to `OWN_BROKERAGE_NAME` ("John L. Scott, Inc.") via the `brokerage` filter whenever the licensed feed is active. Don't widen it to other firms' listings.
 - **Active searches include Contingent listings** (idx@nwmls.com, 2026-07-13) — `status=for-sale` matches `ACTIVE_STATUSES` in `lib/idx/filter.ts`, and the search toolbar labels the option "Active". Don't make for-sale exact-match again.
+- **`/properties` featured/sale/sold views restricted to own brokerage** (NWMLS review 2026-07-21) — `/properties/sale`, `/properties/sold`, and the Featured + Recently Sold sections on `/properties` show only John L. Scott, Inc. listings, same rule as the homepage spotlight. General IDX search (`/home-search`) is unaffected.
+- **Days-on-market is labeled "CDOM" and uses NWMLS's prescribed calculation** (idx@nwmls.com, 2026-08-11) — `lib/cdom.ts` implements `Today − OriginatingSystemModificationTimestamp + CumulativeDaysOnMarket` for on-market (Active/Contingent) listings, stored value unchanged for pending/sold. Don't display the raw feed field directly.
 
 **The §5 visual-parity loop is the main way these get broken.** The live
 Luxury Presence site does NOT render some of these the same way, so "make local
@@ -613,4 +660,4 @@ No global find-and-replace pass. If a piece of copy sounds off, flag it in `TODO
 
 ---
 
-*Last updated: 2026-07-20 (drift fixes: `zip` filter added to the `ListingFilter` contract and `/api/listings` params — landed with the NWMLS 2026-07-06 review round — plus `scripts/verify-idx-filters.ts` in the layout, and a note that contract types live in `types/listing.ts`).*
+*Last updated: 2026-08-25 (drift fixes: Supabase pipeline — remote-media sync, `fetch:snapshot`/`db:load` scripts, scheduled GitHub Actions replication, Postgres `listings` mirror, `.media-mirror/`; Netlify build now prefers the published snapshot; §7.11 gains the CDOM display calculation (`lib/cdom.ts`) and the own-brokerage `/properties` restriction from the 2026-07-21 / 2026-08-11 NWMLS review rounds).*

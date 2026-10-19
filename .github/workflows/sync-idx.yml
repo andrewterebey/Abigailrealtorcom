@@ -1,23 +1,33 @@
-# Scheduled MLS Grid replication (CLAUDE.md §7.7, Phase A).
+# Scheduled MLS Grid replication (CLAUDE.md §7.7).
 #
-# Every 12 hours (the NWMLS/MLS Grid minimum refresh), replicate the feed in
-# remote-media mode: listing data + any NEW photos go to Supabase Storage, the
-# fresh snapshot is published to the bucket, then a Netlify build hook rebuilds
-# the site from it. Already-replicated photos are skipped via the bucket
-# manifest, so routine runs take minutes; the ~20h initial photo backfill is a
-# one-time local run (see CLAUDE.md), not a CI job.
+# Every 12 hours (the NWMLS/MLS Grid minimum refresh), replicate the scoped
+# production feed in remote-media mode: listing rows go to the Supabase
+# `listings` table (upsert + reconcile), new photos go to Supabase Storage,
+# photos of listings that left the window are pruned, and the gzipped snapshot
+# is published to the bucket. Already-replicated photos are skipped via the
+# bucket manifest, so a routine run takes ~10 minutes. The initial photo
+# backfill was a one-time local run (scripts/sync-loop.sh), not a CI job.
+#
+# Never run this while a local sync-loop.sh is active on the same token.
 #
 # Repo secrets required (Settings → Secrets and variables → Actions):
-#   MLSGRID_TOKEN              demo token for staging; prod token at cutover
-#   MLSGRID_API_BASE           https://api-demo.mlsgrid.com/v2 for staging
+#   MLSGRID_TOKEN              production MLS Grid token
+#   MLSGRID_API_BASE           https://api.mlsgrid.com/v2
 #   SUPABASE_URL               https://<project>.supabase.co
 #   SUPABASE_SERVICE_ROLE_KEY  Supabase service-role key
-#   NETLIFY_BUILD_HOOK_URL     Netlify → Site settings → Build hooks
+#   NETLIFY_BUILD_HOOK_URL     optional — Netlify → Site settings → Build hooks
+# Repo variables (same page, "Variables" tab) — production values:
+#   SUPABASE_MEDIA_BUCKET=idx-media-prod
+#   MLSGRID_STATUSES=Active,ActiveUnderContract,Pending
+#   MLSGRID_LISTED_DAYS=30   MLSGRID_CLOSED_DAYS=30
+#   MLSGRID_MAX_PHOTOS=8     MLSGRID_SOLD_MAX_PHOTOS=1
 name: sync-idx
 
 on:
   schedule:
-    - cron: '17 3,15 * * *'
+    # 06:00 and 18:00 Pacific Daylight Time (05:00 / 17:00 PST) — twice daily,
+    # the MLS Grid IDX Rule 11 minimum (refresh at least every 12 hours).
+    - cron: '0 1,13 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -44,9 +54,24 @@ jobs:
           MLSGRID_API_BASE: ${{ secrets.MLSGRID_API_BASE }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Repo VARIABLE (not secret). Unset → default bucket 'idx-media'.
+          # Must name the bucket that matches the token's environment: the
+          # sync refuses to write production data into a demo bucket.
+          SUPABASE_MEDIA_BUCKET: ${{ vars.SUPABASE_MEDIA_BUCKET }}
+          # Feed scope (repo VARIABLES). Required with a production token: the
+          # sync refuses an unscoped import of the ~2.4M-record production feed.
+          MLSGRID_STATUSES: ${{ vars.MLSGRID_STATUSES }}
+          MLSGRID_CLOSED_SINCE: ${{ vars.MLSGRID_CLOSED_SINCE }}
+          MLSGRID_CLOSED_DAYS: ${{ vars.MLSGRID_CLOSED_DAYS }}
+          MLSGRID_LISTED_DAYS: ${{ vars.MLSGRID_LISTED_DAYS }}
+          MLSGRID_SOLD_MAX_PHOTOS: ${{ vars.MLSGRID_SOLD_MAX_PHOTOS }}
+          MLSGRID_MAX_PHOTOS: ${{ vars.MLSGRID_MAX_PHOTOS }}
         run: npm run sync:idx
 
+      # Optional: the site reads Postgres at request time, so a rebuild is only
+      # needed for statically generated pages. Skipped when the hook is unset.
       - name: Trigger Netlify rebuild
         env:
           HOOK: ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
-        run: curl -sf -X POST "$HOOK" -d '{}'
+        run: |
+          if [ -n "$HOOK" ]; then curl -sf -X POST "$HOOK" -d '{}'; else echo "no build hook configured — skipped"; fi
