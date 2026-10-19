@@ -187,6 +187,17 @@ function HomeSearchInner() {
                 distributed by MLS GRID.
               </p>
             )}
+            {/* [GRID §9] exclusion disclosure — REQUIRED whenever the site limits
+                the feed by objective criteria. Production does: sold listings
+                are limited to a rolling window (MLSGRID_CLOSED_DAYS). Gated by
+                NEXT_PUBLIC_IDX_LIMITED so an unlimited deploy can omit it, per
+                the NWMLS reviewer note above. Verbatim legal text. */}
+            {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' &&
+              process.env.NEXT_PUBLIC_IDX_LIMITED === 'true' && (
+                <p className="mb-5 font-body text-[12px] leading-[1.5] text-site-text-muted">
+                  Some IDX listings have been excluded from this website.
+                </p>
+              )}
             {error ? (
               <p className="py-16 text-center font-body text-[14px] uppercase tracking-[0.14em] text-red-600">
                 {error}

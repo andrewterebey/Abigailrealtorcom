@@ -4,7 +4,7 @@ import { Mail, MapPin, Phone } from 'lucide-react'
 import { Container } from './container'
 import { FooterMlsGridDisclaimer } from './footer-mls-grid'
 import { buildDisclaimerParagraphs } from '@/lib/legal'
-import { getSnapshotDataAsOf } from '@/lib/idx/mlsgrid-provider'
+import { getDataAsOf } from '@/lib/idx'
 
 const CONTACT = {
   name: 'Abigail Anderson',
@@ -26,7 +26,7 @@ export async function SiteFooter() {
   // the data was OBTAINED. In branded (real-feed) mode use the snapshot's
   // dataAsOf stamp; otherwise (placeholder/home-only) fall back to render time.
   const branded = process.env.NEXT_PUBLIC_IDX_NWMLS === 'true'
-  const dataAsOf = branded ? await getSnapshotDataAsOf() : undefined
+  const dataAsOf = branded ? await getDataAsOf() : undefined
   const disclaimer = buildDisclaimerParagraphs(
     dataAsOf ? new Date(dataAsOf) : new Date(),
   )

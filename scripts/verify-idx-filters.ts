@@ -221,11 +221,11 @@ async function main() {
     await verifyProvider('PlaceholderProvider', new PlaceholderProvider(), placeholder)
   }
 
-  const mlsgrid = await loadSnapshot('mlsgrid-demo.json')
+  const mlsgrid = await loadSnapshot('mlsgrid-snapshot.json')
   if (mlsgrid) {
     await verifyProvider('MLSGridProvider', new MLSGridProvider(), mlsgrid)
   } else {
-    console.log('\nMLSGridProvider: data/mlsgrid-demo.json not present — skipped')
+    console.log('\nMLSGridProvider: data/mlsgrid-snapshot.json not present — skipped')
   }
 
   if (failures > 0) {

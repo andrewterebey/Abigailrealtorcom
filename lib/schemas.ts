@@ -62,6 +62,8 @@ export const listingSummarySchema = z.object({
 })
 
 export const listingDetailSchema = listingSummarySchema.extend({
+  listedAt: z.string().min(1).optional(),
+  closedAt: z.string().min(1).optional(),
   description: z.string().min(1),
   images: z.array(z.string().min(1)).min(1),
   yearBuilt: z.number().int().min(1800).max(2100).optional(),

@@ -1,6 +1,11 @@
 import type { IDXProvider } from './provider'
 import { PlaceholderProvider } from './placeholder-provider'
-import { MLSGridProvider } from './mlsgrid-provider'
+import { MLSGridProvider, getSnapshotDataAsOf } from './mlsgrid-provider'
+import {
+  SupabaseProvider,
+  getDbDataAsOf,
+  supabaseProviderConfigured,
+} from './supabase-provider'
 
 /**
  * Active IDX provider, selected by environment:
@@ -19,9 +24,23 @@ import { MLSGridProvider } from './mlsgrid-provider'
  * request time we read the committed-at-build snapshot, so its presence here is
  * just the mode switch.
  */
+// With a licensed feed configured, the Supabase mirror is the production
+// store (SUPABASE_URL + SUPABASE_ANON_KEY → SupabaseProvider); the snapshot
+// file remains the fallback for local work without DB access.
+const useDb = Boolean(process.env.MLSGRID_TOKEN) && supabaseProviderConfigured()
+
 export const provider: IDXProvider = process.env.MLSGRID_TOKEN
-  ? new MLSGridProvider()
+  ? useDb
+    ? new SupabaseProvider()
+    : new MLSGridProvider()
   : new PlaceholderProvider()
+
+/** "Data obtained as of" stamp for the MLS GRID §24 disclaimer, from whichever
+ *  licensed store is active (undefined in placeholder mode). */
+export async function getDataAsOf(): Promise<string | undefined> {
+  if (!process.env.MLSGRID_TOKEN) return undefined
+  return useDb ? getDbDataAsOf() : getSnapshotDataAsOf()
+}
 
 export type {
   IDXProvider,

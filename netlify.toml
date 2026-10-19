@@ -4,7 +4,7 @@
 # directory needs to be set here. We override ONLY the build command, because
 # the IDX data the site serves is gitignored and must be regenerated on the
 # build host:
-#   - data/mlsgrid-demo.json  (the listing snapshot MLSGridProvider reads)
+#   - data/mlsgrid-snapshot.json  (the listing snapshot MLSGridProvider reads)
 #   - public/idx/<id>/*.jpg   (listing photos downloaded from the MLS Grid feed)
 #
 # With SUPABASE_URL set, the build downloads the snapshot the scheduled sync
@@ -21,4 +21,4 @@
 # Environment, not here. SUPABASE_SERVICE_ROLE_KEY is NOT needed on Netlify —
 # builds only read the public bucket.
 [build]
-  command = "if [ -n \"$MLSGRID_TOKEN\" ]; then npm run fetch:snapshot || npm run sync:idx; fi && npm run build"
+  command = "if [ -n \"$MLSGRID_TOKEN\" ] && [ -z \"$SUPABASE_ANON_KEY\" ]; then npm run fetch:snapshot || npm run sync:idx; fi && npm run build"
