@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Pin the workspace root. Without this Turbopack infers it from the nearest
+  // lockfile it finds walking UP (a stray ~/package-lock.json on the dev Mac)
+  // and then crashes trying to read directories above the project.
+  turbopack: { root: __dirname },
   images: {
     // Placeholder listing photos under /public/listings/ ship as SVG so they're
     // obviously fake. next/image refuses SVG by default; this opt-in is safe

@@ -613,10 +613,22 @@ async function fetchMediaBuffer(url: string, token: string): Promise<Buffer | nu
 async function main() {
   await loadDotEnvLocal()
 
+  // Never replicate from a site build. Netlify sets NETLIFY=true on its build
+  // hosts; a sync there writes to the shared bucket and Postgres with whatever
+  // token the site holds and reconciles away everything else (this happened on
+  // 2026-10-19). Builds read the published snapshot or Postgres, nothing more.
+  if (process.env.NETLIFY === 'true' && process.env.MLSGRID_ALLOW_BUILD_SYNC !== 'true') {
+    throw new Error(
+      'Refusing to run sync-idx on a Netlify build host. Builds must use fetch:snapshot ' +
+        'or the Postgres provider (SUPABASE_ANON_KEY); replication runs only from ' +
+        'scripts/sync-loop.sh or the sync-idx GitHub workflow.',
+    )
+  }
+
   const token = process.env.MLSGRID_TOKEN
   if (!token) {
     throw new Error(
-      'MLSGRID_TOKEN is not set. Add it to .env.local (local) or the Netlify build environment. Use your DEMO subscription token for the staging site.',
+      'MLSGRID_TOKEN is not set. Add it to .env.local (local) or GitHub Actions secrets.',
     )
   }
   const apiBase = process.env.MLSGRID_API_BASE ?? 'https://api.mlsgrid.com/v2'

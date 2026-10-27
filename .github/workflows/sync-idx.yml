@@ -16,11 +16,8 @@
 #   SUPABASE_URL               https://<project>.supabase.co
 #   SUPABASE_SERVICE_ROLE_KEY  Supabase service-role key
 #   NETLIFY_BUILD_HOOK_URL     optional — Netlify → Site settings → Build hooks
-# Repo variables (same page, "Variables" tab) — production values:
-#   SUPABASE_MEDIA_BUCKET=idx-media-prod
-#   MLSGRID_STATUSES=Active,ActiveUnderContract,Pending
-#   MLSGRID_LISTED_DAYS=30   MLSGRID_CLOSED_DAYS=30
-#   MLSGRID_MAX_PHOTOS=8     MLSGRID_SOLD_MAX_PHOTOS=1
+# Feed scope and bucket default to the production values below. Repo variables
+# (same page, "Variables" tab) of the same names override them if ever needed.
 name: sync-idx
 
 on:
@@ -54,18 +51,23 @@ jobs:
           MLSGRID_API_BASE: ${{ secrets.MLSGRID_API_BASE }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          # Repo VARIABLE (not secret). Unset → default bucket 'idx-media'.
-          # Must name the bucket that matches the token's environment: the
-          # sync refuses to write production data into a demo bucket.
-          SUPABASE_MEDIA_BUCKET: ${{ vars.SUPABASE_MEDIA_BUCKET }}
-          # Feed scope (repo VARIABLES). Required with a production token: the
-          # sync refuses an unscoped import of the ~2.4M-record production feed.
-          MLSGRID_STATUSES: ${{ vars.MLSGRID_STATUSES }}
+          # Bucket must match the token's environment: the sync refuses to
+          # write production data into the demo bucket (and vice versa).
+          SUPABASE_MEDIA_BUCKET: ${{ vars.SUPABASE_MEDIA_BUCKET || 'idx-media-prod' }}
+          # Feed scope — a rolling 30-day window. Required with a production
+          # token: the sync refuses an unscoped import of the ~2.4M-record feed.
+          #   on-market (Active/ActiveUnderContract/Pending) that came on market
+          #   within 30 days, up to 8 photos each; sold that closed within 30
+          #   days, primary photo only. Listings that age out are reconciled
+          #   out of the DB and their photos pruned from the bucket.
+          MLSGRID_STATUSES: ${{ vars.MLSGRID_STATUSES || 'Active,ActiveUnderContract,Pending' }}
+          MLSGRID_LISTED_DAYS: ${{ vars.MLSGRID_LISTED_DAYS || '30' }}
+          MLSGRID_CLOSED_DAYS: ${{ vars.MLSGRID_CLOSED_DAYS || '30' }}
           MLSGRID_CLOSED_SINCE: ${{ vars.MLSGRID_CLOSED_SINCE }}
-          MLSGRID_CLOSED_DAYS: ${{ vars.MLSGRID_CLOSED_DAYS }}
-          MLSGRID_LISTED_DAYS: ${{ vars.MLSGRID_LISTED_DAYS }}
-          MLSGRID_SOLD_MAX_PHOTOS: ${{ vars.MLSGRID_SOLD_MAX_PHOTOS }}
-          MLSGRID_MAX_PHOTOS: ${{ vars.MLSGRID_MAX_PHOTOS }}
+          MLSGRID_MAX_PHOTOS: ${{ vars.MLSGRID_MAX_PHOTOS || '8' }}
+          MLSGRID_SOLD_MAX_PHOTOS: ${{ vars.MLSGRID_SOLD_MAX_PHOTOS || '1' }}
+          # Retry budget for photo downloads per run; routine runs use a few hundred.
+          MLSGRID_MEDIA_REQUEST_BUDGET: ${{ vars.MLSGRID_MEDIA_REQUEST_BUDGET || '40000' }}
         run: npm run sync:idx
 
       # Optional: the site reads Postgres at request time, so a rebuild is only

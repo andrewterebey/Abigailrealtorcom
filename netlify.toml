@@ -7,12 +7,14 @@
 #   - data/mlsgrid-snapshot.json  (the listing snapshot MLSGridProvider reads)
 #   - public/idx/<id>/*.jpg   (listing photos downloaded from the MLS Grid feed)
 #
-# With SUPABASE_URL set, the build downloads the snapshot the scheduled sync
-# (.github/workflows/sync-idx.yml) already published — fast, and always
-# consistent with the media in the bucket. `sync:idx` remains the fallback
-# (first deploy before any scheduled run, or Supabase not configured); it is
-# gated on MLSGRID_TOKEN so a no-token deploy still builds (it then serves the
-# fabricated placeholder data with NWMLS branding OFF).
+# With SUPABASE_ANON_KEY set the site reads Postgres at request time and the
+# build needs no data step at all. Without it (snapshot mode) the build
+# downloads the snapshot the scheduled sync (.github/workflows/sync-idx.yml)
+# already published. The build must NEVER run `sync:idx`: a sync on the build
+# host writes to the shared bucket and Postgres with whatever token Netlify
+# holds, and on 2026-10-19 that fallback replaced the production `listings`
+# table with 66 demo rows. If the snapshot is missing, let the build fail —
+# a failed build leaves the previous deploy in place.
 #
 # NOTE: a netlify.toml build command OVERRIDES any command set in the Netlify
 # dashboard. Set the secrets/flags (MLSGRID_TOKEN, MLSGRID_API_BASE,
@@ -21,4 +23,4 @@
 # Environment, not here. SUPABASE_SERVICE_ROLE_KEY is NOT needed on Netlify —
 # builds only read the public bucket.
 [build]
-  command = "if [ -n \"$MLSGRID_TOKEN\" ] && [ -z \"$SUPABASE_ANON_KEY\" ]; then npm run fetch:snapshot || npm run sync:idx; fi && npm run build"
+  command = "if [ -n \"$MLSGRID_TOKEN\" ] && [ -z \"$SUPABASE_ANON_KEY\" ]; then npm run fetch:snapshot; fi && npm run build"
