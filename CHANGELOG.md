@@ -22,6 +22,11 @@ unless they change behavior on the site.
   website." 
 
 ### Fixed
+- **Maps show imagery again.** CARTO began requiring an API key for its
+  basemap tiles, so every map on the site (home search results, neighborhood
+  pages) had rendered "API KEY REQUIRED" placeholder tiles. The map now uses
+  a CARTO key when one is configured and otherwise falls back to
+  OpenStreetMap's standard tiles, so it is never blank.
 - CDOM now displays NWMLS's prescribed calculation (idx@nwmls.com,
   2026-08-11) instead of the raw feed field: for on-market (Active /
   Contingent) listings the days elapsed since the listing's last

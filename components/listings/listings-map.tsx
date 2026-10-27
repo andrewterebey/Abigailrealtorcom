@@ -17,6 +17,9 @@ export type MapMarker = {
   inactive?: boolean
 }
 
+// Read via the literal process.env member so Next inlines it at build time.
+const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY || ''
+
 type ListingsMapProps = {
   /** Initial center; if markers are provided we recenter to fit them on mount. */
   center: { lat: number; lng: number }
@@ -27,7 +30,7 @@ type ListingsMapProps = {
 }
 
 /**
- * Lightweight Leaflet + OpenStreetMap map. Used by both the IDX search
+ * Lightweight Leaflet map (CARTO Voyager tiles, OSM fallback). Used by both the IDX search
  * (`/home-search/listings`) for price-bubble markers and by neighborhood
  * detail pages for a single-pin "you are here" map. Loads Leaflet via raw
  * import inside useEffect so SSR doesn't hit `window`.
@@ -70,16 +73,25 @@ export function ListingsMap({
       })
       resizeObserver.observe(ref.current)
 
-      // Carto Voyager — softer palette, gold-friendly cartography. Same OSM
-      // data, prettier rendering. Free for non-commercial; for higher traffic
-      // we'd swap to Stadia or Mapbox (see CLAUDE.md §2).
-      L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-        {
-          subdomains: 'abcd',
-          maxZoom: 20,
-        },
-      ).addTo(map)
+      // Basemap tiles. CARTO Voyager (softer palette, gold-friendly
+      // cartography, same OSM data) requires an API key since 2026-09: a
+      // keyless request still returns HTTP 200, but the PNG is an "API KEY
+      // REQUIRED" watermark. The free commercial tier covers 1M requests per
+      // month — request a key at https://carto.com/basemaps/apikey and set
+      // NEXT_PUBLIC_CARTO_API_KEY (public by design; the key only identifies
+      // the site). Without a key we fall back to the OSM standard tile layer:
+      // best-effort, no SLA, acceptable for a low-traffic site but not a
+      // production plan (https://operations.osmfoundation.org/policies/tiles/).
+      const tiles = CARTO_KEY
+        ? {
+            url: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(CARTO_KEY)}`,
+            options: { subdomains: 'abcd', maxZoom: 20 },
+          }
+        : {
+            url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            options: { maxZoom: 19 },
+          }
+      L.tileLayer(tiles.url, tiles.options).addTo(map)
 
       if (markers.length === 0) return
 
@@ -162,15 +174,21 @@ export function ListingsMap({
         >
           OpenStreetMap
         </a>{' '}
-        contributors &middot;{' '}
-        <a
-          href="https://carto.com/attributions"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-site-gold"
-        >
-          CARTO
-        </a>
+        contributors
+        {CARTO_KEY && (
+          <>
+            {' '}
+            &middot;{' '}
+            <a
+              href="https://carto.com/attributions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-site-gold"
+            >
+              CARTO
+            </a>
+          </>
+        )}
         {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' && (
           <> &middot; IDX data courtesy of NWMLS</>
         )}
