@@ -1,11 +1,23 @@
 import { NextResponse } from 'next/server'
 import { provider } from '@/lib/idx'
+import type { MapBounds } from '@/types/listing'
 import {
   listQuerySchema,
   listingListResponseSchema,
 } from '@/lib/schemas'
 
 const DEFAULT_LIMIT = 20
+
+/** "south,west,north,east" → MapBounds, or null when the box is not a valid
+ *  lat/lng rectangle (the schema only checks the shape). */
+function parseBounds(raw: string): MapBounds | null {
+  const [south, west, north, east] = raw.split(',').map(Number)
+  const latOk = (v: number) => v >= -90 && v <= 90
+  const lngOk = (v: number) => v >= -180 && v <= 180
+  if (!latOk(south) || !latOk(north) || !lngOk(west) || !lngOk(east)) return null
+  if (south >= north || west >= east) return null
+  return { south, west, north, east }
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
@@ -20,6 +32,16 @@ export async function GET(request: Request) {
   }
 
   const q = parsed.data
+  const bounds = q.bounds ? parseBounds(q.bounds) : undefined
+  if (bounds === null) {
+    return NextResponse.json(
+      {
+        error: 'Invalid query parameters',
+        issues: [{ path: ['bounds'], message: 'not a valid lat/lng box' }],
+      },
+      { status: 400 },
+    )
+  }
   const limit = q.limit ?? DEFAULT_LIMIT
   const offset = q.offset ?? 0
 
@@ -34,6 +56,7 @@ export async function GET(request: Request) {
       propertyType: q.property_type,
       status: q.status,
       brokerage: q.brokerage,
+      bounds,
     },
     { limit, offset },
   )

@@ -65,6 +65,13 @@ function filterParams(f: ListingFilter): URLSearchParams {
   if (f.brokerage) {
     p.append('brokerage_key', `eq.${normalizeBrokerageName(f.brokerage)}`)
   }
+  if (f.bounds) {
+    // Generated `lat` / `lng` columns (scripts/sql/listings.sql), indexed.
+    p.append('lat', `gte.${f.bounds.south}`)
+    p.append('lat', `lte.${f.bounds.north}`)
+    p.append('lng', `gte.${f.bounds.west}`)
+    p.append('lng', `lte.${f.bounds.east}`)
+  }
   if (f.status) {
     // Active search includes Contingent ([GUID #5]; idx@nwmls.com 2026-07-13).
     if (f.status === 'for-sale') {
