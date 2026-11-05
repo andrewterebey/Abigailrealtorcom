@@ -49,6 +49,9 @@ function HomeSearchInner() {
   const [page, setPage] = useState(1) // 1-based
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Soft message shown above the grid (results stay on screen), as opposed to
+  // `error`, which replaces the grid. Set when the server rate-limits map moves.
+  const [notice, setNotice] = useState<string | null>(null)
   const [view, setView] = useState<View>('split')
   // Map viewport the user has panned/zoomed to. While set, results are limited
   // to it (search-as-you-move); cleared whenever the filters change so a new
@@ -95,9 +98,21 @@ function HomeSearchInner() {
     }
     fetch(`/api/listings?${p.toString()}`)
       .then(async (res) => {
+        if (res.status === 429) {
+          // The API caps map-viewport searches per IP (app/api/listings). Keep
+          // the results already on screen rather than blanking the grid; the
+          // next pan after the window resets refreshes them.
+          if (!cancelled) {
+            setNotice(
+              'The map is being moved too quickly — results will refresh in a moment.',
+            )
+          }
+          return
+        }
         if (!res.ok) throw new Error(`Search failed (${res.status})`)
         const data: ApiResponse = await res.json()
         if (cancelled) return
+        setNotice(null)
         setItems(data.items)
         setTotal(data.total)
       })
@@ -234,6 +249,14 @@ function HomeSearchInner() {
                   Some IDX listings have been excluded from this website.
                 </p>
               )}
+            {notice && !error && (
+              <p
+                role="status"
+                className="mb-5 font-body text-[12px] leading-[1.5] text-site-text-muted"
+              >
+                {notice}
+              </p>
+            )}
             {error ? (
               <p className="py-16 text-center font-body text-[14px] uppercase tracking-[0.14em] text-red-600">
                 {error}

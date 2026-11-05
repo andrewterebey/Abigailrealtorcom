@@ -67,6 +67,9 @@ export function ListingsMap({
   const leafletRef = useRef<LeafletNS | null>(null)
   const layerRef = useRef<import('leaflet').LayerGroup | null>(null)
   const [ready, setReady] = useState(false)
+  // Which basemap is actually on the map — drives the attribution caption.
+  // Starts as CARTO when a key is configured; flips to OSM if CARTO rejects it.
+  const [tileSource, setTileSource] = useState<'carto' | 'osm'>(CARTO_KEY ? 'carto' : 'osm')
 
   // Latest props, readable from the long-lived Leaflet event handler.
   const onBoundsChangeRef = useRef(onBoundsChange)
@@ -123,16 +126,29 @@ export function ListingsMap({
       // the site). Without a key we fall back to the OSM standard tile layer:
       // best-effort, no SLA, acceptable for a low-traffic site but not a
       // production plan (https://operations.osmfoundation.org/policies/tiles/).
-      const tiles = CARTO_KEY
-        ? {
-            url: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(CARTO_KEY)}`,
-            options: { subdomains: 'abcd', maxZoom: 20 },
-          }
-        : {
-            url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            options: { maxZoom: 19 },
-          }
-      L.tileLayer(tiles.url, tiles.options).addTo(map)
+      //
+      // A key CARTO REJECTS (HTTP 403: revoked, or restricted to a different
+      // host — each key is pinned to a domain list, so the production key
+      // fails on localhost and vice versa) leaves every tile blank and logs
+      // nothing. So the CARTO layer is swapped for OSM on its first tile
+      // error, instead of showing a gray map.
+      const osmTiles = () =>
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 })
+      if (CARTO_KEY) {
+        const carto = L.tileLayer(
+          `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(CARTO_KEY)}`,
+          { subdomains: 'abcd', maxZoom: 20 },
+        )
+        carto.once('tileerror', () => {
+          if (!mounted || mapRef.current !== map) return
+          map.removeLayer(carto)
+          osmTiles().addTo(map)
+          setTileSource('osm')
+        })
+        carto.addTo(map)
+      } else {
+        osmTiles().addTo(map)
+      }
 
       layerRef.current = L.layerGroup().addTo(map)
 
@@ -278,7 +294,7 @@ export function ListingsMap({
           OpenStreetMap
         </a>{' '}
         contributors
-        {CARTO_KEY && (
+        {tileSource === 'carto' && (
           <>
             {' '}
             &middot;{' '}
