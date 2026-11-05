@@ -28,6 +28,17 @@ export function matchesFilter(listing: ListingDetail, f: ListingFilter): boolean
       return false
     }
   }
+  if (f.bounds) {
+    const { lat, lng } = listing.coordinates
+    if (
+      lat < f.bounds.south ||
+      lat > f.bounds.north ||
+      lng < f.bounds.west ||
+      lng > f.bounds.east
+    ) {
+      return false
+    }
+  }
   if (f.status) {
     // NWMLS rule: an Active (for-sale) search must also return Contingent
     // listings, since they are still for sale ([GUID #5]; restated by the

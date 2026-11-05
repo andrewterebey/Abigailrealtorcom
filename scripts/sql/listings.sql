@@ -19,7 +19,10 @@ create table if not exists public.listings (
     btrim(regexp_replace(regexp_replace(lower(coalesce(record->>'brokerageName', '')), '[^a-z0-9 ]', '', 'g'), '\s+', ' ', 'g'))
   ) stored,
   has_photo     boolean generated always as ((record->>'primaryImage') not like '%idx-no-photo%') stored,
-  slug          text    generated always as (record->>'slug') stored
+  slug          text    generated always as (record->>'slug') stored,
+  -- map-viewport search (ListingFilter.bounds)
+  lat           double precision generated always as ((record->'coordinates'->>'lat')::double precision) stored,
+  lng           double precision generated always as ((record->'coordinates'->>'lng')::double precision) stored
 );
 
 create index if not exists listings_status_price_idx  on public.listings (status, price);
@@ -30,6 +33,7 @@ create index if not exists listings_property_type_idx on public.listings (proper
 create index if not exists listings_synced_at_idx     on public.listings (synced_at);
 create index if not exists listings_has_photo_idx     on public.listings (has_photo desc, price);
 create index if not exists listings_slug_idx          on public.listings (slug);
+create index if not exists listings_lat_lng_idx       on public.listings (lat, lng);
 -- default result order of SupabaseProvider.list()
 create index if not exists listings_sort_idx          on public.listings (has_photo desc, price desc, id);
 -- covering index so result counts (Prefer: count=exact) are index-only scans

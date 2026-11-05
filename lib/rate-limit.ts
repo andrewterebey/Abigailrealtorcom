@@ -1,7 +1,10 @@
 /**
- * Simple in-memory IP-based token bucket used by `/api/contact` to keep the
+ * Simple in-memory IP-based token bucket. Used by `/api/contact` to keep the
  * form from becoming an open spam relay once Resend is wired in
- * (CLAUDE.md §11 — contact form destination).
+ * (CLAUDE.md §11 — contact form destination), and by `/api/listings` to cap
+ * map-viewport searches (CLAUDE.md §7.9). Callers that share a process must
+ * namespace their keys (e.g. `map:<ip>`) — buckets are keyed by the raw
+ * string, so two routes passing the bare IP would share one allowance.
  *
  * NOTE: This is single-instance only. Netlify dev / a single serverless
  * instance is fine, but a multi-instance or edge deployment will need a

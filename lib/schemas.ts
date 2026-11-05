@@ -100,6 +100,11 @@ export const listQuerySchema = z.object({
   property_type: propertyTypeSchema.optional(),
   status: listingStatusSchema.optional(),
   brokerage: z.string().min(1).optional(),
+  /** Map viewport as "south,west,north,east" in degrees. */
+  bounds: z
+    .string()
+    .regex(/^-?\d+(\.\d+)?(,-?\d+(\.\d+)?){3}$/, 'must be south,west,north,east')
+    .optional(),
   limit: positiveInt
     .pipe(z.number().int().min(1).max(75))
     .optional(),

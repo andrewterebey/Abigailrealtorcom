@@ -538,7 +538,7 @@ changing anything in the IDX layer.
 
 `/data/listings.json`: 12–15 listings across King County at realistic prices ($500k–$3M), mixing Bellevue, Seattle, Newcastle, Kirkland, Shoreline, Renton. Property photos from Unsplash (real-estate category), downloaded to `/public/listings/`. All IDs prefixed `placeholder-` (e.g., `placeholder-nwm-0001`) — never use real MLS numbers that could collide.
 
-### 7.9 Contact API rate limiting
+### 7.9 API rate limiting
 
 `/api/contact` is rate-limited to **5 submissions / 10 minutes / IP** and
 rejects any payload larger than **16 KB** before parsing, so the form can't
@@ -546,6 +546,15 @@ be used as a spam relay once Resend is wired. Implementation: in-memory
 token-bucket in `lib/rate-limit.ts`. Multi-instance deployments (e.g.,
 Netlify scaling up) will need a shared store (Redis / Upstash) — flagged
 inline in the file.
+
+`GET /api/listings` with a `bounds` param (the search map's viewport search,
+fired after each pan/zoom) is rate-limited to **60 requests / minute / IP**
+with the same token bucket, under its own `map:<ip>` key so it never shares
+the contact form's allowance. Over the limit the route returns **429** with
+`Retry-After`; `home-search-client.tsx` then keeps the results already on
+screen and shows a one-line notice instead of blanking the grid. Searches
+without `bounds` — filter/page queries and the server-side self-fetches from
+`/properties` and the homepage spotlight — are not limited.
 
 ### 7.10 What NOT to do
 
