@@ -18,8 +18,24 @@ unless they change behavior on the site.
   persists yet and there is no login — Supabase Auth + storage are the next
   phase, and the route must not ship publicly before auth lands. Not indexed
   (`robots.txt` + noindex). Design: docs/superpowers/specs/2026-08-25-admin-page-design.md.
+- **Real NWMLS listings replace the demo feed (2026-10-09).** The site now
+  serves the production MLS Grid feed instead of demo data: every NWMLS
+  listing that came on market in the last 30 days (Active, Contingent,
+  Pending, statewide) with up to eight photos each, plus listings that sold
+  in the last 30 days with their primary photo. The window rolls forward
+  automatically — listings are refreshed twice a day (6 AM and 6 PM Pacific),
+  new ones appear and older ones drop off, and their photos are removed from
+  our storage. Listings are read from our own database rather than a bundled
+  file. Because the feed is limited by date, the search page carries the MLS
+  Grid-required notice "Some IDX listings have been excluded from this
+  website." 
 
 ### Fixed
+- **Maps show imagery again.** CARTO began requiring an API key for its
+  basemap tiles, so every map on the site (home search results, neighborhood
+  pages) had rendered "API KEY REQUIRED" placeholder tiles. The map now uses
+  a CARTO key when one is configured and otherwise falls back to
+  OpenStreetMap's standard tiles, so it is never blank.
 - CDOM now displays NWMLS's prescribed calculation (idx@nwmls.com,
   2026-08-11) instead of the raw feed field: for on-market (Active /
   Contingent) listings the days elapsed since the listing's last

@@ -11,7 +11,7 @@
  *
  * ⚠️ Field names follow the RESO Data Dictionary + NWMLS local fields, but the
  * exact shape of the MLS Grid *demo* payload must be verified against a real
- * sample (run `npm run sync:idx` and inspect data/mlsgrid-demo.json). Accessors
+ * sample (run `npm run sync:idx` and inspect data/mlsgrid-snapshot.json). Accessors
  * below are defensive (optional, fall back) so an unexpected shape degrades
  * gracefully rather than throwing.
  */
@@ -152,6 +152,14 @@ function mapPropertyType(raw: ResoRecord): PropertyType {
  * through untouched ([GUID #1]). The sync script downloads these and rewrites
  * the paths to local copies.
  */
+function mediaIsPublic(permission: unknown): boolean {
+  const tags = (Array.isArray(permission) ? permission : [permission])
+    .filter((p): p is string => typeof p === 'string' && p.trim() !== '')
+    .map((p) => p.trim().toLowerCase())
+  if (tags.length === 0) return true
+  return tags.some((t) => t === 'public' || t === 'idx')
+}
+
 export function mapMediaUrls(raw: ResoRecord): string[] {
   const removeAll = bool(raw.NWM_IDXMustRemovePhotosYN) === true
   const removePrimary = bool(raw.NWM_IDXMustRemovePrimaryPhotoYN) === true
@@ -163,6 +171,10 @@ export function mapMediaUrls(raw: ResoRecord): string[] {
       const cat = (str(m.MediaCategory) ?? 'photo').toLowerCase()
       return cat.includes('photo') || cat.includes('image') || cat === ''
     })
+    // Production media carries a RESO `Permission` tag. When present, only
+    // media released for public / IDX display may be shown (Private, Office
+    // Only, VOW-only, … are excluded). Absent = no restriction stated.
+    .filter((m) => mediaIsPublic(m.Permission))
     .map((m) => ({
       url: str(m.MediaURL) ?? str(m.MediaUrl),
       order: num(m.Order) ?? 9999,
@@ -229,12 +241,15 @@ export function duplicatePrimaryId(raw: ResoRecord): string | undefined {
  * MlgCanUse is `Collection(Edm.String)`. We fail-closed when the tag is present
  * but omits IDX. When the field is entirely absent/empty we allow the record —
  * some MLS Grid sample payloads omit it. ⚠️ Verify against a real demo snapshot
- * (`npm run sync:idx` → inspect data/mlsgrid-demo.json); if the NWMLS demo feed
+ * (`npm run sync:idx` → inspect data/mlsgrid-snapshot.json); if the NWMLS demo feed
  * populates MlgCanUse, tighten the absent case below to fail-closed too.
  */
 function canDisplayForIdx(raw: ResoRecord): boolean {
   const v = raw.MlgCanUse
-  if (!Array.isArray(v) || v.length === 0) return true // absent/empty — see note
+  // Verified against the production feed 2026-10-02: NWMLS populates MlgCanUse
+  // (e.g. ['IDX']) on every record, so an absent/empty tag is NOT a licence to
+  // display — fail closed.
+  if (!Array.isArray(v) || v.length === 0) return false
   return v.some((u) => typeof u === 'string' && u.trim().toUpperCase() === 'IDX')
 }
 
@@ -330,6 +345,10 @@ export function mapResoToListing(raw: ResoRecord): ListingDetail | null {
     // When the feed last recomputed cdom — display recomputes from this via
     // the NWMLS formula (lib/cdom.ts). Mapper stays clock-free.
     cdomAsOf: str(raw.OriginatingSystemModificationTimestamp),
+    // Recency windows in the sync (MLSGRID_LISTED_DAYS / MLSGRID_CLOSED_DAYS)
+    // key off these dates, not ModificationTimestamp.
+    listedAt: str(raw.OnMarketDate) ?? str(raw.ListingContractDate),
+    closedAt: statusInfo.status === 'sold' ? str(raw.CloseDate) : undefined,
     description: str(raw.PublicRemarks) ?? 'Contact agent for details.',
     // Vacant land often carries YearBuilt 0 in the feed; the API schema
     // requires 1800–2100 when present, so out-of-range values are omitted.

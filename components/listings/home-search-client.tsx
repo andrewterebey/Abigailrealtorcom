@@ -1,10 +1,10 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { IdxSearchToolbar } from './idx-search-toolbar'
 import { ListingGrid } from './listing-grid'
-import { ListingsMap, type MapMarker } from './listings-map'
+import { ListingsMap, type MapBounds, type MapMarker } from './listings-map'
 import { ACTIVE_STATUSES, type ListingSummary } from '@/types/listing'
 
 const ALLOWED_KEYS = [
@@ -49,7 +49,14 @@ function HomeSearchInner() {
   const [page, setPage] = useState(1) // 1-based
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Soft message shown above the grid (results stay on screen), as opposed to
+  // `error`, which replaces the grid. Set when the server rate-limits map moves.
+  const [notice, setNotice] = useState<string | null>(null)
   const [view, setView] = useState<View>('split')
+  // Map viewport the user has panned/zoomed to. While set, results are limited
+  // to it (search-as-you-move); cleared whenever the filters change so a new
+  // city/zip search re-fits the map to its results.
+  const [bounds, setBounds] = useState<MapBounds | null>(null)
 
   // Filter query WITHOUT pagination params — a change resets to page 1.
   const baseQuery = useMemo(() => {
@@ -69,6 +76,7 @@ function HomeSearchInner() {
   if (baseQuery !== trackedQuery) {
     setTrackedQuery(baseQuery)
     setPage(1)
+    setBounds(null)
   }
 
   // Fetch the current page whenever the filters or page change. Each response
@@ -80,11 +88,31 @@ function HomeSearchInner() {
     const p = new URLSearchParams(baseQuery)
     p.set('limit', String(PAGE_SIZE))
     p.set('offset', String((page - 1) * PAGE_SIZE))
+    if (bounds) {
+      p.set(
+        'bounds',
+        [bounds.south, bounds.west, bounds.north, bounds.east]
+          .map((v) => v.toFixed(5))
+          .join(','),
+      )
+    }
     fetch(`/api/listings?${p.toString()}`)
       .then(async (res) => {
+        if (res.status === 429) {
+          // The API caps map-viewport searches per IP (app/api/listings). Keep
+          // the results already on screen rather than blanking the grid; the
+          // next pan after the window resets refreshes them.
+          if (!cancelled) {
+            setNotice(
+              'The map is being moved too quickly — results will refresh in a moment.',
+            )
+          }
+          return
+        }
         if (!res.ok) throw new Error(`Search failed (${res.status})`)
         const data: ApiResponse = await res.json()
         if (cancelled) return
+        setNotice(null)
         setItems(data.items)
         setTotal(data.total)
       })
@@ -100,7 +128,17 @@ function HomeSearchInner() {
     return () => {
       cancelled = true
     }
-  }, [baseQuery, page])
+  }, [baseQuery, page, bounds])
+
+  // The user panned or zoomed: refetch page 1 for the new viewport.
+  const handleBoundsChange = useCallback((b: MapBounds) => {
+    setBounds(b)
+    setPage(1)
+  }, [])
+  const resetMapArea = () => {
+    setBounds(null)
+    setPage(1)
+  }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
@@ -167,6 +205,19 @@ function HomeSearchInner() {
                   : total === 0
                   ? '0 results'
                   : `${rangeStart.toLocaleString()}–${rangeEnd.toLocaleString()} of ${total.toLocaleString()}`}
+                {bounds && !loading && (
+                  <>
+                    {' '}
+                    in map area &middot;{' '}
+                    <button
+                      type="button"
+                      onClick={resetMapArea}
+                      className="underline underline-offset-2 hover:text-site-gold"
+                    >
+                      Show all
+                    </button>
+                  </>
+                )}
               </p>
             </div>
             {/* NWMLS/MLS Grid source identification ([GRID §23]) — must appear
@@ -185,6 +236,25 @@ function HomeSearchInner() {
               <p className="mb-5 font-body text-[12px] leading-[1.5] text-site-text-muted">
                 Listings courtesy of the Northwest Multiple Listing Service, as
                 distributed by MLS GRID.
+              </p>
+            )}
+            {/* [GRID §9] exclusion disclosure — REQUIRED whenever the site limits
+                the feed by objective criteria. Production does: sold listings
+                are limited to a rolling window (MLSGRID_CLOSED_DAYS). Gated by
+                NEXT_PUBLIC_IDX_LIMITED so an unlimited deploy can omit it, per
+                the NWMLS reviewer note above. Verbatim legal text. */}
+            {process.env.NEXT_PUBLIC_IDX_NWMLS === 'true' &&
+              process.env.NEXT_PUBLIC_IDX_LIMITED === 'true' && (
+                <p className="mb-5 font-body text-[12px] leading-[1.5] text-site-text-muted">
+                  Some IDX listings have been excluded from this website.
+                </p>
+              )}
+            {notice && !error && (
+              <p
+                role="status"
+                className="mb-5 font-body text-[12px] leading-[1.5] text-site-text-muted"
+              >
+                {notice}
               </p>
             )}
             {error ? (
@@ -232,6 +302,8 @@ function HomeSearchInner() {
               markers={markers}
               className="h-full w-full"
               ariaLabel="Map of search results"
+              bounds={bounds}
+              onBoundsChange={handleBoundsChange}
             />
           </div>
         ) : null}

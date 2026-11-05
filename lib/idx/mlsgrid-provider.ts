@@ -20,7 +20,7 @@ import type {
  * county-wide IDX search), swap the file read for a DB query — the IDXProvider
  * surface stays identical (see content/legal/nwmls-idx-vendor-requirements.md).
  */
-const SNAPSHOT_PATH = path.join(process.cwd(), 'data', 'mlsgrid-demo.json')
+const SNAPSHOT_PATH = path.join(process.cwd(), 'data', 'mlsgrid-snapshot.json')
 
 let cache: ListingDetail[] | null = null
 
@@ -51,7 +51,7 @@ export async function getSnapshotDataAsOf(): Promise<string | undefined> {
   return all[0]?.dataAsOf
 }
 
-function toSummary(d: ListingDetail): ListingSummary {
+export function toSummary(d: ListingDetail): ListingSummary {
   return {
     id: d.id,
     mlsNumber: d.mlsNumber,

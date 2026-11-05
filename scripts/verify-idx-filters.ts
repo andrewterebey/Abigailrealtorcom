@@ -112,6 +112,24 @@ async function verifyProvider(
     )
   }
 
+  // Map-viewport filter: a small box around the first listing.
+  {
+    const c = all[0].coordinates
+    const bounds = {
+      south: c.lat - 0.05, west: c.lng - 0.05, north: c.lat + 0.05, east: c.lng + 0.05,
+    }
+    const inside = (l: { coordinates: { lat: number; lng: number } }) =>
+      l.coordinates.lat >= bounds.south && l.coordinates.lat <= bounds.north &&
+      l.coordinates.lng >= bounds.west && l.coordinates.lng <= bounds.east
+    const expected = all.filter(inside).length
+    const { items, total } = await provider.list({ bounds }, PAGE)
+    check(
+      `bounds box limits results (${total}/${all.length})`,
+      total === expected && total < all.length && items.every(inside),
+      `expected total ${expected}, got ${total}`,
+    )
+  }
+
   // A city that matches nothing must return zero, not everything.
   {
     const { total } = await provider.list({ city: 'Nowheresville' }, PAGE)
@@ -221,11 +239,11 @@ async function main() {
     await verifyProvider('PlaceholderProvider', new PlaceholderProvider(), placeholder)
   }
 
-  const mlsgrid = await loadSnapshot('mlsgrid-demo.json')
+  const mlsgrid = await loadSnapshot('mlsgrid-snapshot.json')
   if (mlsgrid) {
     await verifyProvider('MLSGridProvider', new MLSGridProvider(), mlsgrid)
   } else {
-    console.log('\nMLSGridProvider: data/mlsgrid-demo.json not present — skipped')
+    console.log('\nMLSGridProvider: data/mlsgrid-snapshot.json not present — skipped')
   }
 
   if (failures > 0) {

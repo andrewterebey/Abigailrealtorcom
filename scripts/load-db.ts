@@ -1,5 +1,5 @@
 /**
- * Load the current data/mlsgrid-demo.json snapshot into the Supabase
+ * Load the current data/mlsgrid-snapshot.json snapshot into the Supabase
  * `listings` table (upsert + reconcile).
  *
  *   npm run db:load
@@ -17,7 +17,7 @@ import type { ListingDetail } from '../types/listing'
 
 async function main() {
   await loadDotEnvLocal()
-  const snapshotPath = path.join(process.cwd(), 'data', 'mlsgrid-demo.json')
+  const snapshotPath = path.join(process.cwd(), 'data', 'mlsgrid-snapshot.json')
   const listings = JSON.parse(
     await fs.readFile(snapshotPath, 'utf8'),
   ) as ListingDetail[]

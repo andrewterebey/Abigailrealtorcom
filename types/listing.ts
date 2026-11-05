@@ -51,6 +51,13 @@ export function normalizeBrokerageName(name: string): string {
     .trim()
 }
 
+export interface MapBounds {
+  south: number
+  west: number
+  north: number
+  east: number
+}
+
 export interface ListingFilter {
   city?: string
   /** 5-digit ZIP; matches on the first 5 digits of the listing's zip. */
@@ -66,6 +73,9 @@ export interface ListingFilter {
   /** Restrict to one member firm (punctuation/case-insensitive exact match on
    *  `brokerageName`). Listings without a brokerageName never match. */
   brokerage?: string
+  /** Geographic viewport (map search): only listings whose coordinates fall
+   *  inside the box. Degrees; south < north, west < east. */
+  bounds?: MapBounds
 }
 
 export interface Pagination {
@@ -122,6 +132,10 @@ export interface ListingSummary {
 }
 
 export interface ListingDetail extends ListingSummary {
+  /** ISO date the listing came on market (feed OnMarketDate / ListingContractDate). */
+  listedAt?: string
+  /** ISO date a sold listing closed (feed CloseDate). */
+  closedAt?: string
   description: string
   images: string[]
   /** Optional — land and some new-construction listings have no year built. */
