@@ -2,27 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  BarChart3,
-  BookOpen,
-  FileText,
-  Home,
-  Inbox,
-  Map,
-  Megaphone,
-  PanelLeft,
-  Presentation,
-  Send,
-  Users,
-  UsersRound,
-  PanelsTopLeft,
-} from 'lucide-react'
+import { BarChart3, FileText, Home, Map, PanelLeft, Users } from 'lucide-react'
 
 /**
- * Left navigation for the admin area. Mirrors the Luxury Presence dashboard
- * sidebar (Abigail's current CMS) section-for-section so the tool feels
- * familiar — see docs/superpowers/specs/2026-08-25-admin-page-design.md.
- * Sections without functionality yet render placeholder screens.
+ * Left navigation for the admin area, in the Luxury Presence dashboard's
+ * style (Abigail's current CMS) but limited to the sections this site has
+ * a use for — see docs/superpowers/specs/2026-11-05-admin-dashboard-plan.md
+ * §2–3 for what was cut and why. Add a section here only when it has a page
+ * that does something.
  */
 
 type NavChild = { label: string; href: string }
@@ -37,65 +24,20 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: Home },
-  { label: 'Actions', href: '/admin/actions', icon: Inbox },
-  { label: 'Collaborations', href: '/admin/collaborations', icon: UsersRound },
-  { label: 'Contacts', href: '/admin/contacts', icon: Users },
-  {
-    label: 'Listings',
-    href: '/admin/listings',
-    icon: Map,
-    base: '/admin/listings',
-    children: [
-      { label: 'MLS Search', href: '/admin/listings' },
-      { label: 'Saved Searches', href: '/admin/listings/saved-searches' },
-      { label: 'Saved Listings', href: '/admin/listings/saved-listings' },
-      { label: 'Listing Feeds', href: '/admin/listings/feeds' },
-    ],
-  },
-  {
-    label: 'Marketing',
-    href: '/admin/marketing',
-    icon: Megaphone,
-    base: '/admin/marketing',
-    children: [{ label: 'Email Campaigns', href: '/admin/marketing' }],
-  },
-  { label: 'Auto Emails', href: '/admin/auto-emails', icon: Send },
-  { label: 'Websites', href: '/admin/websites', icon: PanelsTopLeft },
+  { label: 'Leads', href: '/admin/leads', icon: Users },
+  { label: 'Listings', href: '/admin/listings', icon: Map },
   {
     label: 'Content',
-    href: '/admin/content/agents',
+    href: '/admin/content/blog-posts',
     icon: FileText,
     base: '/admin/content',
     children: [
-      { label: 'Agents', href: '/admin/content/agents' },
-      { label: 'Teams', href: '/admin/content/teams' },
       { label: 'Blog Posts', href: '/admin/content/blog-posts' },
-      { label: 'Developments', href: '/admin/content/developments' },
-      { label: 'Neighborhoods', href: '/admin/content/neighborhoods' },
-      { label: 'Offices', href: '/admin/content/offices' },
-      { label: 'Press Releases', href: '/admin/content/press-releases' },
-      { label: 'Properties', href: '/admin/content/properties' },
       { label: 'Testimonials', href: '/admin/content/testimonials' },
+      { label: 'Neighborhoods', href: '/admin/content/neighborhoods' },
     ],
   },
-  {
-    label: 'Presentations',
-    href: '/admin/presentations',
-    icon: Presentation,
-  },
-  {
-    label: 'Analytics',
-    href: '/admin/analytics',
-    icon: BarChart3,
-    base: '/admin/analytics',
-    children: [
-      { label: 'Building Awareness', href: '/admin/analytics' },
-      { label: 'Attracting Visitors', href: '/admin/analytics/attracting-visitors' },
-      { label: 'Getting Leads', href: '/admin/analytics/getting-leads' },
-      { label: 'Establishing Trust', href: '/admin/analytics/establishing-trust' },
-      { label: 'Products and Services', href: '/admin/analytics/products-and-services' },
-    ],
-  },
+  { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
 ]
 
 export function AdminSidebar() {
@@ -157,20 +99,7 @@ export function AdminSidebar() {
         </ul>
       </nav>
 
-      <div className="border-t border-gray-200 px-2 pt-2">
-        <Link
-          href="/admin/education"
-          className={`flex items-center gap-2.5 rounded-lg px-2 py-2 ${
-            pathname === '/admin/education'
-              ? 'bg-[#e9e9eb] font-medium text-gray-900'
-              : 'text-gray-700 hover:bg-[#ededef]'
-          }`}
-        >
-          <BookOpen className="h-4 w-4 text-gray-500" aria-hidden />
-          Education
-        </Link>
-      </div>
-      <div className="px-3 py-3">
+      <div className="border-t border-gray-200 px-3 py-3">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-[11px] font-medium text-rose-900">
             AA

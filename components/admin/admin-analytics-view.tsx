@@ -3,46 +3,16 @@ import { BLOG_POSTS } from '@/lib/blog'
 import testimonialsData from '@/content/testimonials.json'
 
 /**
- * Shared analytics screen — LP's reporting layout (period toggle, stat tiles,
- * chart cards), one instance per LP report section. ROUGH DRAFT: traffic
- * metrics need an analytics provider (Plausible is still a placeholder
- * site-wide), so tiles show internal counts and charts are empty frames.
+ * The one analytics page. LP splits reporting into five marketing-funnel
+ * sections driven by its ad products; this site has none of those, so one
+ * page covers it (spec 2026-11-05 §4). ROUGH DRAFT: traffic metrics need an
+ * analytics provider (decision pending — Plausible recommended), so the tiles
+ * show live internal counts and the chart frames are empty.
  */
 
-export const ANALYTICS_SECTIONS: Record<
-  string,
-  { title: string; intro: string; charts: [string, string] }
-> = {
-  'building-awareness': {
-    title: 'Building Awareness',
-    intro:
-      'Awareness metrics show how the brand is penetrating the market and capturing attention.',
-    charts: ['Total Impressions by Channel', 'Cumulative Total Impressions'],
-  },
-  'attracting-visitors': {
-    title: 'Attracting Visitors',
-    intro: 'How people find the site and which pages bring them in.',
-    charts: ['Visitors over time', 'Top pages by views'],
-  },
-  'getting-leads': {
-    title: 'Getting Leads',
-    intro: 'Form submissions and inquiry activity across the site.',
-    charts: ['Leads over time', 'Leads by source'],
-  },
-  'establishing-trust': {
-    title: 'Establishing Trust',
-    intro: 'Engagement with testimonials, the about page, and repeat visits.',
-    charts: ['Engaged sessions', 'Returning visitors'],
-  },
-  'products-and-services': {
-    title: 'Products and Services',
-    intro: 'Usage of the home search, valuations, and neighborhood guides.',
-    charts: ['Home search usage', 'Valuation requests'],
-  },
-}
+const CHARTS = ['Visitors over time', 'Leads over time'] as const
 
-export async function AdminAnalyticsView({ section }: { section: string }) {
-  const meta = ANALYTICS_SECTIONS[section]
+export async function AdminAnalyticsView() {
   const [active, sold] = await Promise.all([
     provider.list({ status: 'for-sale' }, { limit: 1, offset: 0 }),
     provider.list({ status: 'sold' }, { limit: 1, offset: 0 }),
@@ -60,7 +30,7 @@ export async function AdminAnalyticsView({ section }: { section: string }) {
   return (
     <div className="px-6 py-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">{meta.title}</h1>
+        <h1 className="text-lg font-semibold">Analytics</h1>
         <div className="flex rounded-full bg-[#f2f2f3] p-1 text-[13px]">
           {['Weekly', 'Monthly', 'Quarterly'].map((period, i) => (
             <span
@@ -76,8 +46,8 @@ export async function AdminAnalyticsView({ section }: { section: string }) {
       </div>
 
       <p className="mt-3 max-w-xl text-[13px] leading-5 text-gray-500">
-        {meta.intro} Traffic metrics appear once an analytics provider is wired
-        up (planned: Plausible); the tiles below are live counts from the
+        Visitors, top pages and leads over time appear once an analytics
+        provider is connected; the tiles below are live counts from the
         site&apos;s own data.
       </p>
 
@@ -92,7 +62,7 @@ export async function AdminAnalyticsView({ section }: { section: string }) {
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        {meta.charts.map((title) => (
+        {CHARTS.map((title) => (
           <div key={title} className="rounded-xl border border-gray-200 p-5">
             <h2 className="text-[13px] font-semibold">{title}</h2>
             <div className="relative mt-6">
