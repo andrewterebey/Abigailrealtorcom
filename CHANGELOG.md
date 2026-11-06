@@ -18,6 +18,14 @@ unless they change behavior on the site.
   persists yet and there is no login — Supabase Auth + storage are the next
   phase, and the route must not ship publicly before auth lands. Not indexed
   (`robots.txt` + noindex). Design: docs/superpowers/specs/2026-08-25-admin-page-design.md.
+  - 2026-11-05: sidebar pruned to Dashboard, Leads, Listings, Content (Blog
+    Posts, Testimonials, Neighborhoods) and Analytics — the Luxury Presence
+    sections this site has no use for are gone (review and plan:
+    docs/superpowers/specs/2026-11-05-admin-dashboard-plan.md). Listings now
+    shows the database's data-as-of stamp with a feed-health card. The blog
+    editor works as a front end: fields, markdown with live preview rendered
+    like the public post, image picker, title search on the list, and
+    "Save draft" to this browser only; Publish waits for the Supabase phase.
 - **Real NWMLS listings replace the demo feed (2026-10-09).** The site now
   serves the production MLS Grid feed instead of demo data: every NWMLS
   listing that came on market in the last 30 days (Active, Contingent,

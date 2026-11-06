@@ -7,8 +7,11 @@ top-level sections and 25 pages, most of them empty states. This document
 goes through every tab, says whether it earns its place on a single-agent
 site with an NWMLS feed, and lays out what to build, in what order.
 
-Status: proposal. Decisions marked **Andrew** need his answer; everything
-else is my recommendation and can be overridden.
+Status: approved by Andrew 2026-11-05 (keep-and-build; Abigail will write
+blog posts). Done the same day on `feat/admin-rough-draft`: the prune (§3),
+the Listings fixes (§4), and the blog editor as a front end (plan:
+`docs/superpowers/plans/2026-11-05-admin-prune-and-blog-editor.md`). Still
+open: decisions 2–5 in §7, and every phase that needs auth or a database.
 
 ## 1. What the admin is for
 
