@@ -1,5 +1,5 @@
 import { ACTIVE_STATUSES, normalizeBrokerageName } from '@/types/listing'
-import type { ListingDetail, ListingFilter } from '@/types/listing'
+import type { ListingDetail, ListingFilter, ListingSort } from '@/types/listing'
 
 /**
  * Shared filter predicate for the snapshot-backed providers. Kept in ONE place
@@ -50,4 +50,20 @@ export function matchesFilter(listing: ListingDetail, f: ListingFilter): boolean
     }
   }
   return true
+}
+
+/**
+ * In-memory counterpart of SupabaseProvider's `order` (see
+ * supabase-provider.ts). Undefined keeps the array order the snapshot was
+ * written in. Ties break on id so pages are stable.
+ */
+export function sortListings<T extends { price: number; id: string }>(
+  items: T[],
+  sort: ListingSort | undefined,
+): T[] {
+  if (!sort) return items
+  const dir = sort === 'price-asc' ? 1 : -1
+  return [...items].sort(
+    (a, b) => dir * (a.price - b.price) || a.id.localeCompare(b.id),
+  )
 }

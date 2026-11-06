@@ -31,6 +31,20 @@ type View = 'split' | 'list' | 'map'
 // still shows something recognisable. Markers will recenter via fitBounds.
 const DEFAULT_CENTER = { lat: 47.6101, lng: -122.2015 } as const
 
+// Viewport a search with NO filters opens on: the populated part of King
+// County (Seattle, the Eastside, south to Federal Way/Auburn, east to
+// Snoqualmie), rather than the whole county's Cascade wilderness. The feed is
+// statewide, so without this an empty search fits the map to every listing in
+// Washington. Results follow this box like any other map area; "clear map
+// area" widens to the whole feed. Searches that carry filters (city, zip,
+// price…) fit the map to their results instead.
+const DEFAULT_BOUNDS: MapBounds = {
+  south: 47.25,
+  west: -122.55,
+  north: 47.8,
+  east: -121.85,
+}
+
 // NWMLS / MLS Grid IDX Rule 26 caps a single search RESPONSE at 2,500 listings
 // (and forbids limiting it below 500 / 50%). We render one page of 75 listings
 // per response — far under the 2,500 ceiling — and let the consumer page
@@ -53,11 +67,6 @@ function HomeSearchInner() {
   // `error`, which replaces the grid. Set when the server rate-limits map moves.
   const [notice, setNotice] = useState<string | null>(null)
   const [view, setView] = useState<View>('split')
-  // Map viewport the user has panned/zoomed to. While set, results are limited
-  // to it (search-as-you-move); cleared whenever the filters change so a new
-  // city/zip search re-fits the map to its results.
-  const [bounds, setBounds] = useState<MapBounds | null>(null)
-
   // Filter query WITHOUT pagination params — a change resets to page 1.
   const baseQuery = useMemo(() => {
     const p = new URLSearchParams()
@@ -68,6 +77,14 @@ function HomeSearchInner() {
     return p.toString()
   }, [searchParams])
 
+  // Map viewport the user has panned/zoomed to. While set, results are limited
+  // to it (search-as-you-move); reset whenever the filters change so a new
+  // city/zip search re-fits the map to its results. A filterless search
+  // starts on King County (DEFAULT_BOUNDS) instead of the whole state.
+  const [bounds, setBounds] = useState<MapBounds | null>(
+    baseQuery ? null : DEFAULT_BOUNDS,
+  )
+
   // Reset to page 1 whenever the filters change. Adjusting state during render
   // (the supported React pattern) means the fetch effect below sees page === 1
   // on the same render, avoiding a wasted fetch of the stale page number
@@ -76,7 +93,7 @@ function HomeSearchInner() {
   if (baseQuery !== trackedQuery) {
     setTrackedQuery(baseQuery)
     setPage(1)
-    setBounds(null)
+    setBounds(baseQuery ? null : DEFAULT_BOUNDS)
   }
 
   // Fetch the current page whenever the filters or page change. Each response

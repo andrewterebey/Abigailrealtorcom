@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { matchesFilter } from './filter'
+import { matchesFilter, sortListings } from './filter'
 import type {
   IDXProvider,
   ListingDetail,
@@ -58,7 +58,10 @@ function toSummary(d: ListingDetail): ListingSummary {
 export class PlaceholderProvider implements IDXProvider {
   async list(filter: ListingFilter, page: Pagination) {
     const all = await loadAll()
-    const filtered = all.filter((l) => matchesFilter(l, filter))
+    const filtered = sortListings(
+      all.filter((l) => matchesFilter(l, filter)),
+      page.sort,
+    )
     const items = filtered
       .slice(page.offset, page.offset + page.limit)
       .map(toSummary)
