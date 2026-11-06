@@ -9,6 +9,7 @@ export type {
   ListingStatus,
   PropertyType,
   ListingFilter,
+  ListingSort,
   Pagination,
   ListingSummary,
   ListingDetail,

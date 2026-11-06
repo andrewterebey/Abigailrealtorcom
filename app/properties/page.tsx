@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   },
 }
 
+// Price band for the main grid, cheapest first (Abigail, 2026-11-05).
+const GRID_MIN_PRICE = 800_000
+const GRID_MAX_PRICE = 2_000_000
+
 type ApiResponse = {
   items: ListingSummary[]
   total: number
@@ -43,22 +47,30 @@ async function fetchListings(params: URLSearchParams): Promise<ApiResponse> {
 }
 
 export default async function PropertiesPage() {
-  // Live splits into two sections: FEATURED PROPERTIES (single highlighted
-  // for-sale listing) and SOLD PROPERTIES (full grid). Fetch both in parallel.
+  // Two sections: FEATURED PROPERTIES (single highlighted for-sale listing)
+  // and REAL ESTATE FOR SALE (active homes $800k–$2M, cheapest first — per
+  // Abigail, 2026-11-05; the live site showed sold listings here, which now
+  // live at /properties/sold). Fetch both in parallel.
   // NWMLS: this page is reached via the homepage spotlight's "View All" and
   // presents listings as featured, so — like the spotlight itself — it may only
   // show the member's own brokerage when the licensed feed is active
   // (idx@nwmls.com review, 2026-07-21). Other firms' listings remain available
   // through the general IDX search at /home-search/listings.
   const forSaleParams = new URLSearchParams({ status: 'for-sale', limit: '1' })
-  const soldParams = new URLSearchParams({ status: 'sold', limit: '20' })
+  const gridParams = new URLSearchParams({
+    status: 'for-sale',
+    min_price: String(GRID_MIN_PRICE),
+    max_price: String(GRID_MAX_PRICE),
+    sort: 'price-asc',
+    limit: '20',
+  })
   if (process.env.MLSGRID_TOKEN) {
     forSaleParams.set('brokerage', OWN_BROKERAGE_NAME)
-    soldParams.set('brokerage', OWN_BROKERAGE_NAME)
+    gridParams.set('brokerage', OWN_BROKERAGE_NAME)
   }
-  const [forSale, sold] = await Promise.all([
+  const [forSale, grid] = await Promise.all([
     fetchListings(forSaleParams),
-    fetchListings(soldParams),
+    fetchListings(gridParams),
   ])
 
   return (
@@ -106,19 +118,19 @@ export default async function PropertiesPage() {
       </section>
 
       <section
-        aria-label="Sold properties"
+        aria-label="Real estate for sale"
         className="pb-16 md:pb-20 lg:pb-24"
       >
         <Container>
           <div className="mb-10 text-center">
             <h2 className="text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
-              Sold Properties
+              Real Estate for Sale
             </h2>
           </div>
           <ListingGrid
-            items={sold.items}
+            items={grid.items}
             className="sm:grid-cols-2 lg:grid-cols-2"
-            emptyMessage="No sold properties to show yet."
+            emptyMessage="No homes for sale to show right now."
           />
 
           <p className="mx-auto mt-16 max-w-4xl text-center font-body text-[13px] leading-[1.7] text-site-text-muted">

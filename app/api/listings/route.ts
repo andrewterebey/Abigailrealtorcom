@@ -85,7 +85,7 @@ export async function GET(request: Request) {
       brokerage: q.brokerage,
       bounds,
     },
-    { limit, offset },
+    { limit, offset, sort: q.sort },
   )
 
   const payload = { items, total, limit, offset }

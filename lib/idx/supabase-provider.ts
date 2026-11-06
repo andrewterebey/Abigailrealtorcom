@@ -97,7 +97,17 @@ export class SupabaseProvider implements IDXProvider {
   async list(filter: ListingFilter, page: Pagination) {
     const p = filterParams(filter)
     p.set('select', 'record')
-    p.set('order', 'has_photo.desc,price.desc,id.asc')
+    // Default order = photo first, price high→low (what the search has always
+    // shown); an explicit sort is price-only so a cheap listing without a
+    // photo still comes first when asked for cheapest-first.
+    p.set(
+      'order',
+      page.sort === 'price-asc'
+        ? 'price.asc,id.asc'
+        : page.sort === 'price-desc'
+          ? 'price.desc,id.asc'
+          : 'has_photo.desc,price.desc,id.asc',
+    )
     p.set('limit', String(page.limit))
     p.set('offset', String(page.offset))
     const res = await rest(p.toString(), 'count=exact')

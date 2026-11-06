@@ -78,9 +78,14 @@ export interface ListingFilter {
   bounds?: MapBounds
 }
 
+/** Result ordering. Omitted = the provider's default (photo first, price high
+ *  to low, id) — the order the search page has always used. */
+export type ListingSort = 'price-asc' | 'price-desc'
+
 export interface Pagination {
   limit: number
   offset: number
+  sort?: ListingSort
 }
 
 export interface ListingSummary {

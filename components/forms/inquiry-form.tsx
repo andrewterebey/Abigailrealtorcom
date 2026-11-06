@@ -10,6 +10,10 @@ type InquiryFormProps = {
   topic?: string
   /** Optional override for the submit button label. */
   submitLabel?: string
+  /** Prefill — e.g. the address typed into the valuation hero pill. */
+  defaultAddress?: string
+  /** Shown under the button after a successful submit. */
+  successMessage?: string
 }
 
 /**
@@ -22,6 +26,8 @@ export function InquiryForm({
   variant = 'contact',
   topic,
   submitLabel = 'Submit',
+  defaultAddress,
+  successMessage = 'Thanks — your message has been received.',
 }: InquiryFormProps) {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'ok' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -186,6 +192,7 @@ export function InquiryForm({
               type="text"
               required
               autoComplete="street-address"
+              defaultValue={defaultAddress}
               className={inputClass}
             />
           </div>
@@ -201,13 +208,18 @@ export function InquiryForm({
           }`}
         >
           <label htmlFor="inquiry-message" className={labelClass}>
-            {variant === 'contact' ? 'Message *' : 'Message *'}
+            {variant === 'valuation' ? 'Anything we should know? (optional)' : 'Message *'}
           </label>
           <textarea
             id="inquiry-message"
             name="message"
             rows={5}
-            required
+            required={variant !== 'valuation'}
+            placeholder={
+              variant === 'valuation'
+                ? 'Recent updates, timing, or questions about selling'
+                : undefined
+            }
             className={`${inputClass} resize-y border border-black/20 p-3`}
           />
         </div>
@@ -231,7 +243,7 @@ export function InquiryForm({
         </button>
         {status === 'ok' ? (
           <p role="status" className="font-body text-[13px] text-green-700">
-            Thanks — your message has been received.
+            {successMessage}
           </p>
         ) : null}
         {status === 'error' ? (
