@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BarChart3, FileText, Home, Map, PanelLeft, Users } from 'lucide-react'
+import { BarChart3, FileText, Home, LogOut, Map, PanelLeft, Users } from 'lucide-react'
 
 /**
  * Left navigation for the admin area, in the Luxury Presence dashboard's
@@ -40,7 +40,15 @@ const NAV: NavItem[] = [
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
 ]
 
-export function AdminSidebar() {
+export function AdminSidebar({
+  email,
+  signOutAction,
+}: {
+  /** Signed-in admin, shown in the footer. */
+  email: string
+  /** Server action that ends the session (app/admin/login/actions.ts). */
+  signOutAction: () => Promise<void>
+}) {
   const pathname = usePathname()
 
   const isActive = (href: string) =>
@@ -101,12 +109,36 @@ export function AdminSidebar() {
 
       <div className="border-t border-gray-200 px-3 py-3">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-[11px] font-medium text-rose-900">
-            AA
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-[11px] font-medium text-rose-900">
+            {initials(email)}
           </span>
-          <span className="font-medium text-gray-900">Abigail Anderson</span>
+          <span className="min-w-0 grow">
+            <span className="block truncate font-medium text-gray-900">
+              {email.startsWith('abigail') ? 'Abigail Anderson' : 'Administrator'}
+            </span>
+            <span className="block truncate text-[11px] text-gray-500" title={email}>
+              {email}
+            </span>
+          </span>
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              title="Sign out"
+              aria-label="Sign out"
+              className="rounded-md p-1.5 text-gray-500 hover:bg-[#ededef] hover:text-gray-900"
+            >
+              <LogOut className="h-4 w-4" aria-hidden />
+            </button>
+          </form>
         </div>
       </div>
     </aside>
   )
+}
+
+function initials(email: string): string {
+  const local = email.split('@')[0] ?? ''
+  const parts = local.split(/[._-]/).filter(Boolean)
+  const letters = parts.length >= 2 ? parts[0][0] + parts[1][0] : local.slice(0, 2)
+  return letters.toUpperCase() || 'AA'
 }

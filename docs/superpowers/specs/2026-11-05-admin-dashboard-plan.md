@@ -181,15 +181,34 @@ states ("No leads yet").
 
 ## 5. Cross-cutting: auth and data (before any of the above ships)
 
-- **Auth first.** Supabase Auth, email + password, allowlist of two accounts
-  (Abigail, Andrew). `middleware.ts` guards `/admin/*` and `/api/admin/*`;
-  unauthenticated requests redirect to `/admin/login`. Sign-out in the
-  sidebar footer. Dependencies `@supabase/supabase-js` and `@supabase/ssr`
-  were approved in the original spec but still need an explicit go before
-  install.
+- **Auth first — DONE 2026-11-11.** Supabase Auth, email + password,
+  allowlist of two accounts (`ADMIN_EMAILS`: Abigail, Andrew). Root
+  `middleware.ts` guards `/admin/*` and `/api/admin/*` (redirect to
+  `/admin/login?next=…`, 401 JSON for the API, 503 when Supabase env is
+  missing); the dashboard layout `app/admin/(dashboard)/layout.tsx`
+  re-checks the session. Login/forgot/reset pages render inside the bare
+  `app/admin/layout.tsx` (no sidebar). Server actions in
+  `app/admin/login/actions.ts`: allowlist check *before* Supabase so an
+  unlisted address never learns whether its password was right; 10 login
+  attempts per IP per 15 min; sign-out; reset email (neutral reply);
+  update password (≥12 chars). `lib/supabase/server.ts` is the only Supabase
+  client — everything is server-side with the anon key, no `NEXT_PUBLIC_`
+  vars. Deps `@supabase/supabase-js` + `@supabase/ssr` installed with
+  Andrew's approval.
+  - Verified headlessly (Playwright, 2026-11-11): redirects, API 401,
+    unlisted/wrong-password refusals, open-redirect guard on `next`,
+    forgot-password neutral reply. The successful-sign-in path was NOT
+    exercised: creating a test account in the shared auth table was denied,
+    so Andrew confirms it with the real accounts.
+  - Andrew's dashboard steps: create the two users (Authentication → Users →
+    Add user, auto-confirm), turn off "Allow new users to sign up", add the
+    `/admin/auth/confirm` redirect URLs (localhost + live domain), and set
+    `ADMIN_EMAILS` on Netlify.
 - Nothing from `app/admin/` merges to `main` until the middleware is in and
-  verified, because `main` auto-deploys to Netlify. Today `main` has no
-  admin, which is correct.
+  verified, because `main` auto-deploys to Netlify. The middleware is in;
+  once Andrew has signed in successfully on localhost, the branch is
+  mergeable (the admin would then be live-but-locked; it still persists
+  nothing).
 - All writes go through `/api/admin/*` route handlers that check the session
   and use the service-role key server-side. The anon key never gains write
   access. The existing `scripts/db.ts` pattern (PostgREST with the service
@@ -206,7 +225,7 @@ states ("No leads yet").
 | Phase | Scope | Size |
 | --- | --- | --- |
 | 0 | Prune the sidebar and pages (§3); fix the two stale bits on Listings (§4) | half a session |
-| 1 | Auth + middleware + login page + sign-out | 1 session |
+| 1 | Auth + middleware + login page + sign-out — **done 2026-11-11** | 1 session |
 | 2 | Leads: table DDL, `/api/contact` insert, Leads page, dashboard count | 1–2 sessions |
 | 3 | Testimonials CRUD + DB-first read + revalidation | 1 session |
 | 4 | Settings page (unblocks the go-live handoff items) | 1 session |

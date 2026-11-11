@@ -26,6 +26,15 @@ unless they change behavior on the site.
     editor works as a front end: fields, markdown with live preview rendered
     like the public post, image picker, title search on the list, and
     "Save draft" to this browser only; Publish waits for the Supabase phase.
+  - 2026-11-11: **the admin now requires a sign-in.** Every `/admin` page
+    (and `/api/admin/*`) is behind Supabase Auth — email and password,
+    accepted only for the two addresses on the `ADMIN_EMAILS` allowlist;
+    any other account, even a valid Supabase one, is signed out and refused.
+    Login at `/admin/login`, "Forgot your password?" emails a reset link, and
+    the sidebar footer has sign out. Accounts are created by hand in the
+    Supabase dashboard (public sign-ups off). Login attempts are rate
+    limited per IP. This lifts the "no login" blocker above; what remains
+    before `/admin` can ship is the data layer (nothing persists yet).
 - **Real NWMLS listings replace the demo feed (2026-10-09).** The site now
   serves the production MLS Grid feed instead of demo data: every NWMLS
   listing that came on market in the last 30 days (Active, Contingent,
