@@ -200,6 +200,37 @@
   h6 { font-size: 16px; line-height: 1.5; }
 }
 
+/* Admin area (/admin) — LP-style dashboard chrome, deliberately NOT the
+   public site's display-serif look. Headings revert to the body sans in
+   mixed case; sizes come from utilities on each element. */
+.admin-root h1,
+.admin-root h2,
+.admin-root h3,
+.admin-root h4,
+.admin-root h5,
+.admin-root h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* …except inside the blog editor's preview, which must look like the public
+   post (components/blog/post-block.tsx sets size/color per element; the
+   family, weight and case come from the public heading rules restored here). */
+.admin-root .blog-preview h2,
+.admin-root .blog-preview h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+}
+.admin-root .blog-preview h2 { font-size: 26px; }
+.admin-root .blog-preview h3 { font-size: 20px; }
+
 /* Leaflet's internal panes (.leaflet-tile-pane @ z:200, .leaflet-marker-pane
    @ z:600, etc.) participate in the root stacking context unless their
    container creates its own. Without this, the gold pin and tiles render

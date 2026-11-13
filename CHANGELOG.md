@@ -9,6 +9,32 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Added
+- **Admin dashboard (rough draft)** at `/admin` — a Luxury Presence-style
+  control panel so Abigail can eventually manage the site herself: Dashboard
+  (live counts), Content → Blog Posts (table + LP-style Edit Post screen) and
+  Testimonials, Leads (layout preview with sample rows), Listings (read-only
+  feed browser with sync status; MLS data stays uneditable per NWMLS rules),
+  and Analytics (layout; awaits an analytics provider). Draft only: nothing
+  persists yet and there is no login — Supabase Auth + storage are the next
+  phase, and the route must not ship publicly before auth lands. Not indexed
+  (`robots.txt` + noindex). Design: docs/superpowers/specs/2026-08-25-admin-page-design.md.
+  - 2026-11-05: sidebar pruned to Dashboard, Leads, Listings, Content (Blog
+    Posts, Testimonials, Neighborhoods) and Analytics — the Luxury Presence
+    sections this site has no use for are gone (review and plan:
+    docs/superpowers/specs/2026-11-05-admin-dashboard-plan.md). Listings now
+    shows the database's data-as-of stamp with a feed-health card. The blog
+    editor works as a front end: fields, markdown with live preview rendered
+    like the public post, image picker, title search on the list, and
+    "Save draft" to this browser only; Publish waits for the Supabase phase.
+  - 2026-11-11: **the admin now requires a sign-in.** Every `/admin` page
+    (and `/api/admin/*`) is behind Supabase Auth — email and password,
+    accepted only for the two addresses on the `ADMIN_EMAILS` allowlist;
+    any other account, even a valid Supabase one, is signed out and refused.
+    Login at `/admin/login`, "Forgot your password?" emails a reset link, and
+    the sidebar footer has sign out. Accounts are created by hand in the
+    Supabase dashboard (public sign-ups off). Login attempts are rate
+    limited per IP. This lifts the "no login" blocker above; what remains
+    before `/admin` can ship is the data layer (nothing persists yet).
 - **Properties page shows homes for sale (2026-11-05).** The main grid on
   /properties is now "Real Estate for Sale": active John L. Scott listings
   between $800,000 and $2,000,000, cheapest first (new `sort` option on
