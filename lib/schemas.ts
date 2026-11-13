@@ -109,6 +109,8 @@ export const listQuerySchema = z.object({
     .pipe(z.number().int().min(1).max(75))
     .optional(),
   offset: positiveInt.optional(),
+  /** Omitted = provider default (photo first, price high→low). */
+  sort: z.enum(['price-asc', 'price-desc']).optional(),
 })
 
 export type ListQuery = z.infer<typeof listQuerySchema>

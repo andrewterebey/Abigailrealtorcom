@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/site/container'
 import { Section, Eyebrow } from '@/components/site/section'
+import { InquiryForm } from '@/components/forms/inquiry-form'
 
 const META_TITLE = 'Free Bellevue, WA Home Valuation'
 const META_DESCRIPTION =
@@ -61,12 +62,26 @@ const IMPORTANCE = [
   },
 ] as const
 
-export default function HomeValuationPage() {
+const FORM_ID = 'valuation-request'
+
+export default async function HomeValuationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ address?: string }>
+}) {
+  // The hero pill is a plain GET form back to this page: the typed address
+  // lands here and prefills the request form below, which the pill's
+  // fragment scrolls to. No JS needed, and nothing is sent anywhere until
+  // the visitor submits the full form.
+  const { address } = await searchParams
+  const defaultAddress =
+    typeof address === 'string' ? address.slice(0, 200) : undefined
+
   return (
     <main>
-      {/* Hero with headline + bullet list. The live site also has an instant-
-          estimate form, but that's a 3rd-party widget; we render a teaser that
-          anchors to the inquiry form below. */}
+      {/* Hero with headline + bullet list. The live site has a 3rd-party
+          instant-estimate widget here; ours takes the address into the
+          valuation request form below (Abigail answers with a CMA). */}
       <section
         aria-label="Home valuation hero"
         className="relative h-[420px] w-full overflow-hidden text-white md:h-[500px] lg:h-[560px]"
@@ -96,17 +111,14 @@ export default function HomeValuationPage() {
               </li>
               <li>Sell For More</li>
             </ul>
-            {/* Inline address-input pill matching live. The live site wires this to
-                a 3rd-party autocomplete + instant-estimate service; we don't have
-                that widget so the form posts to /contact?topic=valuation as a
-                fallback. The visual treatment matches: white pill, map-pin icon,
-                amber submit button on the right. */}
+            {/* Inline address-input pill matching live (white pill, map-pin
+                icon, amber button). Submits back to this page with the address
+                and jumps to the request form, which it prefills. */}
             <form
-              action="/contact"
+              action={`/home-valuation#${FORM_ID}`}
               method="get"
               className="mt-10 flex w-full max-w-2xl items-stretch overflow-hidden rounded-full bg-white text-site-text shadow-lg"
             >
-              <input type="hidden" name="topic" value="valuation" />
               <span aria-hidden className="flex items-center pl-5 pr-2">
                 <svg
                   viewBox="0 0 24 24"
@@ -125,6 +137,8 @@ export default function HomeValuationPage() {
                 type="text"
                 name="address"
                 aria-label="Home address"
+                defaultValue={defaultAddress}
+                maxLength={200}
                 placeholder="Enter your home address"
                 className="flex-1 bg-transparent py-4 font-body text-[14px] text-site-text placeholder:text-site-text-muted focus:outline-none"
               />
@@ -138,6 +152,31 @@ export default function HomeValuationPage() {
           </Container>
         </div>
       </section>
+
+      {/* Valuation request form — the working half of the hero pill. */}
+      <Section id={FORM_ID} className="scroll-mt-24 bg-[#f7f5f0]">
+        <Container>
+          <div className="mx-auto mb-10 max-w-3xl text-center">
+            <Eyebrow>Free Home Valuation</Eyebrow>
+            <h2 className="mt-3 text-[32px] leading-[1.2] md:text-[40px] lg:text-[43px]">
+              Request Your Home&rsquo;s Value
+            </h2>
+            <p className="mt-6 font-body text-[15px] leading-[1.7] text-site-text">
+              Share your address and how to reach you. Abigail will prepare a
+              Comparative Market Analysis based on recent sales near you and
+              get back to you personally &mdash; no automated estimate, no
+              obligation.
+            </p>
+          </div>
+          <InquiryForm
+            variant="valuation"
+            topic="valuation"
+            submitLabel="Get My Home Valuation"
+            defaultAddress={defaultAddress}
+            successMessage="Thanks — Abigail will be in touch with your home valuation shortly."
+          />
+        </Container>
+      </Section>
 
       {/* What's your property worth — intro with image on the right. */}
       <Section>

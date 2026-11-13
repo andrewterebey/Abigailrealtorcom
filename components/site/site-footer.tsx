@@ -172,32 +172,41 @@ function ContactItem({
   )
 }
 
+/**
+ * REALTOR® membership mark — NAR's block "R" logo with the REALTOR®
+ * wordmark (public/images/realtor-logo-png-transparent.png, supplied by
+ * Andrew 2026-11-05). Abigail is a NAR member, so the mark may appear on
+ * her site; it must not be recolored or restyled (NAR Membership Marks
+ * Manual) — only scaled.
+ */
 function RealtorBadge() {
   return (
-    <span
-      aria-label="Realtor"
-      className="inline-flex h-10 w-8 items-center justify-center border border-black/80 text-[10px] font-bold uppercase tracking-wider text-black"
-    >
-      <span className="flex flex-col items-center leading-none">
-        <span className="text-[16px] leading-none">R</span>
-        <span className="text-[6px] leading-none">REALTOR®</span>
-      </span>
-    </span>
+    <Image
+      src="/images/realtor-logo-png-transparent.png"
+      alt="REALTOR®"
+      width={40}
+      height={40}
+      className="h-10 w-10 shrink-0"
+    />
   )
 }
 
+/**
+ * Equal Housing Opportunity logo (HUD; public/images/BLACK-transparent-
+ * equal-housing-opportunity.png, supplied by Andrew 2026-11-05). Required on
+ * real estate advertising under the Fair Housing Act's advertising
+ * guidelines. Not the "Equal Housing Lender" variant — that one is for
+ * mortgage lenders.
+ */
 function EqualHousingBadge() {
   return (
-    <span
-      aria-label="Equal Housing Opportunity"
-      className="inline-flex h-10 items-center justify-center border border-black/80 px-2 text-center text-[6px] font-bold uppercase tracking-wider text-black"
-    >
-      <span className="flex flex-col items-center leading-none">
-        <span className="text-[10px] leading-none">⌂</span>
-        <span className="mt-0.5 leading-none">EQUAL HOUSING</span>
-        <span className="leading-none">OPPORTUNITY</span>
-      </span>
-    </span>
+    <Image
+      src="/images/BLACK-transparent-equal-housing-opportunity.png"
+      alt="Equal Housing Opportunity"
+      width={36}
+      height={40}
+      className="h-10 w-9 shrink-0"
+    />
   )
 }
 

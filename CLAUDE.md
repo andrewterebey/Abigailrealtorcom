@@ -385,6 +385,7 @@ export interface ListingFilter {
 
 export interface Pagination {
   limit: number    // 1–75
+  sort?: 'price-asc' | 'price-desc'  // omitted = photo first, price high→low
   offset: number   // >= 0
 }
 
@@ -428,7 +429,7 @@ export interface IDXProvider {
 
 **`GET /api/listings`**
 
-Query params (all optional): `city`, `zip`, `min_price`, `max_price`, `min_beds`, `min_baths`, `property_type`, `status`, `brokerage`, `limit` (default 20, max 75), `offset` (default 0).
+Query params (all optional): `city`, `zip`, `min_price`, `max_price`, `min_beds`, `min_baths`, `property_type`, `status`, `brokerage`, `limit` (default 20, max 75), `offset` (default 0), `sort` (`price-asc` | `price-desc`; omitted = photo first, price high→low).
 
 `status=for-sale` is the "Active" search and also returns `contingent` listings
 (NWMLS requires it — contingent listings are still for sale). Both providers

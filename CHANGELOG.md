@@ -35,6 +35,19 @@ unless they change behavior on the site.
     Supabase dashboard (public sign-ups off). Login attempts are rate
     limited per IP. This lifts the "no login" blocker above; what remains
     before `/admin` can ship is the data layer (nothing persists yet).
+- **Properties page shows homes for sale (2026-11-05).** The main grid on
+  /properties is now "Real Estate for Sale": active John L. Scott listings
+  between $800,000 and $2,000,000, cheapest first (new `sort` option on
+  `/api/listings`). Sold listings remain at /properties/sold.
+- **Home valuation requests work end to end.** The address pill on
+  /home-valuation carries the address into a valuation request form on the
+  same page; submissions email Abigail through Resend once
+  `RESEND_API_KEY` and `CONTACT_TO_EMAIL` are set (logged until then, with
+  the form still confirming receipt). Message is optional on that form.
+- **Real REALTOR® and Equal Housing Opportunity marks** in the footer, drawn
+  as inline SVG in place of the text placeholders.
+- **Home search opens on King County** instead of the whole state when no
+  filters are set.
 - **Real NWMLS listings replace the demo feed (2026-10-09).** The site now
   serves the production MLS Grid feed instead of demo data: every NWMLS
   listing that came on market in the last 30 days (Active, Contingent,
