@@ -24,3 +24,15 @@
 # builds only read the public bucket.
 [build]
   command = "if [ -n \"$MLSGRID_TOKEN\" ] && [ -z \"$SUPABASE_ANON_KEY\" ]; then npm run fetch:snapshot; fi && npm run build"
+
+# Netlify's secrets scanner fails the build when any environment variable's
+# value appears in the build output. SUPABASE_URL does, on purpose: listing
+# photos are served straight from the project's public Storage bucket, so
+# every prerendered page carries image URLs on that host, and the Supabase
+# project URL is a public identifier (it is in every image src a visitor
+# loads), not a credential. Only the keys are secrets, and they are never
+# emitted — SUPABASE_ANON_KEY is read server-side only (no NEXT_PUBLIC_
+# variant exists) and SUPABASE_SERVICE_ROLE_KEY is not on Netlify at all.
+# Exempt just the URL so the scanner keeps watching everything else.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL"
