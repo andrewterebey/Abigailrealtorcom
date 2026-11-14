@@ -10,6 +10,8 @@ const contactSchema = z.object({
   intent: z.enum(['newsletter', 'contact', 'valuation']).optional(),
 })
 
+type Submission = z.infer<typeof contactSchema>
+
 // Message max is 5000 chars; 16 KB is plenty of headroom for the full JSON
 // envelope while still keeping a giant payload from ever reaching Zod.
 const MAX_BODY_BYTES = 16 * 1024
@@ -52,81 +54,62 @@ export async function POST(request: Request) {
     )
   }
 
-  // Without a Resend key (local dev, preview deploys) the submission is only
-  // logged. With one, it is emailed to CONTACT_TO_EMAIL through Resend's REST
-  // API (no SDK — CLAUDE.md: ask before adding a dependency). The destination
-  // address is a go-live handoff item (CLAUDE.md §11); until it is set the
-  // route still answers ok so the forms never show visitors an error.
-  const apiKey = process.env.RESEND_API_KEY
-  const to = process.env.CONTACT_TO_EMAIL
-  if (!apiKey || !to) {
-    console.log('[api/contact] submission (email not configured):', parsed.data)
+  // Delivery is Netlify Forms: the submission lands in the site's Forms inbox
+  // in the Netlify dashboard, which emails Abigail from there (Forms → Form
+  // notifications). Netlify cannot see function-rendered markup, so the forms
+  // are declared statically in public/__forms.html and this route forwards
+  // each validated submission to that file with `form-name` = intent.
+  // Outside Netlify (local dev) the submission is only logged, and the route
+  // still answers ok so the forms never show visitors an error.
+  const formsUrl = netlifyFormsUrl()
+  if (!formsUrl) {
+    console.log('[api/contact] submission (not on Netlify, logged only):', parsed.data)
     return NextResponse.json({ ok: true, mode: 'log' })
   }
 
-  const sent = await sendViaResend(apiKey, to, parsed.data)
+  const sent = await sendViaNetlifyForms(formsUrl, parsed.data)
   if (!sent) {
     return NextResponse.json(
       { error: 'Could not send your message right now. Please try again or call.' },
       { status: 502 },
     )
   }
-  return NextResponse.json({ ok: true, mode: 'email' })
+  return NextResponse.json({ ok: true, mode: 'netlify' })
 }
 
-type Submission = z.infer<typeof contactSchema>
-
-const INTENT_LABEL: Record<NonNullable<Submission['intent']>, string> = {
-  contact: 'Contact request',
-  valuation: 'Home valuation request',
-  newsletter: 'Newsletter signup',
+/**
+ * Where to POST Netlify Forms submissions: the static registration file on
+ * this very deploy. Netlify sets NETLIFY=true and DEPLOY_PRIME_URL / URL in
+ * its build and function environments; anywhere else this is null and the
+ * forwarding is skipped.
+ */
+function netlifyFormsUrl(): string | null {
+  if (process.env.NETLIFY !== 'true') return null
+  const base = process.env.DEPLOY_PRIME_URL || process.env.URL
+  return base ? `${base.replace(/\/$/, '')}/__forms.html` : null
 }
 
-async function sendViaResend(
-  apiKey: string,
-  to: string,
-  data: Submission,
-): Promise<boolean> {
-  const label = INTENT_LABEL[data.intent ?? 'contact']
-  const from =
-    process.env.CONTACT_FROM_EMAIL ??
-    'Abigail Anderson Website <website@abigailrealtor.com>'
-  const lines = [
-    `${label} from abigailrealtor.com`,
-    '',
-    `Name:  ${data.name}`,
-    `Email: ${data.email}`,
-    data.phone ? `Phone: ${data.phone}` : null,
-    '',
-    data.message ?? '(no message)',
-  ].filter((l): l is string => l !== null)
-
+async function sendViaNetlifyForms(url: string, data: Submission): Promise<boolean> {
+  const body = new URLSearchParams({
+    'form-name': data.intent ?? 'contact',
+    name: data.name,
+    email: data.email,
+    phone: data.phone ?? '',
+    message: data.message ?? '',
+  })
   try {
-    const res = await fetch('https://api.resend.com/emails', {
+    const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        reply_to: data.email,
-        subject: `${label}: ${data.name}`,
-        text: lines.join('\n'),
-      }),
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
     })
     if (!res.ok) {
-      console.error(
-        '[api/contact] Resend rejected the email',
-        res.status,
-        await res.text(),
-      )
+      console.error('[api/contact] Netlify Forms rejected the submission', res.status)
       return false
     }
     return true
   } catch (err) {
-    console.error('[api/contact] Resend request failed', err)
+    console.error('[api/contact] Netlify Forms request failed', err)
     return false
   }
 }

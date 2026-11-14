@@ -1,0 +1,46 @@
+<!doctype html>
+<!--
+  Netlify Forms registration — not a page anyone visits.
+
+  Netlify detects forms by scanning static HTML in the build output. On
+  Next.js the pages are rendered by functions, so the real forms
+  (components/forms/inquiry-form.tsx, components/home/newsletter.tsx) are
+  invisible to that scan. This file declares the same forms statically so
+  Netlify creates them; /api/contact then forwards each validated submission
+  here with `form-name` set to the intent (see app/api/contact/route.ts).
+  Field names must match what the route forwards. Form detection must be
+  switched on in Netlify (Site configuration → Forms) before the build runs.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Form definitions</title>
+  </head>
+  <body>
+    <form name="contact" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="contact" />
+      <input type="text" name="bot-field" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="tel" name="phone" />
+      <textarea name="message"></textarea>
+    </form>
+    <form name="valuation" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="valuation" />
+      <input type="text" name="bot-field" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="tel" name="phone" />
+      <textarea name="message"></textarea>
+    </form>
+    <form name="newsletter" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="newsletter" />
+      <input type="text" name="bot-field" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="tel" name="phone" />
+      <textarea name="message"></textarea>
+    </form>
+  </body>
+</html>

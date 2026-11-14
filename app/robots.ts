@@ -22,7 +22,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         // The admin area is never indexable (it also sets robots noindex
         // metadata in app/admin/layout.tsx).
-        disallow: '/admin',
+        disallow: ['/admin', '/__forms.html'],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

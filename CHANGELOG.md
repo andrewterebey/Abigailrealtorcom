@@ -41,9 +41,12 @@ unless they change behavior on the site.
   `/api/listings`). Sold listings remain at /properties/sold.
 - **Home valuation requests work end to end.** The address pill on
   /home-valuation carries the address into a valuation request form on the
-  same page; submissions email Abigail through Resend once
-  `RESEND_API_KEY` and `CONTACT_TO_EMAIL` are set (logged until then, with
-  the form still confirming receipt). Message is optional on that form.
+  same page. Message is optional on that form.
+- **Form submissions arrive in Netlify (2026-11-14).** Every contact,
+  valuation and newsletter submission is stored under Forms in the Netlify
+  dashboard, one inbox per form, and Netlify can email Abigail for each one
+  (Site configuration → Forms → Form notifications). Replaces the earlier
+  plan to email through Resend, which is dropped.
 - **Real REALTOR® and Equal Housing Opportunity marks** in the footer, drawn
   as inline SVG in place of the text placeholders.
 - **Home search opens on King County** instead of the whole state when no

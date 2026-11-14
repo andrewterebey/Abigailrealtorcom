@@ -42,7 +42,7 @@ Before starting any task:
 | Styling          | **Tailwind CSS v4**                         | Fast iteration; utility-first matches the screenshot-driven workflow |
 | UI primitives    | **shadcn/ui** + **@base-ui/react**          | shadcn for common forms; Base UI for unstyled a11y primitives       |
 | Icons            | **lucide-react**                            |                                                                     |
-| Forms            | Netlify Forms (dev) / Resend (prod email)   | Zero-backend for MVP; Resend for transactional                      |
+| Forms            | Netlify Forms via `/api/contact`             | Submissions land in the Netlify dashboard inbox; no email provider (Resend dropped 2026-11-14) |
 | Maps             | **Leaflet** + CARTO Voyager raster tiles (OSM data); OSM standard tiles as keyless fallback | Free: CARTO's commercial tier allows 1M req/month with a key (`NEXT_PUBLIC_CARTO_API_KEY`); keyless CARTO returns watermark tiles since 2026-09 |
 | Animations       | `tw-animate-css` (installed); Framer Motion (not yet installed) | `tw-animate-css` is the present animation utility; add Framer Motion only if needed to match live site transitions (ask first) |
 | Hosting          | **Netlify**                                 | Same pipeline as other Terebey projects                             |
@@ -188,7 +188,7 @@ Env vars:
 
 | Var                          | When                                                      |
 | ---------------------------- | --------------------------------------------------------- |
-| `RESEND_API_KEY`             | Prod contact-form email. Unset in dev = console log only. |
+| *(contact forms)*            | No env needed. On Netlify `/api/contact` forwards each validated submission to Netlify Forms — declared statically in `public/__forms.html`, one form per intent (contact, valuation, newsletter), because Netlify cannot see function-rendered markup. Form detection must be enabled in the Netlify dashboard (Site configuration → Forms) before the build, and notifications set there. Off Netlify the submission is logged only. |
 | `NEXT_PUBLIC_SITE_URL`       | Base URL for `sitemap.xml` / canonicals. Falls back to `https://abigailrealtor.com`. |
 | `NEXT_PUBLIC_SHOW_SOCIALS`   | Set to `true` to show the footer social-icon row. Hidden by default until real URLs land. |
 | `MLSGRID_TOKEN`              | MLS Grid OAuth2 token (server-only secret). **Set → site serves the synced NWMLS feed via `MLSGridProvider`; unset → `PlaceholderProvider` with NWMLS branding off.** Use the DEMO token for staging. |
@@ -545,7 +545,7 @@ changing anything in the IDX layer.
 
 `/api/contact` is rate-limited to **5 submissions / 10 minutes / IP** and
 rejects any payload larger than **16 KB** before parsing, so the form can't
-be used as a spam relay once Resend is wired. Implementation: in-memory
+be used as a spam relay. Implementation: in-memory
 token-bucket in `lib/rate-limit.ts`. Multi-instance deployments (e.g.,
 Netlify scaling up) will need a shared store (Redis / Upstash) — flagged
 inline in the file.
@@ -619,7 +619,7 @@ so you don't re-litigate decisions Abigail has already weighed in on.
 9. **Responsive by default.** Tailwind's `sm/md/lg/xl` breakpoints align with our three test viewports: mobile = base, tablet = `md`, desktop = `lg`.
 10. **Ask before deviating.** If the live site does something you think is a bad idea (bad a11y, bad SEO, bad UX), flag it and ask — don't silently "improve" it.
 11. **This is a paid client engagement — act accordingly.**
-    - Don't hit Abigail's real phone/email/contact endpoints. Contact form in dev posts to `/api/contact` which logs to console only until `RESEND_API_KEY` is set in prod env.
+    - Don't hit Abigail's real phone/email/contact endpoints. Contact form in dev posts to `/api/contact` which logs to console only; on Netlify it forwards to Netlify Forms.
     - Don't modify or attempt to access the live Luxury Presence site — we only read from it (screenshots, content, images).
     - Don't push directly to `main`. Work on a feature branch (e.g. `feat/page-parity`, `fix/footer-disclaimer`) and merge to `main` only after `npm run lint` passes and all three viewports pass visual diff. PRs are preferred but solo merges are OK for trivial fixes.
     - Keep a running `CHANGELOG.md` of client-visible changes — it becomes the handoff review agenda.
@@ -645,7 +645,7 @@ so you don't re-litigate decisions Abigail has already weighed in on.
 
 Flagged here so we don't hit them mid-build. Track status in `TODO.md`.
 
-- **Contact form destination** — which email(s) should form submissions go to? Does she want SMS notifications too (via Twilio)? Needs `RESEND_API_KEY` to wire up.
+- **Contact form destination** — submissions go to the Netlify Forms inbox; which email(s) should Netlify's form notifications go to? (Resend was dropped 2026-11-14.)
 - **Instagram feed** — handle + approach: static screenshot grid, Instagram Basic Display API (requires her FB developer account), or a third-party widget (Elfsight, LightWidget)?
 - **Calendly / booking link** — does she have one? If so, add to "Let's Connect" CTAs.
 - **Blog** — will she write posts? If yes, CMS choice: MDX in repo, Sanity, or Contentful?

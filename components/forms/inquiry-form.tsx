@@ -20,7 +20,7 @@ type InquiryFormProps = {
  * Shared form used on /buyers, /sellers, /options (property-inquiry),
  * /contact (contact), and /home-valuation (valuation). Posts to
  * /api/contact — CLAUDE.md §7 forbids inventing new endpoints. In dev the
- * API handler logs to console; in prod it will route through Resend.
+ * API handler logs to console; on Netlify it forwards to Netlify Forms.
  */
 export function InquiryForm({
   variant = 'contact',
