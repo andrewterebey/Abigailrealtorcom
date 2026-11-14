@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { submitToNetlifyForms } from '@/lib/netlify-forms'
 
 type Variant = 'property-inquiry' | 'contact' | 'valuation'
 
@@ -20,7 +21,8 @@ type InquiryFormProps = {
  * Shared form used on /buyers, /sellers, /options (property-inquiry),
  * /contact (contact), and /home-valuation (valuation). Posts to
  * /api/contact — CLAUDE.md §7 forbids inventing new endpoints. In dev the
- * API handler logs to console; on Netlify it forwards to Netlify Forms.
+ * API handler validates and rate-limits; the browser then posts the same
+ * submission to Netlify Forms (lib/netlify-forms.ts), where Abigail reads it.
  */
 export function InquiryForm({
   variant = 'contact',
@@ -80,6 +82,17 @@ export function InquiryForm({
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string }
         throw new Error(body.error ?? `Submission failed (${res.status})`)
+      }
+      // Validated and rate-limited; now hand it to Netlify Forms, which is
+      // where Abigail reads it (and gets the notification email).
+      const delivered = await submitToNetlifyForms(intent, {
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        message: payload.message,
+      })
+      if (!delivered) {
+        throw new Error('Could not send your message right now. Please try again or call.')
       }
       setStatus('ok')
       form.reset()

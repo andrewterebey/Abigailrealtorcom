@@ -6,8 +6,8 @@
   Next.js the pages are rendered by functions, so the real forms
   (components/forms/inquiry-form.tsx, components/home/newsletter.tsx) are
   invisible to that scan. This file declares the same forms statically so
-  Netlify creates them; /api/contact then forwards each validated submission
-  here with `form-name` set to the intent (see app/api/contact/route.ts).
+  Netlify creates them; after /api/contact accepts a submission, the browser
+  posts it here with `form-name` set to the intent (lib/netlify-forms.ts).
   Field names must match what the route forwards. Form detection must be
   switched on in Netlify (Site configuration → Forms) before the build runs.
 -->

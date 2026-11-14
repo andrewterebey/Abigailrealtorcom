@@ -188,7 +188,7 @@ Env vars:
 
 | Var                          | When                                                      |
 | ---------------------------- | --------------------------------------------------------- |
-| *(contact forms)*            | No env needed. On Netlify `/api/contact` forwards each validated submission to Netlify Forms — declared statically in `public/__forms.html`, one form per intent (contact, valuation, newsletter), because Netlify cannot see function-rendered markup. Form detection must be enabled in the Netlify dashboard (Site configuration → Forms) before the build, and notifications set there. Off Netlify the submission is logged only. |
+| *(contact forms)*            | No env needed. The browser posts each submission to `/api/contact` (validation + rate limit) and then, in production builds, to Netlify Forms via `lib/netlify-forms.ts` — the forms are declared statically in `public/__forms.html`, one per intent (contact, valuation, newsletter), because Netlify only detects forms in built HTML. Never forward from the route handler: a Netlify Function has no `NETLIFY` flag at runtime (only `URL`, `SITE_NAME`, `SITE_ID`) and submissions from functions are not recorded. Form detection must be enabled in the Netlify dashboard (Site configuration → Forms) before the build, and notifications set there. Off Netlify the submission is logged only. |
 | `NEXT_PUBLIC_SITE_URL`       | Base URL for `sitemap.xml` / canonicals. Falls back to `https://abigailrealtor.com`. |
 | `NEXT_PUBLIC_SHOW_SOCIALS`   | Set to `true` to show the footer social-icon row. Hidden by default until real URLs land. |
 | `MLSGRID_TOKEN`              | MLS Grid OAuth2 token (server-only secret). **Set → site serves the synced NWMLS feed via `MLSGridProvider`; unset → `PlaceholderProvider` with NWMLS branding off.** Use the DEMO token for staging. |
@@ -619,7 +619,7 @@ so you don't re-litigate decisions Abigail has already weighed in on.
 9. **Responsive by default.** Tailwind's `sm/md/lg/xl` breakpoints align with our three test viewports: mobile = base, tablet = `md`, desktop = `lg`.
 10. **Ask before deviating.** If the live site does something you think is a bad idea (bad a11y, bad SEO, bad UX), flag it and ask — don't silently "improve" it.
 11. **This is a paid client engagement — act accordingly.**
-    - Don't hit Abigail's real phone/email/contact endpoints. Contact form in dev posts to `/api/contact` which logs to console only; on Netlify it forwards to Netlify Forms.
+    - Don't hit Abigail's real phone/email/contact endpoints. Contact form in dev posts to `/api/contact` which logs to console only; in production the browser also posts to Netlify Forms.
     - Don't modify or attempt to access the live Luxury Presence site — we only read from it (screenshots, content, images).
     - Don't push directly to `main`. Work on a feature branch (e.g. `feat/page-parity`, `fix/footer-disclaimer`) and merge to `main` only after `npm run lint` passes and all three viewports pass visual diff. PRs are preferred but solo merges are OK for trivial fixes.
     - Keep a running `CHANGELOG.md` of client-visible changes — it becomes the handoff review agenda.

@@ -46,7 +46,9 @@ unless they change behavior on the site.
   valuation and newsletter submission is stored under Forms in the Netlify
   dashboard, one inbox per form, and Netlify can email Abigail for each one
   (Site configuration → Forms → Form notifications). Replaces the earlier
-  plan to email through Resend, which is dropped.
+  plan to email through Resend, which is dropped. (Same day: the first
+  version posted from the server and Netlify never recorded it; the browser
+  now posts directly, per Netlify's guidance.)
 - **Real REALTOR® and Equal Housing Opportunity marks** in the footer, drawn
   as inline SVG in place of the text placeholders.
 - **Home search opens on King County** instead of the whole state when no

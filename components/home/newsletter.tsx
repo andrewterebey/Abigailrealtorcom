@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { submitToNetlifyForms } from '@/lib/netlify-forms'
 import { useState } from 'react'
 import { Container } from '@/components/site/container'
 
@@ -30,8 +31,10 @@ export function Newsletter({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name, email, intent: 'newsletter' }),
       })
-      setStatus(res.ok ? 'ok' : 'error')
-      if (res.ok) {
+      // /api/contact validates and rate-limits; Netlify Forms stores it.
+      const ok = res.ok && (await submitToNetlifyForms('newsletter', { name, email }))
+      setStatus(ok ? 'ok' : 'error')
+      if (ok) {
         setName('')
         setEmail('')
         setConsent(false)
