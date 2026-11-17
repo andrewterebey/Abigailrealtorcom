@@ -240,11 +240,12 @@ export function InquiryForm({
       </div>
 
       <p className="mt-6 font-body text-[11px] leading-relaxed text-site-text-muted">
-        I agree to be contacted by Abigail Anderson via call, email, and text
-        for real estate services. To opt out, you can reply &apos;stop&apos; at
-        any time or reply &apos;help&apos; for assistance. You can also click
-        the unsubscribe link in the emails. Message and data rates may apply.
-        Message frequency may vary.{' '}
+        By submitting this form, you agree to be contacted by Abigail Anderson
+        (John L. Scott Real Estate) via call, email, and SMS text message for
+        real estate services. Consent is not a condition of purchase. Message
+        and data rates may apply. Message frequency may vary. Reply STOP to opt
+        out at any time or HELP for assistance; you can also use the
+        unsubscribe link in our emails. See our{' '}
         <Link
           href="/privacy-policy"
           className="underline underline-offset-2 hover:text-site-gold"

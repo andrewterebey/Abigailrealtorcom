@@ -20,6 +20,11 @@ unless they change behavior on the site.
   "Terms and Conditions" list (Section 11(VII), with Abigail's email and the
   policy link filled in). "Last Updated" moved to November 17, 2026. Nothing
   else in the legal text changed.
+  - Follow-up the same day: the contact/valuation/inquiry form consent
+    text now reads as submit-is-consent ("By submitting this form, you
+    agree…"), names the brokerage, adds "Consent is not a condition of
+    purchase" and spells out STOP / HELP, matching the standard carrier
+    opt-in template. No checkbox was added.
 - **Admin dashboard (rough draft)** at `/admin` — a Luxury Presence-style
   control panel so Abigail can eventually manage the site herself: Dashboard
   (live counts), Content → Blog Posts (table + LP-style Edit Post screen) and
