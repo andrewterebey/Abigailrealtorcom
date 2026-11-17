@@ -623,7 +623,7 @@ so you don't re-litigate decisions Abigail has already weighed in on.
     - Don't modify or attempt to access the live Luxury Presence site — we only read from it (screenshots, content, images).
     - Don't push directly to `main`. Work on a feature branch (e.g. `feat/page-parity`, `fix/footer-disclaimer`) and merge to `main` only after `npm run lint` passes and all three viewports pass visual diff. PRs are preferred but solo merges are OK for trivial fixes.
     - Keep a running `CHANGELOG.md` of client-visible changes — it becomes the handoff review agenda.
-12. **Legal text is verbatim.** The NWMLS IDX disclaimer, DMCA notice, and privacy policy wording are copied exactly from the live site into `/content/legal/` and rendered unchanged. Don't paraphrase them, don't "clean them up."
+12. **Legal text is verbatim.** The NWMLS IDX disclaimer, DMCA notice, and privacy policy wording are copied exactly from the live site into `/content/legal/` and rendered unchanged. Don't paraphrase them, don't "clean them up." The only departures are the ones logged in each file's HTML comment header (vendor-contact repointing, and the 2026-11-17 Follow Up Boss SMS-registration additions to Sections 4 and 11 of the privacy policy). Any new wording a vendor or Abigail requires goes in the same way: added verbatim, logged in that header. `/privacy-policy` and `/terms-and-conditions` both render `terms-and-conditions.md`; link to `/privacy-policy`.
 
 ---
 

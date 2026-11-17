@@ -121,11 +121,11 @@ Pages in build order. Complete visual parity for page N before starting N+1.
 
 ## Blog & legal follow-ups
 
-- [ ] **Standalone `/privacy-policy` copy** — currently a stub that points at
-      `/terms-and-conditions` (which is where the live Luxury Presence site
-      renders the full Privacy Policy / Terms of Use document). Decide with
-      Abigail whether to author a fresh privacy-only document, redirect
-      `/privacy-policy` → `/terms-and-conditions`, or leave as-is.
+- [x] **Standalone `/privacy-policy` copy** — done 2026-11-17: `/privacy-policy`
+      now renders the full Privacy Policy / Terms of Use document (same source
+      file as `/terms-and-conditions`, which stays up and points its canonical
+      here). Forced by Follow Up Boss's SMS registration review, which landed
+      on the old "Coming soon" stub.
 - [ ] **Blog post inline markdown** — the hand-rolled renderer in
       `lib/blog.ts` only handles h2/h3/paragraphs/lists. Inline links and
       bold in body copy render as plain text. Revisit once the live posts

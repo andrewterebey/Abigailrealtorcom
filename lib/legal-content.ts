@@ -3,10 +3,11 @@ import path from 'node:path'
 
 /**
  * Loader for the verbatim legal copy under /content/legal/. Used by the
- * Terms & Conditions page (which — matching the live site — renders the
- * Privacy Policy content; the live URL for the privacy policy is literally
- * `/terms-and-conditions`). CLAUDE.md §12 requires these pages to render
- * the source text without paraphrase or reformatting.
+ * Privacy Policy page and the Terms & Conditions page (both render the
+ * Privacy Policy / Terms of Use document; `/terms-and-conditions` is the
+ * old Luxury Presence slug, `/privacy-policy` the canonical URL). CLAUDE.md
+ * §12 requires these pages to render the source text without paraphrase or
+ * reformatting.
  *
  * The markdown in the source files was captured from the Luxury Presence
  * export, so it includes a bunch of site-chrome (nav links, "Buttons:" pseudo

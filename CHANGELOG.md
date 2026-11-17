@@ -9,6 +9,17 @@ unless they change behavior on the site.
 ## Unreleased
 
 ### Added
+- **Privacy Policy updates for SMS registration (2026-11-17)** — Follow Up
+  Boss rejected Abigail's business registration because the footer's
+  "Privacy Policy" link opened a "Coming soon" stub and the contact form's
+  opt-in text had no link. Now `/privacy-policy` renders the full Privacy
+  Policy / Terms of Use document, the contact, valuation and newsletter
+  opt-in texts link to it, and the policy carries the reviewer's required
+  wording: the sentence "Data will not be shared with third parties for
+  marketing or promotional purposes" (end of Section 4) and the six-item SMS
+  "Terms and Conditions" list (Section 11(VII), with Abigail's email and the
+  policy link filled in). "Last Updated" moved to November 17, 2026. Nothing
+  else in the legal text changed.
 - **Admin dashboard (rough draft)** at `/admin` — a Luxury Presence-style
   control panel so Abigail can eventually manage the site herself: Dashboard
   (live counts), Content → Blog Posts (table + LP-style Edit Post screen) and

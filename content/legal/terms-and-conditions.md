@@ -13,6 +13,15 @@ repointed to Abigail Anderson's John L. Scott business contact (matching the
 dmca-notice.md deviation). ⚠️ Abigail must confirm the real privacy / data-rights
 contact (and whether a dedicated privacy@ alias or named processor is preferred)
 before go-live.
+
+ADDITION (2026-11-17, Follow Up Boss SMS registration): FUB's business-
+registration reviewer required (a) the exact sentence "Data will not be shared
+with third parties for marketing or promotional purposes" (added as the last
+paragraph of Section 4), (b) a "Terms and Conditions" list of six SMS items
+(added verbatim as Section 11(VII), with the contact email and privacy-policy
+link filled in), and (c) a privacy-policy link in every form's opt-in text
+(done in the form components, not here). Nothing else was reworded; the
+"Last Updated" date was advanced to the day of the change.
 -->
 ---
 title: "Privacy Policy | Abigail Anderson | Bellevue, WA Real Estate"
@@ -32,7 +41,7 @@ Buttons: `Let's Connect`
 
 ### PRIVACY POLICY AND TERMS OF USE
 
-Last Updated: March 12, 2026
+Last Updated: November 17, 2026
 
 Introduction
 
@@ -87,6 +96,7 @@ We do not "sell" any personal information (as defined under applicable laws), bu
 **For compliance, fraud prevention, and safety:** We or our Service Providers may share your personal information for the compliance, fraud prevention, and safety purposes described above.
 **Business transfers:** We (or our Service Providers) may sell, transfer, or otherwise share some or all of our (or our Service Providers') business or assets, including your personal information, in connection with a business transaction (or potential business transaction) such as a corporate divestiture, merger, consolidation, acquisition, reorganization, or sale of assets, or in the event of bankruptcy or dissolution. In such a case, we will make reasonable efforts to require the recipient to honor this Privacy Policy and Terms of Use.
 Other than as set forth herein, data will not be shared with third parties for marketing or promotional purposes. We will never disclose any personal information such as phone numbers and SMS consent with any third parties for marketing purposes.
+Data will not be shared with third parties for marketing or promotional purposes.
 5. **Advertising and Tracking Technologies**
 We may use advertising and tracking technologies to deliver relevant advertising and measure the effectiveness of our marketing efforts.
 ***Third-Party Advertising Platforms***
@@ -138,6 +148,13 @@ Carriers are not liable for delayed or undelivered messages.
 Message and data rates may apply for any messages sent to you from us and to us from you. Message frequency may vary. If you have any questions about your text plan or data plan, it is best to contact your wireless provider.
 **(VI) Other Privacy Questions**
 If you have any questions regarding privacy, please read this Privacy Policy and Terms of Use.
+**(VII) Terms and Conditions**
+1. We use SMS to confirm appointments, send reminders, and notify clients of schedule updates or important changes.
+2. You can cancel the SMS service at any time. Just text "STOP". After you send the SMS message "STOP" to us, we will send you an SMS message to confirm that you have been unsubscribed. After this, you will no longer receive SMS messages from us. If you want to join again, just sign up as you did the first time, and we will start sending SMS messages to you again.
+3. If you are experiencing issues with the messaging program, you can reply with the keyword "HELP" for more assistance, or you can get help directly at [abigaila@johnlscott.com](mailto:abigaila@johnlscott.com).
+4. Carriers are not liable for delayed or undelivered messages.
+5. As always, message and data rates may apply for any messages sent to you from us and to us from you. Message frequency may vary. If you have any questions about your text plan or data plan, it is best to contact your wireless provider.
+6. If you have any questions regarding privacy, please read our privacy policy: [https://abigailrealtor.com/privacy-policy](https://abigailrealtor.com/privacy-policy)
 12. **How to Contact Us**
 You may contact us using the information below.
 Abigail Anderson

@@ -14,7 +14,8 @@ const META_IMAGE = '/images/home-portrait-main.jpg'
 export const metadata: Metadata = {
   title: META_TITLE,
   description: META_DESCRIPTION,
-  alternates: { canonical: '/terms-and-conditions' },
+  // Same document as /privacy-policy; that URL is the canonical one.
+  alternates: { canonical: '/privacy-policy' },
   openGraph: {
     title: META_TITLE,
     description: META_DESCRIPTION,

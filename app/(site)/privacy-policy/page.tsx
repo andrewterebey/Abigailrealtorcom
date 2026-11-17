@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { Container } from '@/components/site/container'
+import { LegalBody } from '@/components/site/legal-body'
 import { PageHero } from '@/components/site/page-hero'
+import { loadLegalBody } from '@/lib/legal-content'
 
 const META_TITLE = 'Privacy Policy'
-const META_DESCRIPTION = 'Privacy policy for abigailrealtor.com.'
+const META_DESCRIPTION =
+  'Privacy policy and terms of use for abigailrealtor.com.'
 // No dedicated legal-page hero — fall back to the portrait hero. Tracked
 // in TODO.md.
 const META_IMAGE = '/images/home-portrait-main.jpg'
@@ -28,30 +30,22 @@ export const metadata: Metadata = {
 }
 
 /**
- * Placeholder: the live site uses `/terms-and-conditions` as the Privacy
- * Policy URL, and there is no separate `privacy-policy.md` in
- * /content/legal/. We render a short stub here and point readers at the
- * canonical Privacy Policy. Tracked in TODO.md — decide whether to keep this
- * URL as a redirect or author fresh copy.
+ * The full Privacy Policy / Terms of Use document, rendered verbatim from
+ * /content/legal/terms-and-conditions.md (CLAUDE.md §12). This is the URL
+ * the footer and every form's opt-in text link to, and the one given to
+ * Follow Up Boss for SMS registration — it must render the real document,
+ * not a stub. `/terms-and-conditions` (the old Luxury Presence slug) serves
+ * the same document and points its canonical here.
  */
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  const blocks = await loadLegalBody('terms-and-conditions.md')
   return (
     <main>
       <PageHero title="Privacy Policy" />
       <section className="py-16 md:py-20 lg:py-24">
         <Container>
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="font-body text-[15px] leading-[1.75] text-site-text md:text-[16px]">
-              Coming soon. Our full Privacy Policy and Terms of Use is available
-              at{' '}
-              <Link
-                href="/terms-and-conditions"
-                className="text-site-gold underline underline-offset-2 hover:text-site-gold-dim"
-              >
-                abigailrealtor.com/terms-and-conditions
-              </Link>
-              .
-            </p>
+          <div className="mx-auto max-w-[720px]">
+            <LegalBody blocks={blocks} />
           </div>
         </Container>
       </section>

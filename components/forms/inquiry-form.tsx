@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { submitToNetlifyForms } from '@/lib/netlify-forms'
 
@@ -243,7 +244,14 @@ export function InquiryForm({
         for real estate services. To opt out, you can reply &apos;stop&apos; at
         any time or reply &apos;help&apos; for assistance. You can also click
         the unsubscribe link in the emails. Message and data rates may apply.
-        Message frequency may vary. Privacy Policy.
+        Message frequency may vary.{' '}
+        <Link
+          href="/privacy-policy"
+          className="underline underline-offset-2 hover:text-site-gold"
+        >
+          Privacy Policy
+        </Link>
+        .
       </p>
 
       <div className="mt-8 flex flex-col items-center gap-3">

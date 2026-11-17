@@ -113,7 +113,7 @@ export function Newsletter({
               emails. Message and data rates may apply. Message frequency may
               vary.{' '}
               <Link
-                href="/terms-and-conditions"
+                href="/privacy-policy"
                 className="text-white underline-offset-4 hover:underline"
               >
                 Privacy Policy
